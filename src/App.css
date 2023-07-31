@@ -1,5 +1,15 @@
 .App {
   text-align: center;
+
+  /* Useful properties taken from the create-react-app's .App-header, which we no longer use. */
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  font-size: 12px; /* calc(8px + 2vmin); */
+  color: white;
 }
 
 .App-logo {
