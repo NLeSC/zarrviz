@@ -1,12 +1,12 @@
 import { ImprovedNoise } from 'https://unpkg.com/three/examples/jsm/math/ImprovedNoise.js';
 import { Vol3dViewer } from '@janelia/web-vol-viewer';
-import logo from './logo.svg';
 import './App.css';
 import * as THREE from 'three';
 import { openArray, HTTPStore } from 'zarr'
 import React, { useState, useEffect, useRef } from 'react';
+import CloudViewerUI from './CloudViewerUI.jsx';
 
-function LoadZarr() {
+/*function LoadZarr() {
   const initialized = useRef(false)
   const [users, setUsers] = useState([]);
   const fetchOptions = { redirect: 'follow', mode: 'cors', credentials: 'include'};
@@ -24,20 +24,25 @@ function LoadZarr() {
     }
   }, []);
   return { users };
-}
+}*/
 
 function App() {
+  return (
+    <div className="App">
+      <CloudViewerUI />
+    </div>
+  );
+/*  const [dataUint8, setDataUint8] = React.useState(null);
 
   const loadNoise = false;
   let size = 0;
   let size_z = 0;
-  let data = new Uint8Array(0);
   let volsize = [0, 0, 0];
   if (loadNoise) {
     size = 1000;
     size_z = 149;
     volsize = [size, size, size_z];
-    data = new Uint8Array(size * size * size_z);
+    let tmpdata = new Uint8Array(size * size * size_z);
     let i = 0;
     let z_fac = 1;
     const scale = 0.1;
@@ -49,11 +54,12 @@ function App() {
 
         for (let x = 0; x < size; x++) {
 
-          data[i] = (0 + z_fac * perlin.noise(x * scale, y * scale, z * scale * 8) + z_fac * perlin.noise(x * scale / 4, y * scale / 4, z * scale));
+          tmpdata[i] = (0 + z_fac * perlin.noise(x * scale, y * scale, z * scale * 8) + z_fac * perlin.noise(x * scale / 4, y * scale / 4, z * scale));
           i++;
         }
       }
     }
+    setDataUint8(tmpdata);
   }
   else {
     console.time('Data loading time');
@@ -64,18 +70,18 @@ function App() {
       let z_size = ret[1][0];
       let x_size = ret[1][1];
       let y_size = ret[1][2];
-
-      data = ret[0];
+      console.log("here we go...")
+      setDataUint8(ret[0]);
       volsize = [x_size, y_size, z_size];
     }
   }
   console.log("Data is loaded.");
   let middle = null;
-  if (data.length != 0) {
+  if (dataUint8) {
     middle = (
       <div className='App'>
         <Vol3dViewer
-          volumeDataUint8={data}
+          volumeDataUint8={dataUint8}
           volumeSize={volsize}
           voxelSize={[1, 1, 1]}
           transferFunctionTex={makeFluoTransferTex(0.5, 200, 3, 255, '#f3f6f4')}
@@ -87,16 +93,15 @@ function App() {
     <div className="BasicUI">
       <div
         className="Middle"
-
         tabIndex={0}
         //        onKeyPress={onKeyPress}
         role='link'>
         {middle}
       </div>
-    </div>)
+    </div>)*/
 }
 
-export function makeFluoTransferTex(alpha0, peak, dataGamma, alpha1, colorStr) {
+/*export function makeFluoTransferTex(alpha0, peak, dataGamma, alpha1, colorStr) {
   // See Wan et al., 2012, "FluoRender: An Application of 2D Image Space Methods for
   // 3D and 4D Confocal Microscopy Data Visualization in Neurobiology Research"
   // https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3622106/
@@ -141,6 +146,6 @@ export function makeFluoTransferTex(alpha0, peak, dataGamma, alpha1, colorStr) {
   transferTexture.needsUpdate = true;
 
   return transferTexture;
-}
+}*/
 
 export default App;
