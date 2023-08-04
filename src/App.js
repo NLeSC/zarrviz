@@ -14,7 +14,6 @@ function LoadZarr() {
   const store = new HTTPStore('https://surfdrive.surf.nl/files/remote.php/nonshib-webdav/Ruisdael-viz/ql.zarr', {fetchOptions, supportedMethods});
   useEffect(() => {
     const fetchData = async () => {
-      var fetchopts = Object.assign({}, {method: 'GET'}, fetchOptions);
       const zarrdata = await openArray({store: store, path: 'ql', mode: "r"});
       const { data, strides, shape } = await zarrdata.getRaw([9, null, null, null]);
       setUsers([data, shape]);
@@ -26,7 +25,7 @@ function LoadZarr() {
   }, []);
   return { users };
 }
-ELPRS-MXXRB-RFYVA-PKQGN
+
 function App() {
 
   const loadNoise = false;
