@@ -50,11 +50,8 @@ uniform bool useVolumeMirrorX;
 
 // Optional parameters, for when a solid surface is being drawn along with
 // the volume data.
-uniform bool useSurface;
 uniform float near;
 uniform float far;
-uniform sampler2D surfaceColorTex;
-uniform sampler2D surfaceDepthTex;
 
 // Three.js adds built-in uniforms and attributes:
 // https://threejs.org/docs/#api/en/renderers/webgl/WebGLProgram
@@ -90,25 +87,6 @@ void main(void) {
   // expressed as a range of "t" values (with "t" being the traditional
   // parameter for a how far a point is along a ray).
   vec2 tBox = intersectBox(cameraPositionAdjusted, rayDir);
-
-  ivec2 surfaceTexSize = ivec2(0);
-  vec2 surfaceTexCoord = vec2(0);
-  if (useSurface) {
-    // If a surface is being drawn, then adjust the range of "t" values
-    // so the farthest value corresponds to where the surface is, which
-    // comes from the depth-buffer value in the texture.
-    surfaceTexSize = textureSize(surfaceColorTex, 0);
-    surfaceTexCoord = gl_FragCoord.xy / vec2(surfaceTexSize);
-    float depth = texture(surfaceDepthTex, surfaceTexCoord).x;
-    float dist = cameraDistanceFromDepth(depth);
-    tBox.y = min(tBox.y, dist);
-
-    // It also may be the case that the surface extends outside the volume.
-    // If it is between the camera and the volume, the starting "t" value
-    // must be pushed back to accomodate it (with a little extra tolerance
-    // included) or it will appear as black.
-    tBox.x = min(tBox.x, dist - 0.0001);
-  }
 
   if (tBox.x >= tBox.y) {
     discard;
@@ -220,16 +198,6 @@ void main(void) {
 
   float g = 1.0 / finalGamma;
   gl_FragColor = pow(gl_FragColor, vec4(g, g, g, 1));
-
-  if (useSurface) {
-    // If a surface is being drawn, the background color comes from the texture
-    // captured when the surface was rendered (in its own pass).
-    vec3 surfaceColor = texture(surfaceColorTex, surfaceTexCoord).rgb;
-    float surfaceAlpha = 1.0;
-    gl_FragColor.rgb += (1.0 - gl_FragColor.a) * surfaceAlpha * surfaceColor.rgb;
-    // The following line is no longer needed with the final assignment, below.
-    // gl_FragColor.a += (1.0 - gl_FragColor.a) * surfaceAlpha;
-  }
 
   // A few browsers show some artifacts if the final alpha value is not 1.0,
   // probably a version of the issues discussed here:

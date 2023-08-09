@@ -32,9 +32,6 @@ function Vol3dViewer(props) {
     cameraFovDegrees,
     orbitZoomSpeed,
     useLighting,
-    useSurface,
-    surfaceMesh,
-    surfaceColor,
     onCameraChange,
     onWebGLRender,
   } = props;
@@ -53,8 +50,6 @@ function Vol3dViewer(props) {
   const boxRef = React.useRef(null);
   const boxMaterialRef = React.useRef(null);
   const trackballRef = React.useRef(null);
-  const surfaceRef = React.useRef(null);
-  const surfaceTargetRef = React.useRef(null);
   const onCameraChangeRef = React.useRef(null);
   const prevHeightRef = React.useRef(null);
 
@@ -182,9 +177,6 @@ function Vol3dViewer(props) {
           dtScale: new THREE.Uniform(0),
           finalGamma: new THREE.Uniform(0),
           useLighting: new THREE.Uniform(true),
-          useSurface: new THREE.Uniform(false),
-          surfaceColorTex: new THREE.Uniform(null),
-          surfaceDepthTex: new THREE.Uniform(null),
           useVolumeMirrorX: new THREE.Uniform(false)
         }
       });
@@ -247,41 +239,8 @@ function Vol3dViewer(props) {
 
   // This rendering function is "memoized" so it can be used in `useEffect` blocks.
   const renderScene = React.useCallback(() => {
-    const surfaceVisible = surfaceRef.current && surfaceRef.current.visible;
-    if (surfaceVisible) {
-      boxRef.current.visible = false;
-
-      const size = new THREE.Vector2();
-      rendererRef.current.getDrawingBufferSize(size);
-      if (!surfaceTargetRef.current || surfaceTargetRef.current.width !== size.x || surfaceTargetRef.current.height !== size.y) {        
-        surfaceTargetRef.current  = new THREE.WebGLRenderTarget(size.x, size.y);
-        surfaceTargetRef.current.texture.format = THREE.RGBFormat;
-        surfaceTargetRef.current.texture.minFilter = THREE.NearestFilter;
-        surfaceTargetRef.current.texture.magFilter = THREE.NearestFilter;
-        surfaceTargetRef.current.texture.generateMipmaps = false;
-        surfaceTargetRef.current.depthBuffer = true;
-        surfaceTargetRef.current.depthTexture = new THREE.DepthTexture(size.x, size.y);
-        surfaceTargetRef.current.depthTexture.format = THREE.DepthFormat;
-        surfaceTargetRef.current.depthTexture.type = THREE.UnsignedShortType;
-        surfaceTargetRef.current.stencilBuffer = false;
-
-        boxMaterialRef.current.uniforms.surfaceColorTex.value = surfaceTargetRef.current.texture;
-        boxMaterialRef.current.uniforms.surfaceDepthTex.value = surfaceTargetRef.current.depthTexture;
-      }
-
-      rendererRef.current.setRenderTarget(surfaceTargetRef.current);
-      rendererRef.current.render(sceneRef.current, cameraRef.current);
-      rendererRef.current.setRenderTarget(null);
-
-      surfaceRef.current.visible = false;  
-      boxRef.current.visible = true;
-    }
 
     rendererRef.current.render(sceneRef.current, cameraRef.current);
-
-    if (surfaceVisible) {
-      surfaceRef.current.visible = true;
-    }
 
     if (onWebGLRender) {
       onWebGLRender();
@@ -334,51 +293,13 @@ function Vol3dViewer(props) {
     boxMaterialRef.current.uniforms.dtScale.value = dtScale;
     boxMaterialRef.current.uniforms.finalGamma.value = finalGamma;
     boxMaterialRef.current.uniforms.useLighting.value = useLighting;
-    boxMaterialRef.current.uniforms.useSurface.value = useSurface;
     boxMaterialRef.current.uniforms.useVolumeMirrorX.value = useVolumeMirrorX;
 
     // This `useEffect` follows the first React rendering, so it is necessary to
     // explicitly force a Three.js rendering to make the volme visible before any
     // interactive camera motion.
     renderScene();
-  }, [alphaScale, dtScale, finalGamma, renderScene, transferFunctionTex, useLighting, useSurface, useVolumeMirrorX]);
-
-  React.useEffect(() => {
-    const initSurface = () => {
-      console.log('initSurface');
-
-      if (surfaceRef.current) {
-        sceneRef.current.remove(surfaceRef.current);
-      }
-      if (surfaceMesh) {
-        sceneRef.current.add(surfaceMesh);
-        if (surfaceRef.current) {
-          surfaceMesh.visible = surfaceRef.current.visible;
-        }
-      }
-
-      return surfaceMesh;
-    }
-
-    surfaceRef.current = initSurface();
-    renderScene();
-  }, [renderScene, sceneRef, surfaceRef, surfaceMesh]);
-
-  // Surface color must be changed with `useEffect` block or color will not be applied on
-  // the second or subsequent change to `surfaceMesh` (since the new `surfaceMesh` is itself
-  // applied with `useEffect`).
-  React.useEffect(() => {
-    console.log('init surfaceColor');
-
-    if (surfaceRef.current) {
-      surfaceRef.current.material.color.set(surfaceColor);
-      renderScene();
-    }
-  }, [renderScene, surfaceColor, surfaceMesh]);
-
-  if (surfaceRef.current) {
-    surfaceRef.current.visible = useSurface;
-  }
+  }, [alphaScale, dtScale, finalGamma, renderScene, transferFunctionTex, useLighting, useVolumeMirrorX]);
 
   // When the window is resized, force an update to the camera aspect ratio as part of scene rendering.
   React.useEffect(() => {
@@ -476,12 +397,6 @@ Vol3dViewer.propTypes = {
   cameraFovDegrees: PropTypes.number,
   orbitZoomSpeed: PropTypes.number,
   useLighting: PropTypes.bool,
-  useSurface: PropTypes.bool,
-  // A Three.js `Mesh` (https://threejs.org/docs/#api/en/objects/Mesh)
-  surfaceMesh: PropTypes.shape({
-    visible: PropTypes.bool
-  }),
-  surfaceColor: PropTypes.string,
   onCameraChange: PropTypes.func,
   onWebGLRender: PropTypes.func,
 };
@@ -499,9 +414,6 @@ Vol3dViewer.defaultProps = {
   cameraFovDegrees: 45.0,
   orbitZoomSpeed: 0.15,
   useLighting: true,
-  useSurface: false,
-  surfaceMesh: null,
-  surfaceColor: '#00ff00',
   onCameraChange: null,
   onWebGLRender: null
 };

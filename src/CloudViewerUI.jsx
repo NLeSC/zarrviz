@@ -87,7 +87,7 @@ function CloudViewerUI() {
             volumeDataUint8={dataUint8}
             volumeSize={dataShape.current}
             voxelSize={dataCellSize.current}
-            transferFunctionTex={makeFluoTransferTex(10, 250, 10, 25, '#f3f6f4')}
+            transferFunctionTex={makeCloudTransferTex()}
             dtScale={0.5}
           />
       );
@@ -104,63 +104,17 @@ function CloudViewerUI() {
       </div>); 
 }
 
-export function makeFluoTransferTex(alpha0, peak, dataGamma, alpha1, colorStr) {
-  // See Wan et al., 2012, "FluoRender: An Application of 2D Image Space Methods for
-  // 3D and 4D Confocal Microscopy Data Visualization in Neurobiology Research"
-  // https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3622106/
+export function makeCloudTransferTex() {
 
-/*  const transferFunction = new THREE.DataTexture([
-    // Scalar value, Color R, Color G, Color B, Opacity
-    1, 255, 255, 255, 3,  // Fully transparent for low densities
-    25, 204, 204, 204, 12, // Light gray with low opacity for lighter smoke
-    77, 123, 123, 123, 50,  // Medium gray with some opacity
-    180, 77, 77, 77, 126,  // Dark gray with more opacity
-    255, 26, 26, 26, 250   // Almost fully opaque for high densities (dense clouds)
-  ], 5, 1, THREE.RGBAFormat);
-
-  // Set parameters for the DataTexture1D
-  transferFunction.minFilter = THREE.NearestFilter;
-  transferFunction.magFilter = THREE.NearestFilter;
-  transferFunction.wrapS = THREE.ClampToEdgeWrapping;
-  transferFunction.wrapT = THREE.ClampToEdgeWrapping;
-  transferFunction.needsUpdate = true;
-  return transferFunction;*/
-
-  const color = new THREE.Color(colorStr).multiplyScalar(255);
   const width = 256;
   const height = 1;
   const size = width * height;
   const data = new Uint8Array(4 * size);
+
   for (let i = 0; i < width; i += 1) {
-    // Compute the alpha for the data value at `i` in three steps. For the first step, 
-    // think of a triangular "tent" with `y = 0` at `x = 0`, `y = 1` at `x = peak`, and 
-    // `y = 0` at `x = 255`, and find the `y` on this tent at `x = i`.
-    // The slope of the appropriate side of the "tent" is `1.0 / d`.
-    const d = (i < peak) ? peak : width - peak - 1;
-    const x = (i < peak) ? i : width - i - 1;
-    const y = (1.0 / d) * x;
-
-    // For the second step, use an exponential of `dataGamma` to make the straight "tent" line 
-    // "droop" or "bulge".
-    const yGamma = y ** (1.0 / dataGamma);
-
-    // For the third step, apply a similar "droop"/"bulge" to a "tent" with `y = alpha0`
-    // at `x = 0` and `y = 255` at `x = peak` and `y = alpha1` at `x = 255`.
-    let alpha = (i < peak) ? alpha0 : alpha1;
-    alpha += yGamma * (255 - alpha);
-    alpha = Math.round(alpha);
-    alpha = Math.max(0, Math.min(alpha, 255));
-
-    // Match VVD_Viewer, which has an extra factor of alpha in the colors (but not alphas) of
-    // its transfer function.
-//    const extraAlpha = alpha / 255.0;
-    const extraAlpha = 1;
-    data[4 * i] = color.r * extraAlpha;
-    data[4 * i + 1] = color.g * extraAlpha;
-    data[4 * i + 2] = color.b * extraAlpha;
-    data[4 * i + 3] = alpha;
 
     let r = 0;
+    let alpha = 0;
 
     if (i < 10)
     {
@@ -169,30 +123,29 @@ export function makeFluoTransferTex(alpha0, peak, dataGamma, alpha1, colorStr) {
     }
     else if(i < 25)
     {
-      r = 255;
-      alpha = 42;
+      r = 245;
+      alpha = 100;
     }
     else if(i < 77)
     {
-      r = 255;
-      alpha = 80;
+      r = 235;
+      alpha = 200;
     }
     else if(i < 180)
     {
-      r = 255;
-      alpha = 126;
+      r = 225;
+      alpha = 250;
     }
     else
     {
-      r = 255;
-      alpha = 250;
+      r = 215;
+      alpha = 255;
 
     }
     data[4 * i] = r;
     data[4 * i + 1] = r;
     data[4 * i + 2] = r;
     data[4 * i + 3] = alpha;
-
 
   }
   console.log(data);
