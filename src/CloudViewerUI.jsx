@@ -1,54 +1,94 @@
-import { ImprovedNoise } from 'https://unpkg.com/three/examples/jsm/math/ImprovedNoise.js';
-import { Vol3dViewer } from '@janelia/web-vol-viewer';
+import Vol3dViewer from './Vol3dViewer';
 import * as THREE from 'three';
 import { openArray, HTTPStore } from 'zarr'
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import './CloudViewerUI.css';
+import { Queue } from 'async-await-queue';
 
-async function fetchdata(url, variable, time_index) {
-    const fetchOptions = { redirect: 'follow', mode: 'cors', credentials: 'include'};
-    const supportedMethods = ['GET', 'HEAD'];
-    const store = new HTTPStore(url, {fetchOptions, supportedMethods});
-    const zarrdata = await openArray({store: store, path: variable, mode: "r"});
-    const { data, strides, shape } = await zarrdata.getRaw([time_index, null, null, null]);
-    console.log('hoera 0', shape);
-    return { data, shape };
-}
 
 function CloudViewerUI() {
     const [zarrUrl, setZarrUrl] = React.useState('https://surfdrive.surf.nl/files/remote.php/nonshib-webdav/Ruisdael-viz/ql.zarr');
     const [dataUint8, setDataUint8] = React.useState(null);
-    const [dataShape, setDataShape] = React.useState(null);
+    const dataShape = React.useRef([]);
+    const dataCellSize = React.useRef([]);
+    const allTimeSlices = React.useRef(new Array(10));
+    const currentTimeIndex = React.useRef(0);
 
-    const fetchData = async (url, variable, time_index) => {
+    const fetchData = async (url, variable, timeIndex) => {
+        if (allTimeSlices.current[timeIndex]) {
+            return;
+        }
         const fetchOptions = { redirect: 'follow', mode: 'cors', credentials: 'include'};
         const supportedMethods = ['GET', 'HEAD'];
         const store = new HTTPStore(url, {fetchOptions, supportedMethods});
         const zarrdata = await openArray({store: store, path: variable, mode: "r"});
-        const { data, strides, shape } = await zarrdata.getRaw([time_index, null, null, null]);
-        console.log('hoera 0', shape);
-        setDataShape([shape[1], shape[2], shape[0]]);
-        setDataUint8(data);
+        console.log('downloading time slice', timeIndex, '...');
+        const { data, strides, shape } = await zarrdata.getRaw([timeIndex, null, null, null]);
+        console.log('...done.');
+        allTimeSlices.current[timeIndex] = data;
+        if ( timeIndex == 0 ){
+          const zarrxvals = await openArray({store: store, path: 'xt', mode: "r"});
+          const zarryvals = await openArray({store: store, path: 'yt', mode: "r"});
+          const zarrzvals = await openArray({store: store, path: 'zt', mode: "r"});
+          const xvals = await zarrxvals.getRaw([null]);
+          const yvals = await zarryvals.getRaw([null]);
+          const zvals = await zarrzvals.getRaw([null]);
+          let xvalues = xvals.data;
+          let dx = xvalues[1] - xvalues[0];
+          let yvalues = yvals.data;
+          let dy = yvalues[1] - yvalues[0];
+          let zvalues = zvals.data;
+          let sumDifferences = 0;
+          for (let i = 1; i < zvalues.length; i++) {
+            sumDifferences += Math.abs(zvalues[i] - zvalues[i - 1]);
+          }
+          let dz = sumDifferences / (zvalues.length - 1);
+          console.log("I calculated ", dx, dy, dz);
+          dataCellSize.current = [dx/dx, dy/dx, dz/dx];
+          dataShape.current = [shape[1], shape[2] * (dy/dx), shape[0] * (dz/dx)];
+        }
     }
 
+    const fetchAllData = async (url, variable) => {
+      console.log('here we go downloading data...')
+      const q = new Queue(1, 5000);
+      for (let i = 0; i < 10; ++i) {
+        const me = Symbol();
+        await q.wait(me, 10 - i);
+        try {
+            fetchData(url, variable, i);
+        } catch (e) {
+          console.error(e);
+        } finally {
+          q.end(me);
+        }
+      }
+      return await q.flush();
+    }
 
     useEffect(() => {
-        const result = fetchData(zarrUrl, 'ql', 0);
-//        setDataShape(result.shape);
-//        setDataUint8(result.data);
-//        console.log('hoera 1');
-    }, []);
-    console.log('hoera 2', dataShape);
+      fetchAllData(zarrUrl, 'ql');
+    }, [zarrUrl]);
+
+    useEffect(() => {
+      const interval =  setInterval(() => {
+        if (allTimeSlices.current[currentTimeIndex.current]){
+          setDataUint8(allTimeSlices.current[currentTimeIndex.current]);
+          currentTimeIndex.current = (currentTimeIndex.current + 1) % 10;
+        }
+      }, 1000);
+      return () => clearInterval(interval);
+      }, []);
 
     let viewer = null;
-    if (dataUint8 && dataUint8.length != 0) {
-        console.log('hoera 3');
+    if (dataUint8 && dataUint8.length != 0 && dataCellSize.current.length != 0) {
       viewer = (
           <Vol3dViewer
             volumeDataUint8={dataUint8}
-            volumeSize={dataShape}
-            voxelSize={[1, 1, 1]}
-            transferFunctionTex={makeFluoTransferTex(0.5, 200, 3, 255, '#f3f6f4')}
+            volumeSize={dataShape.current}
+            voxelSize={dataCellSize.current}
+            transferFunctionTex={makeFluoTransferTex(10, 250, 10, 25, '#f3f6f4')}
+            dtScale={0.5}
           />
       );
     }
@@ -57,7 +97,7 @@ function CloudViewerUI() {
         <div
           className="Middle"
           tabIndex={0}
-          //        onKeyPress={onKeyPress}
+ //         onKeyDown={onKeyDown}
           role='link'>
           {viewer}
         </div>
@@ -68,6 +108,23 @@ export function makeFluoTransferTex(alpha0, peak, dataGamma, alpha1, colorStr) {
   // See Wan et al., 2012, "FluoRender: An Application of 2D Image Space Methods for
   // 3D and 4D Confocal Microscopy Data Visualization in Neurobiology Research"
   // https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3622106/
+
+/*  const transferFunction = new THREE.DataTexture([
+    // Scalar value, Color R, Color G, Color B, Opacity
+    1, 255, 255, 255, 3,  // Fully transparent for low densities
+    25, 204, 204, 204, 12, // Light gray with low opacity for lighter smoke
+    77, 123, 123, 123, 50,  // Medium gray with some opacity
+    180, 77, 77, 77, 126,  // Dark gray with more opacity
+    255, 26, 26, 26, 250   // Almost fully opaque for high densities (dense clouds)
+  ], 5, 1, THREE.RGBAFormat);
+
+  // Set parameters for the DataTexture1D
+  transferFunction.minFilter = THREE.NearestFilter;
+  transferFunction.magFilter = THREE.NearestFilter;
+  transferFunction.wrapS = THREE.ClampToEdgeWrapping;
+  transferFunction.wrapT = THREE.ClampToEdgeWrapping;
+  transferFunction.needsUpdate = true;
+  return transferFunction;*/
 
   const color = new THREE.Color(colorStr).multiplyScalar(255);
   const width = 256;
@@ -96,12 +153,49 @@ export function makeFluoTransferTex(alpha0, peak, dataGamma, alpha1, colorStr) {
 
     // Match VVD_Viewer, which has an extra factor of alpha in the colors (but not alphas) of
     // its transfer function.
-    const extraAlpha = alpha / 255.0;
+//    const extraAlpha = alpha / 255.0;
+    const extraAlpha = 1;
     data[4 * i] = color.r * extraAlpha;
     data[4 * i + 1] = color.g * extraAlpha;
     data[4 * i + 2] = color.b * extraAlpha;
     data[4 * i + 3] = alpha;
+
+    let r = 0;
+
+    if (i < 10)
+    {
+      r = 255;
+      alpha = 30;
+    }
+    else if(i < 25)
+    {
+      r = 255;
+      alpha = 42;
+    }
+    else if(i < 77)
+    {
+      r = 255;
+      alpha = 80;
+    }
+    else if(i < 180)
+    {
+      r = 255;
+      alpha = 126;
+    }
+    else
+    {
+      r = 255;
+      alpha = 250;
+
+    }
+    data[4 * i] = r;
+    data[4 * i + 1] = r;
+    data[4 * i + 2] = r;
+    data[4 * i + 3] = alpha;
+
+
   }
+  console.log(data);
 
   const transferTexture = new THREE.DataTexture(data, width, height, THREE.RGBAFormat);
   transferTexture.wrapS = THREE.ClampToEdgeWrapping;
