@@ -8,6 +8,7 @@ import { Queue } from 'async-await-queue';
 
 function CloudViewerUI() {
     const [zarrUrl, setZarrUrl] = React.useState('https://surfdrive.surf.nl/files/remote.php/nonshib-webdav/Ruisdael-viz/ql.zarr');
+//    const [zarrUrl, setZarrUrl] = React.useState('http://0.0.0.0:8000/ql.zarr');
     const [dataUint8, setDataUint8] = React.useState(null);
     const dataShape = React.useRef([]);
     const dataCellSize = React.useRef([]);
@@ -88,7 +89,8 @@ function CloudViewerUI() {
             volumeSize={dataShape.current}
             voxelSize={dataCellSize.current}
             transferFunctionTex={makeCloudTransferTex()}
-            dtScale={0.5}
+            dtScale={0.1}
+            finalGamma={4.0}
           />
       );
     }
@@ -111,42 +113,27 @@ export function makeCloudTransferTex() {
   const size = width * height;
   const data = new Uint8Array(4 * size);
 
+  const rstart = 255;
+  const rend = 100;
+  const astart = 100;
+  const aend = 250;
+  const imid = 20;
+  const amid = 220;
+
   for (let i = 0; i < width; i += 1) {
-
-    let r = 0;
+    let r = rstart + i * (rend - rstart) / (width - 1);
     let alpha = 0;
+    if (i < imid){
+      alpha = astart + i * (amid - astart) / (imid - 1);
+    }
+    else {
+      alpha = amid + (i - imid) * (aend - amid) / (width - imid);
+    }
 
-    if (i < 10)
-    {
-      r = 255;
-      alpha = 30;
-    }
-    else if(i < 25)
-    {
-      r = 245;
-      alpha = 100;
-    }
-    else if(i < 77)
-    {
-      r = 235;
-      alpha = 200;
-    }
-    else if(i < 180)
-    {
-      r = 225;
-      alpha = 250;
-    }
-    else
-    {
-      r = 215;
-      alpha = 255;
-
-    }
     data[4 * i] = r;
     data[4 * i + 1] = r;
     data[4 * i + 2] = r;
     data[4 * i + 3] = alpha;
-
   }
   console.log(data);
 

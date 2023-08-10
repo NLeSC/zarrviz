@@ -116,27 +116,16 @@ function Vol3dViewer(props) {
   
       // Lights, to be used both during rendering the volume, and rendering the optional surface.
 
-      const directionalLightPos0 = new THREE.Vector3(-0.2,  1.0,  0.0).normalize();
-      const directionalLightPos1 = new THREE.Vector3(-1.0, -1.0,  1.0).normalize();
-      const directionalLightPos2 = new THREE.Vector3( 1.0, -1.0, -1.0).normalize();
-      const directionalLightColor0 = new THREE.Color(0.92, 0.83, 0.62);
-      const directionalLightColor1 = new THREE.Color(0.92, 0.83, 0.62);
-      const directionalLightColor2 = new THREE.Color(0.92, 0.83, 0.62);
-      const directionalLight0 = new THREE.DirectionalLight(directionalLightColor0.getHex(), 1);
-      directionalLight0.position.copy(directionalLightPos0);
-      const directionalLight1 = new THREE.DirectionalLight(directionalLightColor1.getHex(), 1);
-      directionalLight1.position.copy(directionalLightPos1);
-      const directionalLight2 = new THREE.DirectionalLight(directionalLightColor2.getHex(), 1);
-      directionalLight2.position.copy(directionalLightPos2);
-  
-      scene.add(directionalLight0);
-      scene.add(directionalLight1);
-      scene.add(directionalLight2);
+      const directionalLightPos = new THREE.Vector3(0.0,  1.0,  0.0).normalize();
+      const directionalLightColor = new THREE.Color(0.99, 0.83, 0.62);
+      const directionalLight = new THREE.DirectionalLight(directionalLightColor.getHex(), 1.0);
+      directionalLight.position.copy(directionalLightPos);  
+      scene.add(directionalLight);
 
-      return ([scene, box, boxSize, directionalLight0, directionalLight1, directionalLight2]);  
+      return ([scene, box, boxSize, directionalLight]);  
     }
 
-    const initMaterial = (renderer, box, boxSize, directionalLight0, directionalLight1, directionalLight2) => {
+    const initMaterial = (renderer, box, boxSize, directionalLight) => {
       const volumeTexture = new THREE.DataTexture3D(volumeDataUint8, volumeSize[0], volumeSize[1], volumeSize[2]);
       volumeTexture.format = THREE.RedFormat
       volumeTexture.type = THREE.UnsignedByteType
@@ -147,12 +136,8 @@ function Vol3dViewer(props) {
       volumeTexture.magFilter = THREE.LinearFilter;
       volumeTexture.needsUpdate = true
   
-      const lightColor0 = directionalLight0.color;
-      const lightColor1 = directionalLight1.color;
-      const lightColor2 = directionalLight2.color;
-      const lightColorV0 = new THREE.Vector3(lightColor0.r, lightColor0.g, lightColor0.b);
-      const lightColorV1 = new THREE.Vector3(lightColor1.r, lightColor1.g, lightColor1.b);
-      const lightColorV2 = new THREE.Vector3(lightColor2.r, lightColor2.g, lightColor1.b);
+      const lightColor = directionalLight.color;
+      const lightColorV = new THREE.Vector3(lightColor.r, lightColor.g, lightColor.b);
 
       const boxMaterial = new THREE.ShaderMaterial({
         vertexShader: vertexShaderVolume,
@@ -161,12 +146,8 @@ function Vol3dViewer(props) {
         uniforms: {	
           boxSize: new THREE.Uniform(boxSize),
           volumeTex: new THREE.Uniform(volumeTexture),
-          light0: new THREE.Uniform(directionalLight0.position),
-          light1: new THREE.Uniform(directionalLight1.position),
-          light2: new THREE.Uniform(directionalLight2.position),
-          lightColor0: new THREE.Uniform(lightColorV0),
-          lightColor1: new THREE.Uniform(lightColorV1),
-          lightColor2: new THREE.Uniform(lightColorV2),
+          lightPos: new THREE.Uniform(directionalLight.position),
+          lightColor: new THREE.Uniform(lightColorV),
           near: new THREE.Uniform(cameraNear),
           far: new THREE.Uniform(cameraFar),
 
@@ -188,8 +169,8 @@ function Vol3dViewer(props) {
     }
 
     const renderer = initRenderer();
-    const [scene, box, boxSize, light0, light1, light2] = initScene();
-    const [boxMaterial] = initMaterial(renderer, box, boxSize, light0, light1, light2);
+    const [scene, box, boxSize, light] = initScene();
+    const [boxMaterial] = initMaterial(renderer, box, boxSize, light);
 
     rendererRef.current = renderer;
     sceneRef.current = scene;

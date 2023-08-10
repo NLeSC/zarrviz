@@ -32,18 +32,14 @@ precision mediump float;
 in vec3 rayDirUnnorm;
 
 uniform sampler2D transferTex;
-uniform highp sampler3D volumeTex;
+uniform lowp sampler3D volumeTex;
 uniform float alphaScale;
 uniform float dtScale;
 uniform float finalGamma;
 
 uniform bool useLighting;
-uniform vec3 light0;
-uniform vec3 light1;
-uniform vec3 light2;
-uniform vec3 lightColor0;
-uniform vec3 lightColor1;
-uniform vec3 lightColor2;
+uniform vec3 lightPos;
+uniform vec3 lightColor;
 uniform highp vec3 boxSize;
 
 uniform bool useVolumeMirrorX;
@@ -52,6 +48,8 @@ uniform bool useVolumeMirrorX;
 // the volume data.
 uniform float near;
 uniform float far;
+uniform float scrWidth;
+uniform float scrHeight;
 
 // Three.js adds built-in uniforms and attributes:
 // https://threejs.org/docs/#api/en/renderers/webgl/WebGLProgram
@@ -75,7 +73,7 @@ float cameraDistanceFromDepth(float depth) {
   float z = 2.0 * near * far / (far + near - zN * (far - near));
   return near + z;
 }
-
+ 
 void main(void) {
   vec3 rayDir = normalize(rayDirUnnorm);
 
@@ -164,19 +162,16 @@ void main(void) {
       grad /= gradLength;
       float gradStrength = (gradLength < 0.0001) ? 0.0 : 1.0;
 
-      vec3 lighting0 = max(dot(grad, light0), 0.0) * lightColor0;
-      vec3 lighting1 = max(dot(grad, light1), 0.0) * lightColor1;
-      vec3 lighting2 = max(dot(grad, light2), 0.0) * lightColor2;
-      vec3 lighting = min(lighting0 + lighting1 + lighting2, vec3(1.0));
+      vec3 lighting = min(max(dot(grad, lightPos), 0.0) * lightColor, vec3(1.0));
       vColor.rgb *= lighting;
       vColor *= gradStrength;
 
       /*
       // Uncomment to visualize the gradient for debugging.
-      gl_FragColor.rgb = (grad + vec3(1.0)) / 2.0;
-      gl_FragColor.a = 1.0;
-      gl_FragColor.a *= gradStrength;
-      return;
+      //gl_FragColor.rgb = (grad + vec3(1.0)) / 2.0;
+      //gl_FragColor.a = 1.0;
+      //gl_FragColor.a *= gradStrength;
+      //return;
       */
     }
 
