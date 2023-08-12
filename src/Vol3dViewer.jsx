@@ -24,6 +24,9 @@ function Vol3dViewer(props) {
     dtScale,
     transferFunctionTex,
     finalGamma,
+    ambientLightFactor,
+    specularHardness,
+    specularPower,
     interactionSpeedup,
     cameraPosition,
     cameraTarget,
@@ -72,7 +75,7 @@ function Vol3dViewer(props) {
 
       // Three.js now uses WebGL 2 by default, so no special canvas context is needed.
       const renderer = new THREE.WebGLRenderer({ antialias: true });
-      renderer.setClearColor("#000080");
+      renderer.setClearColor("#000000");
   
       // For a shader using `gl_FragCoord`, as in this code (Shaders.js), the following
       // use of `setPixelRatio` is not recommended in this guide:
@@ -116,16 +119,18 @@ function Vol3dViewer(props) {
   
       // Lights, to be used both during rendering the volume, and rendering the optional surface.
 
-      const directionalLightPos = new THREE.Vector3(0.0,  1.0,  0.0).normalize();
-      const directionalLightColor = new THREE.Color(0.99, 0.83, 0.62);
-      const directionalLight = new THREE.DirectionalLight(directionalLightColor.getHex(), 1.0);
-      directionalLight.position.copy(directionalLightPos);  
-      scene.add(directionalLight);
-
-      return ([scene, box, boxSize, directionalLight]);  
+      const sunLightDir = new THREE.Vector3(0.0,  1.0,  0.0).normalize();
+      const sunLightColor = new THREE.Color(0.99, 0.83, 0.62);
+      const sunLight = new THREE.DirectionalLight(sunLightColor.getHex(), 1.0);
+      sunLight.position.copy(sunLightDir);  
+      scene.add(sunLight);
+      const hemisphereLight = new THREE.HemisphereLight( 0xffffbb, 0x080820, 1.0 );
+      scene.add(hemisphereLight);
+      
+      return ([scene, box, boxSize, sunLight, hemisphereLight]);  
     }
 
-    const initMaterial = (renderer, box, boxSize, directionalLight) => {
+    const initMaterial = (renderer, box, boxSize, sunLight, hemisphereLight) => {
       const volumeTexture = new THREE.DataTexture3D(volumeDataUint8, volumeSize[0], volumeSize[1], volumeSize[2]);
       volumeTexture.format = THREE.RedFormat
       volumeTexture.type = THREE.UnsignedByteType
@@ -136,8 +141,9 @@ function Vol3dViewer(props) {
       volumeTexture.magFilter = THREE.LinearFilter;
       volumeTexture.needsUpdate = true
   
-      const lightColor = directionalLight.color;
+      const lightColor = sunLight.color;
       const lightColorV = new THREE.Vector3(lightColor.r, lightColor.g, lightColor.b);
+      const ambientLightColorV = new THREE.Vector3(hemisphereLight.color.r, hemisphereLight.color.g, hemisphereLight.color.b);
 
       const boxMaterial = new THREE.ShaderMaterial({
         vertexShader: vertexShaderVolume,
@@ -146,11 +152,14 @@ function Vol3dViewer(props) {
         uniforms: {	
           boxSize: new THREE.Uniform(boxSize),
           volumeTex: new THREE.Uniform(volumeTexture),
-          lightPos: new THREE.Uniform(directionalLight.position),
-          lightColor: new THREE.Uniform(lightColorV),
+          sunLightDir: new THREE.Uniform(sunLight.position),
+          sunLightColor: new THREE.Uniform(lightColorV),
+          ambientLightColor: new THREE.Uniform(ambientLightColorV),
+          ambientLightFactor: new THREE.Uniform(ambientLightFactor),
+          specularHardness: new THREE.Uniform(specularHardness),
+          specularPower: new THREE.Uniform(specularPower),
           near: new THREE.Uniform(cameraNear),
           far: new THREE.Uniform(cameraFar),
-
           // The following are set separately, since they are based on `props` values that can
           // change often, and should not trigger complete re-initialization.
           transferTex: new THREE.Uniform(null),
@@ -169,8 +178,8 @@ function Vol3dViewer(props) {
     }
 
     const renderer = initRenderer();
-    const [scene, box, boxSize, light] = initScene();
-    const [boxMaterial] = initMaterial(renderer, box, boxSize, light);
+    const [scene, box, boxSize, sunLight, hemisphereLight] = initScene();
+    const [boxMaterial] = initMaterial(renderer, box, boxSize, sunLight, hemisphereLight);
 
     rendererRef.current = renderer;
     sceneRef.current = scene;
@@ -256,7 +265,6 @@ function Vol3dViewer(props) {
 
   React.useEffect(() => {
     console.log('update box material');
-//    console.log('updating texture...');
 
     boxMaterialRef.current.uniforms.volumeTex.value.dispose();
     let volumeTexture = new THREE.DataTexture3D(volumeDataUint8, volumeSize[0], volumeSize[1], volumeSize[2]);
@@ -275,7 +283,10 @@ function Vol3dViewer(props) {
     boxMaterialRef.current.uniforms.finalGamma.value = finalGamma;
     boxMaterialRef.current.uniforms.useLighting.value = useLighting;
     boxMaterialRef.current.uniforms.useVolumeMirrorX.value = useVolumeMirrorX;
-
+    boxMaterialRef.current.uniforms.ambientLightFactor.value = ambientLightFactor;
+    boxMaterialRef.current.uniforms.specularPower.value = specularPower;
+    boxMaterialRef.current.uniforms.specularHardness.value = specularHardness;
+    
     // This `useEffect` follows the first React rendering, so it is necessary to
     // explicitly force a Three.js rendering to make the volme visible before any
     // interactive camera motion.
@@ -371,6 +382,9 @@ Vol3dViewer.propTypes = {
     // A Three.js `DataTexture` (https://threejs.org/docs/#api/en/textures/DataTexture)
   transferFunctionTex: PropTypes.shape({ type: PropTypes.number }).isRequired,
   finalGamma: PropTypes.number,
+  ambientLightFactor: PropTypes.number,
+  specularHardness: PropTypes.number,
+  specularPower: PropTypes.number,
   interactionSpeedup: PropTypes.number,
   cameraPosition: PropTypes.arrayOf(PropTypes.number),
   cameraTarget: PropTypes.arrayOf(PropTypes.number),
@@ -387,6 +401,9 @@ Vol3dViewer.defaultProps = {
   alphaScale: 1.0,
   dtScale: 1.0,
   finalGamma: 4.5,
+  ambientLightFactor: 0.5,
+  specularHardness: 0.4,
+  specularPower: 1.0,
   interactionSpeedup: 1,
   cameraPosition: [0, 0, -2],
   cameraTarget: [0, 0, 0],

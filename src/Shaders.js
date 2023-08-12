@@ -36,10 +36,14 @@ uniform lowp sampler3D volumeTex;
 uniform float alphaScale;
 uniform float dtScale;
 uniform float finalGamma;
+uniform vec3 ambientLightColor;
+uniform float ambientLightFactor;
+uniform float specularHardness;
+uniform float specularPower;
 
 uniform bool useLighting;
-uniform vec3 lightPos;
-uniform vec3 lightColor;
+uniform vec3 sunLightDir;
+uniform vec3 sunLightColor;
 uniform highp vec3 boxSize;
 
 uniform bool useVolumeMirrorX;
@@ -125,8 +129,7 @@ void main(void) {
   // other axes.
   float l = length(rayDir * boxSize);
   float lMin = min(boxSize.x, min(boxSize.y, boxSize.z));
-  float alphaNormalization = lMin / l;
-  alphaNormalization *= alphaScale;
+  float alphaNormalization = alphaScale * (lMin / l);
 
   // A step of one voxel, for computing the gradient by a central difference.
   vec3 dg = vec3(1) / vec3(volumeTexSize);
@@ -157,15 +160,25 @@ void main(void) {
       // act as if the surface is facing the camera.  So flip the gradient if it points
       // away from the camera (i.e., negate it if dot(grad, rayDir) > 0.0)
       grad *= -sign(dot(grad, rayDir));
+      float gradStrength = (length(grad) < 0.0001) ? 0.0 : 1.0;
 
-      float gradLength = length(grad);
-      grad /= gradLength;
-      float gradStrength = (gradLength < 0.0001) ? 0.0 : 1.0;
+      vec3 gradPos = (viewMatrix * vec4(grad, 1.0)).xyz;
+      vec3 rayPos = (viewMatrix * vec4(p, 1.0)).xyz;
+      vec3 lightDirection = sunLightDir;
+      // if the normal has a zero length, illuminate it as though it was fully lit
+      float normal_length = length(gradPos);
+      vec3 normal = (normal_length == 0.0) ?  lightDirection : gradPos / normal_length;
 
-      vec3 lighting = min(max(dot(grad, lightPos), 0.0) * lightColor, vec3(1.0));
-      vColor.rgb *= lighting;
+      float lightNormDot = dot(normal, lightDirection);
+      vec3 reflectedRay = reflect(-lightDirection, normal);
+      vec3 eyeDirection = normalize(-rayPos);
+
+      //Specular
+      float specular = specularPower * float(lightNormDot > 0.0) * pow(max(dot(reflectedRay, eyeDirection), 0.0), specularHardness);
+      float diffuse = clamp(lightNormDot, 0.0, 1.0);
+      vColor.rgb += (sunLightColor * (specular + diffuse * ambientLightColor) + ambientLightFactor * ambientLightColor);
       vColor *= gradStrength;
-
+      
       /*
       // Uncomment to visualize the gradient for debugging.
       //gl_FragColor.rgb = (grad + vec3(1.0)) / 2.0;

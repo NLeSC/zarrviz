@@ -7,8 +7,8 @@ import { Queue } from 'async-await-queue';
 
 
 function CloudViewerUI() {
-    const [zarrUrl, setZarrUrl] = React.useState('https://surfdrive.surf.nl/files/remote.php/nonshib-webdav/Ruisdael-viz/ql.zarr');
-//    const [zarrUrl, setZarrUrl] = React.useState('http://0.0.0.0:8000/ql.zarr');
+//    const [zarrUrl, setZarrUrl] = React.useState('https://surfdrive.surf.nl/files/remote.php/nonshib-webdav/Ruisdael-viz/ql.zarr');
+    const [zarrUrl, setZarrUrl] = React.useState('http://0.0.0.0:8000/ql.zarr');
     const [dataUint8, setDataUint8] = React.useState(null);
     const dataShape = React.useRef([]);
     const dataCellSize = React.useRef([]);
@@ -77,7 +77,7 @@ function CloudViewerUI() {
           setDataUint8(allTimeSlices.current[currentTimeIndex.current]);
           currentTimeIndex.current = (currentTimeIndex.current + 1) % 10;
         }
-      }, 1000);
+      }, 10000);
       return () => clearInterval(interval);
       }, []);
 
@@ -90,7 +90,8 @@ function CloudViewerUI() {
             voxelSize={dataCellSize.current}
             transferFunctionTex={makeCloudTransferTex()}
             dtScale={0.1}
-            finalGamma={4.0}
+            finalGamma={3.0}
+            alphaScale={0.8}
           />
       );
     }
@@ -114,11 +115,11 @@ export function makeCloudTransferTex() {
   const data = new Uint8Array(4 * size);
 
   const rstart = 255;
-  const rend = 100;
-  const astart = 100;
-  const aend = 250;
+  const rend = 50;
+  const astart = 20;
+  const aend = 255;
   const imid = 20;
-  const amid = 220;
+  const amid = 40;
 
   for (let i = 0; i < width; i += 1) {
     let r = rstart + i * (rend - rstart) / (width - 1);
