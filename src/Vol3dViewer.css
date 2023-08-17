@@ -1,0 +1,11 @@
+.Fallback {
+  text-align: center;
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  font-size: 12px; /* calc(8px + 2vmin); */
+  color: white;
+}
