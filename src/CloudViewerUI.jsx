@@ -7,8 +7,8 @@ import { Queue } from 'async-await-queue';
 
 
 function CloudViewerUI() {
-//    const [zarrUrl, setZarrUrl] = React.useState('https://surfdrive.surf.nl/files/remote.php/nonshib-webdav/Ruisdael-viz/ql.zarr');
-    const [zarrUrl, setZarrUrl] = React.useState('http://0.0.0.0:8000/ql.zarr');
+    const [zarrUrl, setZarrUrl] = React.useState('https://surfdrive.surf.nl/files/remote.php/nonshib-webdav/Ruisdael-viz/ql.zarr');
+//    const [zarrUrl, setZarrUrl] = React.useState('http://0.0.0.0:8000/ql.zarr');
     const [dataUint8, setDataUint8] = React.useState(null);
     const dataShape = React.useRef([]);
     const dataCellSize = React.useRef([]);
@@ -45,8 +45,8 @@ function CloudViewerUI() {
           }
           let dz = sumDifferences / (zvalues.length - 1);
           console.log("I calculated ", dx, dy, dz);
-          dataCellSize.current = [dx/dx, dy/dx, dz/dx];
-          dataShape.current = [shape[1], shape[2] * (dy/dx), shape[0] * (dz/dx)];
+          dataCellSize.current = [dx, dy, dz];
+          dataShape.current = [shape[1], shape[2], shape[0]];
         }
     }
 
@@ -90,8 +90,7 @@ function CloudViewerUI() {
             voxelSize={dataCellSize.current}
             transferFunctionTex={makeCloudTransferTex()}
             dtScale={0.1}
-            finalGamma={3.0}
-            alphaScale={0.8}
+            finalGamma={6.0}
           />
       );
     }

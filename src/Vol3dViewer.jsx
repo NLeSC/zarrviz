@@ -19,22 +19,20 @@ function Vol3dViewer(props) {
     volumeDataUint8,
     volumeSize,
     voxelSize,
-    useVolumeMirrorX,
-    alphaScale,
     dtScale,
+    inScatFactor,
+    qLScale,
+    gHG,
+    dataEpsilon,
+    bottomColor,
     transferFunctionTex,
     finalGamma,
-    ambientLightFactor,
-    specularHardness,
-    specularPower,
     interactionSpeedup,
     cameraPosition,
-    cameraTarget,
     cameraUp,
     // Vertical field of view
     cameraFovDegrees,
     orbitZoomSpeed,
-    useLighting,
     onCameraChange,
     onWebGLRender,
   } = props;
@@ -119,12 +117,14 @@ function Vol3dViewer(props) {
   
       // Lights, to be used both during rendering the volume, and rendering the optional surface.
 
-      const sunLightDir = new THREE.Vector3(0.0,  1.0,  0.0).normalize();
+      const sunLightDir = new THREE.Vector3(0.0,  0.5,  0.5);
       const sunLightColor = new THREE.Color(0.99, 0.83, 0.62);
       const sunLight = new THREE.DirectionalLight(sunLightColor.getHex(), 1.0);
-      sunLight.position.copy(sunLightDir);  
+      sunLight.position.copy(sunLightDir);
       scene.add(sunLight);
-      const hemisphereLight = new THREE.HemisphereLight( 0xffffbb, 0x080820, 1.0 );
+      const seaLightColor = new THREE.Color(0.0, 0.0005, 0.0033);
+      const toaLightColor = new THREE.Color(0.0, 0.0002, 0.033);
+      const hemisphereLight = new THREE.HemisphereLight( seaLightColor.getHex(), toaLightColor.getHex(), 1.0 );
       scene.add(hemisphereLight);
       
       return ([scene, box, boxSize, sunLight, hemisphereLight]);  
@@ -144,6 +144,7 @@ function Vol3dViewer(props) {
       const lightColor = sunLight.color;
       const lightColorV = new THREE.Vector3(lightColor.r, lightColor.g, lightColor.b);
       const ambientLightColorV = new THREE.Vector3(hemisphereLight.color.r, hemisphereLight.color.g, hemisphereLight.color.b);
+//      const ambientLightColorV = new THREE.Vector3(0.3, 0.7, 0.98);
 
       const boxMaterial = new THREE.ShaderMaterial({
         vertexShader: vertexShaderVolume,
@@ -152,22 +153,22 @@ function Vol3dViewer(props) {
         uniforms: {	
           boxSize: new THREE.Uniform(boxSize),
           volumeTex: new THREE.Uniform(volumeTexture),
+          voxelSize: new THREE.Uniform(voxelSize),
           sunLightDir: new THREE.Uniform(sunLight.position),
           sunLightColor: new THREE.Uniform(lightColorV),
           ambientLightColor: new THREE.Uniform(ambientLightColorV),
-          ambientLightFactor: new THREE.Uniform(ambientLightFactor),
-          specularHardness: new THREE.Uniform(specularHardness),
-          specularPower: new THREE.Uniform(specularPower),
           near: new THREE.Uniform(cameraNear),
           far: new THREE.Uniform(cameraFar),
           // The following are set separately, since they are based on `props` values that can
           // change often, and should not trigger complete re-initialization.
           transferTex: new THREE.Uniform(null),
-          alphaScale: new THREE.Uniform(0),
           dtScale: new THREE.Uniform(0),
-          finalGamma: new THREE.Uniform(0),
-          useLighting: new THREE.Uniform(true),
-          useVolumeMirrorX: new THREE.Uniform(false)
+          inScatFactor: new THREE.Uniform(0),
+          qLScale: new THREE.Uniform(0),
+          gHG: new THREE.Uniform(0),
+          dataEpsilon: new THREE.Uniform(0),
+          bottomColor: new THREE.Uniform(new THREE.Vector3(0.0, 0.0005, 0.0033)),
+          finalGamma: new THREE.Uniform(0)
         }
       });
   
@@ -212,7 +213,6 @@ function Vol3dViewer(props) {
       camera.up.set(cameraUp[0], cameraUp[1], cameraUp[2]);
 
       const trackball = new OrbitUnlimitedControls(camera, renderer.domElement);
-      trackball.target.set(cameraTarget[0], cameraTarget[1], cameraTarget[2]);
       trackball.zoomSpeed = orbitZoomSpeed;
 
       // Match the modifier keys used by VVD_Viewer, as described in the FluoRender user manual:
@@ -225,7 +225,7 @@ function Vol3dViewer(props) {
       cameraRef.current = camera;
       trackballRef.current = trackball;
     }
-  }, [rendererRef, cameraPosition, cameraUp, cameraTarget, cameraFovDegrees, orbitZoomSpeed]);
+  }, [rendererRef, cameraPosition, cameraUp, cameraFovDegrees, orbitZoomSpeed]);
 
   // This rendering function is "memoized" so it can be used in `useEffect` blocks.
   const renderScene = React.useCallback(() => {
@@ -278,20 +278,19 @@ function Vol3dViewer(props) {
     volumeTexture.needsUpdate = true
     boxMaterialRef.current.uniforms.volumeTex.value = volumeTexture;
     boxMaterialRef.current.uniforms.transferTex.value = transferFunctionTex;
-    boxMaterialRef.current.uniforms.alphaScale.value = alphaScale;
     boxMaterialRef.current.uniforms.dtScale.value = dtScale;
+    boxMaterialRef.current.uniforms.inScatFactor.value = inScatFactor;
+    boxMaterialRef.current.uniforms.qLScale.value = qLScale;
+    boxMaterialRef.current.uniforms.gHG.value = gHG;
+    boxMaterialRef.current.uniforms.dataEpsilon.value = dataEpsilon;
+    boxMaterialRef.current.uniforms.bottomColor.value = bottomColor;
     boxMaterialRef.current.uniforms.finalGamma.value = finalGamma;
-    boxMaterialRef.current.uniforms.useLighting.value = useLighting;
-    boxMaterialRef.current.uniforms.useVolumeMirrorX.value = useVolumeMirrorX;
-    boxMaterialRef.current.uniforms.ambientLightFactor.value = ambientLightFactor;
-    boxMaterialRef.current.uniforms.specularPower.value = specularPower;
-    boxMaterialRef.current.uniforms.specularHardness.value = specularHardness;
     
     // This `useEffect` follows the first React rendering, so it is necessary to
     // explicitly force a Three.js rendering to make the volme visible before any
     // interactive camera motion.
     renderScene();
-  }, [alphaScale, dtScale, finalGamma, renderScene, transferFunctionTex, useLighting, useVolumeMirrorX]);
+  }, [dtScale, inScatFactor, finalGamma, renderScene, transferFunctionTex]);
 
   // When the window is resized, force an update to the camera aspect ratio as part of scene rendering.
   React.useEffect(() => {
@@ -376,42 +375,38 @@ Vol3dViewer.propTypes = {
   }).isRequired,
   volumeSize: PropTypes.arrayOf(PropTypes.number).isRequired,
   voxelSize: PropTypes.arrayOf(PropTypes.number).isRequired,
-  useVolumeMirrorX: PropTypes.bool,
-  alphaScale: PropTypes.number,
   dtScale: PropTypes.number,
+  inScatFactor: PropTypes.number,
+  qLScale: PropTypes.number,
+  gHG: PropTypes.number,
+  dataEpsilon: PropTypes.number,
+  bottomColor: PropTypes.arrayOf(PropTypes.number),
     // A Three.js `DataTexture` (https://threejs.org/docs/#api/en/textures/DataTexture)
   transferFunctionTex: PropTypes.shape({ type: PropTypes.number }).isRequired,
   finalGamma: PropTypes.number,
-  ambientLightFactor: PropTypes.number,
-  specularHardness: PropTypes.number,
-  specularPower: PropTypes.number,
   interactionSpeedup: PropTypes.number,
   cameraPosition: PropTypes.arrayOf(PropTypes.number),
-  cameraTarget: PropTypes.arrayOf(PropTypes.number),
   cameraUp: PropTypes.arrayOf(PropTypes.number),
   cameraFovDegrees: PropTypes.number,
   orbitZoomSpeed: PropTypes.number,
-  useLighting: PropTypes.bool,
   onCameraChange: PropTypes.func,
   onWebGLRender: PropTypes.func,
 };
 
 Vol3dViewer.defaultProps = {
-  useVolumeMirrorX: false,
-  alphaScale: 1.0,
   dtScale: 1.0,
+  inScatFactor: 0.06,
+  qLScale: 0.00446,
+  gHG: 0.8,
+  dataEpsilon: 1.e-5,
+  bottomColor: [0.0, 0.0005, 0.0033],
   finalGamma: 4.5,
-  ambientLightFactor: 0.5,
-  specularHardness: 0.4,
-  specularPower: 1.0,
   interactionSpeedup: 1,
   cameraPosition: [0, 0, -2],
-  cameraTarget: [0, 0, 0],
   // Gives the correct orientation for Janelia FlyLight datasets.
   cameraUp: [0, -1, 0],
   cameraFovDegrees: 45.0,
   orbitZoomSpeed: 0.15,
-  useLighting: true,
   onCameraChange: null,
   onWebGLRender: null
 };

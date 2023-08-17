@@ -6,6 +6,10 @@
 export const vertexShaderVolume =
 `
 out vec3 rayDirUnnorm;
+out vec3 lightDir;
+
+uniform vec3 sunLightDir;
+
 
 // Three.js adds built-in uniforms and attributes:
 // https://threejs.org/docs/#api/en/renderers/webgl/WebGLProgram
@@ -22,7 +26,9 @@ out vec3 rayDirUnnorm;
 void main()
 {
   rayDirUnnorm = position - cameraPosition;
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  vec4 viewPosition = modelViewMatrix * vec4(position, 1.0);
+  gl_Position = projectionMatrix * viewPosition;
+  lightDir = normalize((viewMatrix * vec4(sunLightDir, 1.0)).xyz - viewPosition.xyz);
 }
 `
 
@@ -30,30 +36,26 @@ export const fragmentShaderVolume =
 `
 precision mediump float;
 in vec3 rayDirUnnorm;
+in vec3 lightDir;
 
 uniform sampler2D transferTex;
 uniform lowp sampler3D volumeTex;
-uniform float alphaScale;
 uniform float dtScale;
+uniform float inScatFactor;
 uniform float finalGamma;
 uniform vec3 ambientLightColor;
-uniform float ambientLightFactor;
-uniform float specularHardness;
-uniform float specularPower;
-
-uniform bool useLighting;
-uniform vec3 sunLightDir;
 uniform vec3 sunLightColor;
 uniform highp vec3 boxSize;
-
-uniform bool useVolumeMirrorX;
+uniform ivec3 voxelSize;
+uniform float qLScale;
+uniform float gHG;
+uniform float dataEpsilon;
+uniform vec3 bottomColor;
 
 // Optional parameters, for when a solid surface is being drawn along with
 // the volume data.
 uniform float near;
 uniform float far;
-uniform float scrWidth;
-uniform float scrHeight;
 
 // Three.js adds built-in uniforms and attributes:
 // https://threejs.org/docs/#api/en/renderers/webgl/WebGLProgram
@@ -77,13 +79,20 @@ float cameraDistanceFromDepth(float depth) {
   float z = 2.0 * near * far / (far + near - zN * (far - near));
   return near + z;
 }
- 
+
+float phaseHG(float cosTheta, float g) {
+  float PI = 3.14159265358979323846;
+  float denom = 1.0 + g * g + 2.0 * g * cosTheta;
+  return (1.0 - g * g) / (4.0 * PI * denom * sqrt(denom));
+}
+
 void main(void) {
   vec3 rayDir = normalize(rayDirUnnorm);
 
-  rayDir.x = useVolumeMirrorX ? -rayDir.x : rayDir.x;
+  // Reflect z-axis to make the top level face the viewer
+  rayDir.z = -rayDir.z;
   vec3 cameraPositionAdjusted = cameraPosition;
-  cameraPositionAdjusted.x = useVolumeMirrorX ? -cameraPositionAdjusted.x : cameraPositionAdjusted.x;
+  cameraPositionAdjusted.z = -cameraPosition.z;
 
   // Find the part of the ray that intersects the box, where this part is
   // expressed as a range of "t" values (with "t" being the traditional
@@ -97,7 +106,8 @@ void main(void) {
   tBox.x = max(tBox.x, 0.0);
 
   ivec3 volumeTexSize = textureSize(volumeTex, 0);
-  vec3 dt0 = 1.0 / (vec3(volumeTexSize) * abs(rayDir));
+//  vec3 dt0 = 1.0 / (vec3(volumeTexSize) * abs(rayDir));
+  vec3 dt0 = 1.0 / (vec3(volumeTexSize));
   float dt = min(dt0.x, min(dt0.y, dt0.z));
 
   dt *= dtScale;
@@ -129,83 +139,80 @@ void main(void) {
   // other axes.
   float l = length(rayDir * boxSize);
   float lMin = min(boxSize.x, min(boxSize.y, boxSize.z));
-  float alphaNormalization = alphaScale * (lMin / l);
 
   // A step of one voxel, for computing the gradient by a central difference.
   vec3 dg = vec3(1) / vec3(volumeTexSize);
 
   // Most browsers do not need this initialization, but add it to be safe.
   gl_FragColor = vec4(0.0);
-  gl_FragColor.rgb = vec3(0.0, 0.0, 128.0);
+  //gl_FragColor.rgb = vec3(0.0, 0.0, 128.0);
+
+  vec3 illumination = vec3(0.0, 0.0, 0.0);
+  float transmittance = 1.0;
+  float vsx = float(voxelSize.x);
+  float vsy = float(voxelSize.y);
+  float vsz = float(voxelSize.z);
+  float dx = length(vec3(vsx, vsy, vsz) * dPSized);
+  float transmittance_threshold = 0.05;
 
   for (float t = tBox.x; t < tBox.y; t += dt) {
     float v = texture(volumeTex, pSized).r;
-    vec4 vColor = texture(transferTex, vec2(v, 0.5));
-      
-    vColor.a *= alphaNormalization;
-
-    // Compute simple lighting when the color is not fully transparent.
-    if (useLighting && vColor.a > 0.0)
+    float currentDensity = v == 0.0 ? 0.0 : (qLScale * pow(dataEpsilon / qLScale, 1.0 - v / 255.0) - dataEpsilon);
+    
+    // For testing purposes
+    /*if ((pSized.x - 0.5) * (pSized.x - 0.5) + (pSized.y - 0.5) * (pSized.y - 0.5) < 0.1)
     {
-      // Gradient approximated by the central difference.
-      float dataDxA = texture(volumeTex, pSized + vec3(dg.x, 0.0,  0.0 )).r;
-      float dataDxB = texture(volumeTex, pSized - vec3(dg.x, 0.0,  0.0 )).r;
-      float dataDyA = texture(volumeTex, pSized + vec3(0.0,  dg.y, 0.0 )).r;
-      float dataDyB = texture(volumeTex, pSized - vec3(0.0,  dg.y, 0.0 )).r;
-      float dataDzA = texture(volumeTex, pSized + vec3(0.0,  0.0,  dg.z)).r;
-      float dataDzB = texture(volumeTex, pSized - vec3(0.0,  0.0,  dg.z)).r;
-      vec3 grad = vec3(dataDxA - dataDxB, dataDyA - dataDyB, dataDzA - dataDzB);  
+      v = 150.0 / 255.0;
+      currentDensity = 0.000001;
+    }
+    else
+    {
+      v = 0.0;
+      currentDensity = 0.0;
+    }*/
 
-      // When using the gradient as the surface normal for shading, we always want to
-      // act as if the surface is facing the camera.  So flip the gradient if it points
-      // away from the camera (i.e., negate it if dot(grad, rayDir) > 0.0)
-      grad *= -sign(dot(grad, rayDir));
-      float gradStrength = (length(grad) < 0.0001) ? 0.0 : 1.0;
+    // Uncomment to show logarithmic lwc
+    //currentDensity = ql_scale * v / 255.0;
 
-      vec3 gradPos = (viewMatrix * vec4(grad, 1.0)).xyz;
-      vec3 rayPos = (viewMatrix * vec4(p, 1.0)).xyz;
-      vec3 lightDirection = sunLightDir;
-      // if the normal has a zero length, illuminate it as though it was fully lit
-      float normal_length = length(gradPos);
-      vec3 normal = (normal_length == 0.0) ?  lightDirection : gradPos / normal_length;
+    // Barometric formula to compute lwc from ql and the extinction parameter
+    float h = (tBox.y - t) * dPSized.z * 35.0;
+    float rho0 = 1.2041;
+    float H = 7400.0;
+    float LWC = v == 0.0 ? 0.0 : currentDensity * rho0 * exp(-h / H); // Needed for extinction 
+    float extinction = currentDensity > 0.0 ? 3.0 * LWC / (2.0 * 6.0e-6) : 0.000042;
 
-      float lightNormDot = dot(normal, lightDirection);
-      vec3 reflectedRay = reflect(-lightDirection, normal);
-      vec3 eyeDirection = normalize(-rayPos);
+    // Henyey-Greenstein phase function
+    float cosTheta = dot(rayDir, -lightDir);
+    float phase = phaseHG(cosTheta, gHG);
 
-      //Specular
-      float specular = specularPower * float(lightNormDot > 0.0) * pow(max(dot(reflectedRay, eyeDirection), 0.0), specularHardness);
-      float diffuse = clamp(lightNormDot, 0.0, 1.0);
-      vColor.rgb += (sunLightColor * (specular + diffuse * ambientLightColor) + ambientLightFactor * ambientLightColor);
-      vColor *= gradStrength;
-      
-      /*
-      // Uncomment to visualize the gradient for debugging.
-      //gl_FragColor.rgb = (grad + vec3(1.0)) / 2.0;
-      //gl_FragColor.a = 1.0;
-      //gl_FragColor.a *= gradStrength;
-      //return;
-      */
+    // Total in-scattering
+    vec3 inScattering = currentDensity > 0.0 ? (inScatFactor * clamp(ambientLightColor + sunLightColor * phase, 0.0, 1.0)) : vec3(0.0, 0.0, 0.0);
+    
+    // Out-scattering: Beer's law
+    float beer = currentDensity > 0.0 ? exp(-extinction * dx) : 1.0;
+    float outScattering = (1.0 - beer) / extinction;
+    transmittance *= beer;
+
+    // Surface
+    if(t > tBox.y - dt && transmittance >= transmittance_threshold)
+    {
+      inScattering = bottomColor;
+      outScattering = 1.0;
     }
 
-    // Adding this point's color is the compositing operation "A over B", where 
-    // A is gl_FragColor (the samples in front of this one on the ray) and 
-    // B is vColor (this sample), using premultiplied alpha for the B color 
-    // (i.e., vColor.a * vColor.rgb).
-    // https://en.wikipedia.org/wiki/Alpha_compositing#Straight_versus_premultiplied
-    gl_FragColor.rgb += (1.0 - gl_FragColor.a) * vColor.a * vColor.rgb;
-    gl_FragColor.a += (1.0 - gl_FragColor.a) * vColor.a;
+    // Full illumination
+    illumination += transmittance * (inScattering * outScattering);
 
-    if (gl_FragColor.a >= 0.95) {
+    if(transmittance < transmittance_threshold) {
       break;
     }
 
     // Move to the next point along the ray.
     pSized += dPSized;
   }
-
+  
   float g = 1.0 / finalGamma;
-  gl_FragColor = pow(gl_FragColor, vec4(g, g, g, 1));
+  gl_FragColor = pow(vec4(illumination, transmittance), vec4(g, g, g, 1));
 
   // A few browsers show some artifacts if the final alpha value is not 1.0,
   // probably a version of the issues discussed here:
