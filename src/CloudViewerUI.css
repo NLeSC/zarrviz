@@ -8,3 +8,16 @@
     flex-direction: column;  
   }
   
+  .InputControl {
+    display: flex;
+    flex-direction: row;
+    width: 50%;
+  }
+  
+  .Control {
+    width: 3em;
+    font-size: inherit;
+    color: inherit;
+    background-color: inherit;
+    border: 1px solid #000000;
+  }  

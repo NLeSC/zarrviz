@@ -20,11 +20,15 @@ function Vol3dViewer(props) {
     volumeSize,
     voxelSize,
     dtScale,
-    inScatFactor,
+    ambientFactor,
+    solarFactor,
     qLScale,
-    gHG,
+    gHG1,
+    gHG2,
+    wHG,
     dataEpsilon,
     bottomColor,
+    bottomHeight,
     transferFunctionTex,
     finalGamma,
     interactionSpeedup,
@@ -117,7 +121,7 @@ function Vol3dViewer(props) {
   
       // Lights, to be used both during rendering the volume, and rendering the optional surface.
 
-      const sunLightDir = new THREE.Vector3(0.0,  0.5,  0.5);
+      const sunLightDir = new THREE.Vector3(0.0,  0.5,  0.2);
       const sunLightColor = new THREE.Color(0.99, 0.83, 0.62);
       const sunLight = new THREE.DirectionalLight(sunLightColor.getHex(), 1.0);
       sunLight.position.copy(sunLightDir);
@@ -143,8 +147,9 @@ function Vol3dViewer(props) {
   
       const lightColor = sunLight.color;
       const lightColorV = new THREE.Vector3(lightColor.r, lightColor.g, lightColor.b);
-      const ambientLightColorV = new THREE.Vector3(hemisphereLight.color.r, hemisphereLight.color.g, hemisphereLight.color.b);
-//      const ambientLightColorV = new THREE.Vector3(0.3, 0.7, 0.98);
+//      const ambientLightColorV = new THREE.Vector3(hemisphereLight.color.r, hemisphereLight.color.g, hemisphereLight.color.b);
+      const ambientLightColorTop = new THREE.Vector3(123.0/255.0, 178.0/255.0, 227.0/255.0);
+      const ambientLightColorBot = new THREE.Vector3(94.0 / 255.0, 138.0 / 255.0, 127/255.0 );
 
       const boxMaterial = new THREE.ShaderMaterial({
         vertexShader: vertexShaderVolume,
@@ -155,19 +160,24 @@ function Vol3dViewer(props) {
           volumeTex: new THREE.Uniform(volumeTexture),
           voxelSize: new THREE.Uniform(voxelSize),
           sunLightDir: new THREE.Uniform(sunLight.position),
-          sunLightColor: new THREE.Uniform(lightColorV),
-          ambientLightColor: new THREE.Uniform(ambientLightColorV),
+          sunLightColor: new THREE.Uniform(lightColorV.normalize()),
+          ambientLightColorTop: new THREE.Uniform(ambientLightColorTop.normalize()),
+          ambientLightColorBot: new THREE.Uniform(ambientLightColorBot.normalize()),
           near: new THREE.Uniform(cameraNear),
           far: new THREE.Uniform(cameraFar),
           // The following are set separately, since they are based on `props` values that can
           // change often, and should not trigger complete re-initialization.
           transferTex: new THREE.Uniform(null),
           dtScale: new THREE.Uniform(0),
-          inScatFactor: new THREE.Uniform(0),
+          ambientFactor: new THREE.Uniform(0),
+          solarFactor: new THREE.Uniform(0),
           qLScale: new THREE.Uniform(0),
-          gHG: new THREE.Uniform(0),
+          gHG1: new THREE.Uniform(0),
+          gHG2: new THREE.Uniform(0),
+          wHG: new THREE.Uniform(0),
           dataEpsilon: new THREE.Uniform(0),
           bottomColor: new THREE.Uniform(new THREE.Vector3(0.0, 0.0005, 0.0033)),
+          bottomHeight: new THREE.Uniform(0),
           finalGamma: new THREE.Uniform(0)
         }
       });
@@ -279,18 +289,22 @@ function Vol3dViewer(props) {
     boxMaterialRef.current.uniforms.volumeTex.value = volumeTexture;
     boxMaterialRef.current.uniforms.transferTex.value = transferFunctionTex;
     boxMaterialRef.current.uniforms.dtScale.value = dtScale;
-    boxMaterialRef.current.uniforms.inScatFactor.value = inScatFactor;
+    boxMaterialRef.current.uniforms.ambientFactor.value = ambientFactor;
+    boxMaterialRef.current.uniforms.solarFactor.value = solarFactor;
     boxMaterialRef.current.uniforms.qLScale.value = qLScale;
-    boxMaterialRef.current.uniforms.gHG.value = gHG;
+    boxMaterialRef.current.uniforms.gHG1.value = gHG1;
+    boxMaterialRef.current.uniforms.gHG2.value = gHG2;
+    boxMaterialRef.current.uniforms.wHG.value = wHG;
     boxMaterialRef.current.uniforms.dataEpsilon.value = dataEpsilon;
     boxMaterialRef.current.uniforms.bottomColor.value = bottomColor;
+    boxMaterialRef.current.uniforms.bottomHeight.value = bottomHeight;
     boxMaterialRef.current.uniforms.finalGamma.value = finalGamma;
     
     // This `useEffect` follows the first React rendering, so it is necessary to
     // explicitly force a Three.js rendering to make the volme visible before any
     // interactive camera motion.
     renderScene();
-  }, [dtScale, inScatFactor, finalGamma, renderScene, transferFunctionTex]);
+  }, [dtScale, ambientFactor, solarFactor, finalGamma, renderScene, transferFunctionTex]);
 
   // When the window is resized, force an update to the camera aspect ratio as part of scene rendering.
   React.useEffect(() => {
@@ -376,11 +390,15 @@ Vol3dViewer.propTypes = {
   volumeSize: PropTypes.arrayOf(PropTypes.number).isRequired,
   voxelSize: PropTypes.arrayOf(PropTypes.number).isRequired,
   dtScale: PropTypes.number,
-  inScatFactor: PropTypes.number,
+  ambientFactor: PropTypes.number,
+  solarFactor: PropTypes.number,
   qLScale: PropTypes.number,
-  gHG: PropTypes.number,
+  gHG1: PropTypes.number,
+  gHG2: PropTypes.number,
+  wHG: PropTypes.number,
   dataEpsilon: PropTypes.number,
   bottomColor: PropTypes.arrayOf(PropTypes.number),
+  bottomHeight: PropTypes.number,
     // A Three.js `DataTexture` (https://threejs.org/docs/#api/en/textures/DataTexture)
   transferFunctionTex: PropTypes.shape({ type: PropTypes.number }).isRequired,
   finalGamma: PropTypes.number,
@@ -394,16 +412,19 @@ Vol3dViewer.propTypes = {
 };
 
 Vol3dViewer.defaultProps = {
-  dtScale: 1.0,
-  inScatFactor: 0.06,
+  dtScale: 0.1,
+  ambientFactor: 0.0001,
+  solarFactor: 0.01,
   qLScale: 0.00446,
-  gHG: 0.8,
-  dataEpsilon: 1.e-5,
+  gHG1: 0.3,
+  gHG2: -0.7,
+  wHG: 0.75,
+  dataEpsilon: 5.e-5,
   bottomColor: [0.0, 0.0005, 0.0033],
-  finalGamma: 4.5,
+  bottomHeight: 675.0,
+  finalGamma: 4.0,
   interactionSpeedup: 1,
   cameraPosition: [0, 0, -2],
-  // Gives the correct orientation for Janelia FlyLight datasets.
   cameraUp: [0, -1, 0],
   cameraFovDegrees: 45.0,
   orbitZoomSpeed: 0.15,
