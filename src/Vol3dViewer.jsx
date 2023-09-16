@@ -13,6 +13,7 @@ import OrbitUnlimitedControls from '@janelia/three-orbit-unlimited-controls';
 
 import { vertexShaderVolume, fragmentShaderVolume } from './Shaders';
 import { getBoxSize } from './Utils';
+import tooloud from 'tooloud';
 
 function Vol3dViewer(props) {
   const {
@@ -41,6 +42,9 @@ function Vol3dViewer(props) {
     onWebGLRender,
   } = props;
 
+  const [worleyNoiseDataUint8, setWorleyNoiseDataUint8] = React.useState(null);
+  const [perlinNoiseDataUint8, setPerlinNoiseDataUint8] = React.useState(null);
+
   // For mounting the Three.js renderer image in the appropriate place in the DOM.
   const mountRef = React.useRef(null);
 
@@ -60,7 +64,9 @@ function Vol3dViewer(props) {
 
   const cameraNear = 0.01;
   const cameraFar = 10.0;
-  // Different props affect different parts of the Three.js state, and a change to only
+  const noiseSizeXY = 128;
+  const noiseSizeZ = 64;
+// Different props affect different parts of the Three.js state, and a change to only
   // one prop should not causes all the Three.js state to be reinitialized.  It is not clear
   // that the Three.js state could be split between multiple React components, each having
   // only the appropriate subset of the props.  So this component makes significant use of
@@ -130,12 +136,27 @@ function Vol3dViewer(props) {
       const toaLightColor = new THREE.Color(0.0, 0.0002, 0.033);
       const hemisphereLight = new THREE.HemisphereLight( seaLightColor.getHex(), toaLightColor.getHex(), 1.0 );
       scene.add(hemisphereLight);
-      
-      return ([scene, box, boxSize, sunLight, hemisphereLight]);  
+      const worleyNoiseTile3D = new Uint8Array(noiseSizeXY * noiseSizeXY * noiseSizeZ);
+      const perlinNoiseTile3D = new Uint8Array(noiseSizeXY * noiseSizeXY * noiseSizeZ);
+      const a = 1.0 / noiseSizeXY;
+      const b = 1.0 / noiseSizeZ;
+      for(let i = 0 ; i < noiseSizeXY ; i++){
+        for(let j = 0 ; j < noiseSizeXY ; j++){
+          for(let k = 0 ; k < noiseSizeZ ; k++){
+            var worleyNoise = tooloud.Worley.Euclidean(i * a, j * a, k * b)[0];
+            worleyNoiseTile3D[i * noiseSizeXY * noiseSizeZ + j * noiseSizeZ + k] = Math.floor(255 * worleyNoise);
+            var perlinNoise = tooloud.Perlin.noise(i * a, j * a, k * b);
+            perlinNoiseTile3D[i * noiseSizeXY * noiseSizeZ + j * noiseSizeZ + k] = Math.floor(255 * perlinNoise);
+          }
+        }
+      }
+      setWorleyNoiseDataUint8(worleyNoiseTile3D);
+      setPerlinNoiseDataUint8(perlinNoiseTile3D);
+      return ([scene, box, boxSize, sunLight, hemisphereLight]);
     }
 
     const initMaterial = (renderer, box, boxSize, sunLight, hemisphereLight) => {
-      const volumeTexture = new THREE.DataTexture3D(volumeDataUint8, volumeSize[0], volumeSize[1], volumeSize[2]);
+      const volumeTexture = new THREE.DataTexture3D(volumeDataUint8, boxSize[0], boxSize[1], boxSize[2]);
       volumeTexture.format = THREE.RedFormat
       volumeTexture.type = THREE.UnsignedByteType
       // Disabling mimpaps saves memory.
@@ -144,7 +165,27 @@ function Vol3dViewer(props) {
       volumeTexture.minFilter = THREE.LinearFilter;
       volumeTexture.magFilter = THREE.LinearFilter;
       volumeTexture.needsUpdate = true
-  
+
+      const worleyNoiseTexture = new THREE.DataTexture3D(worleyNoiseDataUint8, noiseSizeXY, noiseSizeXY, noiseSizeZ);
+      worleyNoiseTexture.wrapS = THREE.RepeatWrapping;
+      worleyNoiseTexture.wrapT = THREE.RepeatWrapping;
+      worleyNoiseTexture.format = THREE.RedFormat;
+      worleyNoiseTexture.type = THREE.UnsignedByteType;
+      worleyNoiseTexture.generateMipmaps = false;
+      worleyNoiseTexture.minFilter = THREE.LinearFilter;
+      worleyNoiseTexture.magFilter = THREE.LinearFilter;
+      worleyNoiseTexture.needsUpdate = true;
+      
+      const perlinNoiseTexture = new THREE.DataTexture3D(perlinNoiseDataUint8, noiseSizeXY, noiseSizeXY, noiseSizeZ);
+      perlinNoiseTexture.wrapS = THREE.RepeatWrapping;
+      perlinNoiseTexture.wrapT = THREE.RepeatWrapping;
+      perlinNoiseTexture.format = THREE.RedFormat;
+      perlinNoiseTexture.type = THREE.UnsignedByteType;
+      perlinNoiseTexture.generateMipmaps = false;
+      perlinNoiseTexture.minFilter = THREE.LinearFilter;
+      perlinNoiseTexture.magFilter = THREE.LinearFilter;
+      perlinNoiseTexture.needsUpdate = true;
+
       const lightColor = sunLight.color;
       const lightColorV = new THREE.Vector3(lightColor.r, lightColor.g, lightColor.b);
 //      const ambientLightColorV = new THREE.Vector3(hemisphereLight.color.r, hemisphereLight.color.g, hemisphereLight.color.b);
@@ -167,7 +208,8 @@ function Vol3dViewer(props) {
           far: new THREE.Uniform(cameraFar),
           // The following are set separately, since they are based on `props` values that can
           // change often, and should not trigger complete re-initialization.
-          transferTex: new THREE.Uniform(null),
+          worleyTex: new THREE.Uniform(worleyNoiseTexture),
+          perlinTex: new THREE.Uniform(perlinNoiseTexture),
           dtScale: new THREE.Uniform(0),
           ambientFactor: new THREE.Uniform(0),
           solarFactor: new THREE.Uniform(0),
@@ -278,16 +320,44 @@ function Vol3dViewer(props) {
 
     boxMaterialRef.current.uniforms.volumeTex.value.dispose();
     let volumeTexture = new THREE.DataTexture3D(volumeDataUint8, volumeSize[0], volumeSize[1], volumeSize[2]);
-    volumeTexture.format = THREE.RedFormat
-    volumeTexture.type = THREE.UnsignedByteType
+    volumeTexture.format = THREE.RedFormat;
+    volumeTexture.type = THREE.UnsignedByteType;
     // Disabling mimpaps saves memory.
     volumeTexture.generateMipmaps = false;
     // Linear filtering disables LODs, which do not help with volume rendering.
     volumeTexture.minFilter = THREE.LinearFilter;
     volumeTexture.magFilter = THREE.LinearFilter;
-    volumeTexture.needsUpdate = true
+    volumeTexture.anisotropy = 16;
+    volumeTexture.needsUpdate = true;
+
+    boxMaterialRef.current.uniforms.worleyTex.value.dispose();
+    boxMaterialRef.current.uniforms.perlinTex.value.dispose();
+
+    let worleyNoiseTexture = new THREE.DataTexture3D(worleyNoiseDataUint8, noiseSizeXY, noiseSizeXY, noiseSizeZ);
+    worleyNoiseTexture.wrapS = THREE.RepeatWrapping;
+    worleyNoiseTexture.wrapT = THREE.RepeatWrapping;
+    worleyNoiseTexture.format = THREE.RedFormat;
+    worleyNoiseTexture.type = THREE.UnsignedByteType;
+    worleyNoiseTexture.generateMipmaps = false;
+    worleyNoiseTexture.minFilter = THREE.LinearFilter;
+    worleyNoiseTexture.magFilter = THREE.LinearFilter;
+    worleyNoiseTexture.needsUpdate = true;
+
+    let perlinNoiseTexture = new THREE.DataTexture3D(perlinNoiseDataUint8, noiseSizeXY, noiseSizeXY, noiseSizeZ);
+    perlinNoiseTexture.wrapS = THREE.RepeatWrapping;
+    perlinNoiseTexture.wrapT = THREE.RepeatWrapping;
+    perlinNoiseTexture.format = THREE.RedFormat;
+    perlinNoiseTexture.type = THREE.UnsignedByteType;
+    perlinNoiseTexture.generateMipmaps = false;
+    perlinNoiseTexture.minFilter = THREE.LinearFilter;
+    perlinNoiseTexture.magFilter = THREE.LinearFilter;
+    perlinNoiseTexture.needsUpdate = true;
+    console.log(perlinNoiseDataUint8);
+
     boxMaterialRef.current.uniforms.volumeTex.value = volumeTexture;
-    boxMaterialRef.current.uniforms.transferTex.value = transferFunctionTex;
+    boxMaterialRef.current.uniforms.worleyTex.value = worleyNoiseTexture;
+    boxMaterialRef.current.uniforms.perlinTex.value = perlinNoiseTexture;
+//    boxMaterialRef.current.uniforms.transferTex.value = transferFunctionTex;
     boxMaterialRef.current.uniforms.dtScale.value = dtScale;
     boxMaterialRef.current.uniforms.ambientFactor.value = ambientFactor;
     boxMaterialRef.current.uniforms.solarFactor.value = solarFactor;
@@ -419,7 +489,7 @@ Vol3dViewer.defaultProps = {
   gHG1: 0.3,
   gHG2: -0.7,
   wHG: 0.75,
-  dataEpsilon: 5.e-5,
+  dataEpsilon: 1.e-8,
   bottomColor: [0.0, 0.0005, 0.0033],
   bottomHeight: 675.0,
   finalGamma: 4.0,

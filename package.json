@@ -17,6 +17,7 @@
     "react-scripts": "5.0.1",
     "three": "^0.125.2",
     "three-addons": "^1.2.0",
+    "tooloud": "^2.0.4",
     "web-vitals": "^2.1.4",
     "zarr": "^0.6.1"
   },

@@ -61,7 +61,7 @@ function CloudViewerUI() {
 
     const fetchAllData = async (url, variable) => {
       console.log('here we go downloading data...')
-      const q = new Queue(1, 5000);
+      const q = new Queue(1, 50000);
       for (let i = 0; i < 10; ++i) {
         const me = Symbol();
         await q.wait(me, 10 - i);
@@ -169,8 +169,8 @@ function CloudViewerUI() {
                 <Slider aria-label="Ambient light factor" 
                         value={ambientFactor} 
                         min={0.0} 
-                        max={0.001}
-                        step={0.00001} 
+                        max={0.0001}
+                        step={0.000001} 
                         onChange={onAmbientFactorChange}
                         valueLabelDisplay="auto"
                         getAriaValueText={valuetext}
@@ -183,8 +183,8 @@ function CloudViewerUI() {
                 <Slider aria-label="Solar light factor" 
                         value={solarFactor} 
                         min={0.0} 
-                        max={0.1}
-                        step={0.001}
+                        max={0.01}
+                        step={0.0001}
                         onChange={onSolarFactorChange}
                         valueLabelDisplay="auto"
                         getAriaValueText={valuetext}
