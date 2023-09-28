@@ -40,7 +40,6 @@ in vec3 rayDirUnnorm;
 in vec3 lightDir;
 uniform lowp sampler3D volumeTex;
 uniform lowp sampler3D worleyTex;
-uniform lowp sampler3D perlinTex;
 uniform float dtScale;
 uniform float ambientFactor;
 uniform float solarFactor;
@@ -57,6 +56,11 @@ uniform float wHG;
 uniform float dataEpsilon;
 uniform vec3 bottomColor;
 uniform float bottomHeight;
+uniform bool noise;
+uniform float noiseFreq1;
+uniform float noiseScale1;
+uniform float noiseFreq2;
+uniform float noiseScale2;
 
 // Optional parameters, for when a solid surface is being drawn along with
 // the volume data.
@@ -80,32 +84,46 @@ vec2 intersectBox(vec3 orig, vec3 dir) {
   return vec2(t0, t1);
 }
 
-float getQl(vec3 coords) {
+float getQl(vec3 coords, vec3 delta) {
+  float N = 2.0;
+  float k = 0.0;
   float v = texture(volumeTex, coords).r;
-  float ql = v == 0.0 ? 0.0 : qLScale * pow(dataEpsilon / qLScale, 1.0 - v / 255.0) - dataEpsilon;
-  return ql;
-}
+  if (noise) {
+    if (v != 0.0) {
+      k = 1.0;
+    }
+    if ( k == 0.0 ) {
+      k += texture(volumeTex, coords + vec3(N * delta.x, 0.0, 0.0)).r;
+    }
+    if ( k == 0.0 ) {
+      k += texture(volumeTex, coords - vec3(N * delta.x, 0.0, 0.0)).r;
+    }
+    if ( k == 0.0 ) {
+      k += texture(volumeTex, coords + vec3(0.0, N * delta.y, 0.0)).r;
+    }
+    if ( k == 0.0 ) {
+      k += texture(volumeTex, coords - vec3(0.0, N * delta.y, 0.0)).r;
+    }
+    if ( k == 0.0 ) {
+      k += texture(volumeTex, coords + vec3(0.0, 0.0, N * delta.z)).r;
+    }
+    if ( k == 0.0 ) {
+      k += texture(volumeTex, coords - vec3(0.0, 0.0, N * delta.z)).r;
+    }
+    if ( k != 0.0 ) {
+      float nx = noiseScale1 * texture(worleyTex, noiseFreq1 * coords).r;
+      float ny = noiseScale1 * texture(worleyTex, noiseFreq1 * (coords + vec3(0.0, 10.0, 0.0))).r;
+      float nz = noiseScale1 * texture(worleyTex, noiseFreq1 * (coords + vec3(0.0, 0.0, 10.0))).r;
+      
+      float nx2 = noiseScale2 * texture(worleyTex, noiseFreq2 * coords).r;
+      float ny2 = noiseScale2 * texture(worleyTex, noiseFreq2 * (coords + vec3(0.0, 10.0, 0.0))).r;
+      float nz2 = noiseScale2 * texture(worleyTex, noiseFreq2 * (coords + vec3(0.0, 0.0, 10.0))).r;
 
-vec3 getNoisyCoords(vec3 coords) {
-  float horFreq = 10.0;
-  float vertFreq = 10.0;
-  float horScale = 0.004;
-  float vertScale = 0.0;
-  vec3 freqVec = vec3(horFreq, horFreq, vertFreq);
-  vec3 scaleVec = vec3(horScale, horScale, vertScale);
-  float nx = texture(worleyTex, freqVec * coords).r;
-  float ny = texture(worleyTex, freqVec * coords + 7.0 * freqVec).r;
-
-  float horFreq2 = 230.0;
-  float vertFreq2 = 800.0;
-  float horScale2 = 0.003;
-  float vertScale2 = 0.0;
-  vec3 freqVec2 = vec3(horFreq2, horFreq2, vertFreq2);
-  vec3 scaleVec2 = vec3(horScale2, horScale2, vertScale2);
-  float nx2 = texture(worleyTex, freqVec2 * coords).r;
-  float ny2 = texture(worleyTex, freqVec2 * coords + 700.0 * freqVec2).r;
-
-  return vec3(coords + scaleVec * vec3(nx, ny, 0.0) + scaleVec2 * vec3(nx2, ny2, 0.0));
+      float vnoise = texture(volumeTex, coords + vec3(nx, ny, nz) + vec3(nx2, ny2, nz2)).r;
+      return vnoise == 0.0 ? 0.0 : qLScale * pow(dataEpsilon / qLScale, 1.0 - vnoise / 255.0) - dataEpsilon;
+    }
+  }
+  return v == 0.0 ? 0.0 : qLScale * pow(dataEpsilon / qLScale, 1.0 - v / 255.0) - dataEpsilon;
 }
 
 float phaseHG(float cosTheta, float g) {
@@ -121,7 +139,7 @@ float extinction(float ql, float h) {
   return ql == 0.0 ? 0.000042 : 3.0 * LWC / (2.0 * 6.0e-3);
 }
 
-float getShadow(vec3 pos, vec3 step, vec2 tbounds, float tstep, float stepLengthm, float distz) {
+float getShadow(vec3 pos, vec3 step, vec2 tbounds, float tstep, float stepLengthm, float distz, vec3 delta) {
   float transmittance = 1.0;
   vec3 samplePos = pos;
   float t = tbounds.x;
@@ -129,7 +147,7 @@ float getShadow(vec3 pos, vec3 step, vec2 tbounds, float tstep, float stepLength
   while(t < tbounds.y){
     t += (n * tstep);
     samplePos += (n * step);
-    float ql = getQl(samplePos);
+    float ql = getQl(samplePos, delta);
     float h = bottomHeight + (samplePos.z - 0.5) * distz;
     float beer = exp(-extinction(ql, h) * (n * stepLengthm));
     transmittance *= beer;
@@ -214,9 +232,9 @@ void main(void) {
   for (float t = tBox.x; t < tBox.y; t += dt) {
 
     vec3 mirroredZcoords = vec3(pSized.x, pSized.y, 1.0 - pSized.z);
-    vec3 x = getNoisyCoords(pSized);
+    vec3 x = pSized;
 
-    float ql = getQl(x);
+    float ql = getQl(x, dg);
     float height = bottomHeight + (0.5 - pSized.z) * distvec.z;
 
     // extinction parameter
@@ -227,7 +245,7 @@ void main(void) {
     float phase = wHG * phaseHG(cosTheta, gHG1) + (1.0 - wHG) * phaseHG(cosTheta, gHG2);
 
     // Shadowing
-    float shadow = ql > 0.0 ? getShadow(x, dPSized, tBoxShadow, dt, dx, distvec.z) : 1.0;
+    float shadow = ql > 0.0 ? getShadow(x, dPSized, tBoxShadow, dt, dx, distvec.z, dg) : 1.0;
 
     // Ambient Lighting: linear approx
     float hfrac = (topHeight - height)/(topHeight - bottomHeight);
@@ -240,6 +258,11 @@ void main(void) {
     float outScattering = ((1.0 - beer) / ext) + (1.0 - beer * beer);
     transmittance *= (1.0 + beer - beer * beer);
 
+//    float horFreq2 = 8.0;
+//    float vertFreq2 = 8.0;
+//    vec3 freqVec2 = vec3(horFreq2, horFreq2, vertFreq2);
+//    float nx2 = texture(worleyTex, mod(freqVec2 * x, 256.0)).r;
+
     if(transmittance < transmittance_threshold) {
       break;
     }
@@ -250,6 +273,7 @@ void main(void) {
       illumination += transmittance * bottomColor;
       break;
     }
+//    transmittance *= (1.0 + 0.1 * nx2);
 
     // Full illumination
     illumination += transmittance * clamp(inScattering * outScattering, 0.0, 1.0);
