@@ -131,10 +131,13 @@ function Vol3dViewer(props) {
       scene.add(hemisphereLight);
 
       // Adding the plane mesh to the scene to hold the Map texture
+      const textureLoader = new THREE.TextureLoader();
+      const texture = textureLoader.load('/data/nl-map.webp');
       // Create a plane geometry and mesh
-      const planeGeometry = new THREE.PlaneGeometry(boxWidth, boxHeight);
-      const planeMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+      const planeGeometry = new THREE.PlaneGeometry(boxWidth * 4, boxHeight * 4);
+      const planeMaterial = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
       const planeMesh = new THREE.Mesh(planeGeometry, planeMaterial);
+
 
       // Position the plane underneath the box
       planeMesh.position.set(-boxWidth / 1000, -boxHeight / 1000, boxDepth * 3);  // Adjust position as needed
@@ -169,6 +172,8 @@ function Vol3dViewer(props) {
         vertexShader: vertexShaderVolume,
         fragmentShader: fragmentShaderVolume,
         side: THREE.BackSide,
+        // transparent: true,
+        // opacity: 0.5,
         uniforms: {
           boxSize: new THREE.Uniform(boxSize),
           volumeTex: new THREE.Uniform(volumeTexture),
@@ -200,6 +205,9 @@ function Vol3dViewer(props) {
     const renderer = initRenderer();
     const [scene, box, boxSize, sunLight, hemisphereLight] = initScene();
     const [boxMaterial] = initMaterial(renderer, box, boxSize, sunLight, hemisphereLight);
+
+    // boxMaterial.blending = THREE.CustomBlending;
+    // boxMaterial.transparent = true;
 
     rendererRef.current = renderer;
     sceneRef.current = scene;
@@ -384,12 +392,46 @@ function Vol3dViewer(props) {
     );
   }
 
+  // Add some buttons to control the camera view.
+  useEffect(() => {
+    const setCameraView = (position, up) => {
+      cameraRef.current.position.set(...position);
+      cameraRef.current.up.set(...up);
+      cameraRef.current.lookAt(0, 0, 0);
+      renderScene();
+    };
+
+
+    return () => {
+      document.getElementById("viewAbove").addEventListener("click", () => setCameraView([0, 2, 0], [0, 0, -1]));
+      document.getElementById("viewFront").addEventListener("click", () => setCameraView([0, 0, 2], [0, 1, 0]));
+      document.getElementById("viewProfile").addEventListener("click", () => setCameraView([2, 0, 0], [0, 1, 0]));
+    };
+  }, [renderScene]);
+
+
+
   // The `ref` here sets up the mounting of the Three.js renderer image in the
   // appropriate place in the DOM.
   return (
-    <div className="Vol3dViewer"
-      ref={mountRef}
-    />
+    <div className="h-screen w-screen">
+
+      <div className="Vol3dViewer"
+        ref={mountRef}
+      />
+
+
+      <div>
+        <div className="Vol3dViewer" ref={mountRef} />
+        <div className="camera-control">
+          {/* ...existing sliders... */}
+          <button className="btn" id="viewAbove">View from Above</button>
+          <button className="btn" id="viewFront">View from Front</button>
+          <button className="btn" id="viewProfile">View Profile</button>
+        </div>
+      </div>
+      {/* <pre>{JSON.stringify(cameraRef, null, 2)}</pre> */}
+    </div>
   );
 }
 
