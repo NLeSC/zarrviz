@@ -4,24 +4,27 @@
   "private": true,
   "type": "module",
   "dependencies": {
+    "@janelia/three-orbit-unlimited-controls": "^1.1.0",
     "@janelia/web-vol-viewer": "github:janeliascicomp/web-vol-viewer",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
+    "@vitejs/plugin-react": "^4.1.0",
     "async-await-queue": "^2.1.4",
+    "prop-types": "^15.8.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-scripts": "5.0.1",
     "three": "^0.125.2",
     "three-addons": "^1.2.0",
+    "typescript": "^5.2.2",
+    "vite-tsconfig-paths": "^4.2.1",
     "web-vitals": "^2.1.4",
     "zarr": "^0.6.1"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
   },
   "eslintConfig": {
     "extends": [
@@ -29,16 +32,7 @@
       "react-app/jest"
     ]
   },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+  "devDependencies": {
+    "tsc": "^2.0.4"
   }
 }
