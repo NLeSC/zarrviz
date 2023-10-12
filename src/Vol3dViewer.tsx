@@ -132,7 +132,7 @@ function Vol3dViewer(props) {
 
       // Adding the plane mesh to the scene to hold the Map texture
       const textureLoader = new THREE.TextureLoader();
-      const texture = textureLoader.load('/data/nl-map.webp');
+      const texture = textureLoader.load('/maps/nl-map.webp');
       // Create a plane geometry and mesh
       const planeGeometry = new THREE.PlaneGeometry(boxWidth * 4, boxHeight * 4);
       const planeMaterial = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
