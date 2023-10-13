@@ -153,7 +153,7 @@ void main(void) {
   float vsy = float(voxelSize.y);
   float vsz = float(voxelSize.z);
   float dx = length(vec3(vsx, vsy, vsz) * dPSized);
-  float transmittance_threshold = 0.05;
+  float transmittance_threshold = 0.01;
 
   for (float t = tBox.x; t < tBox.y; t += dt) {
     float v = texture(volumeTex, pSized).r;
@@ -193,13 +193,6 @@ void main(void) {
     float outScattering = (1.0 - beer) / extinction;
     transmittance *= beer;
 
-    // Surface
-    if(t > tBox.y - dt && transmittance >= transmittance_threshold)
-    {
-      inScattering = bottomColor;
-      outScattering = 1.0;
-    }
-
     // Full illumination
     illumination += transmittance * (inScattering * outScattering);
 
@@ -210,13 +203,22 @@ void main(void) {
     // Move to the next point along the ray.
     pSized += dPSized;
   }
-  
+
+  // Surface
+  if(transmittance >= (1.0 - transmittance_threshold))
+  {
+    //inScattering = bottomColor;
+    //outScattering = 1.0;
+    //illumination = vec3(0.0, 0.0, 0.0);
+    transmittance = 0.0;
+  }
+
   float g = 1.0 / finalGamma;
   gl_FragColor = pow(vec4(illumination, transmittance), vec4(g, g, g, 1));
 
   // A few browsers show some artifacts if the final alpha value is not 1.0,
   // probably a version of the issues discussed here:
   // https://webglfundamentals.org/webgl/lessons/webgl-and-alpha.html
-  gl_FragColor.a = 1.0;
+  //gl_FragColor.a = 1.0;
 }
 `

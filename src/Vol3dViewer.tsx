@@ -13,6 +13,7 @@ import OrbitUnlimitedControls from '@janelia/three-orbit-unlimited-controls';
 
 import { vertexShaderVolume, fragmentShaderVolume } from './Shaders';
 import { getBoxSize } from './Utils';
+import { render } from '../node_modules/@testing-library/react/types/index';
 
 function Vol3dViewer(props) {
   const {
@@ -72,8 +73,9 @@ function Vol3dViewer(props) {
       console.log('initRenderer');
 
       // Three.js now uses WebGL 2 by default, so no special canvas context is needed.
-      const renderer = new THREE.WebGLRenderer({ antialias: true });
-      renderer.setClearColor("#000000");
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      //renderer.setClearColor("#000000");
+      renderer.setClearAlpha(0);
 
       // For a shader using `gl_FragCoord`, as in this code (Shaders.js), the following
       // use of `setPixelRatio` is not recommended in this guide:
@@ -172,8 +174,8 @@ function Vol3dViewer(props) {
         vertexShader: vertexShaderVolume,
         fragmentShader: fragmentShaderVolume,
         side: THREE.BackSide,
-        // transparent: true,
-        // opacity: 0.5,
+        transparent: true,
+        opacity: 1.0,
         uniforms: {
           boxSize: new THREE.Uniform(boxSize),
           volumeTex: new THREE.Uniform(volumeTexture),

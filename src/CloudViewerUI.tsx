@@ -81,7 +81,7 @@ function CloudViewerUI() {
         setDataUint8(allTimeSlices.current[currentTimeIndex.current]);
         currentTimeIndex.current = (currentTimeIndex.current + 1) % 10;
       }
-    }, 1000);
+    }, 100);
     return () => clearInterval(interval);
   }, []);
 
