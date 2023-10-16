@@ -33,6 +33,8 @@
     ]
   },
   "devDependencies": {
-    "tsc": "^2.0.4"
+    "tsc": "^2.0.4",
+    "vite": "^4.4.11",
+    "vite-plugin-glsl": "^1.1.2"
   }
 }
