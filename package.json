@@ -16,14 +16,13 @@
     "react-dom": "^18.2.0",
     "three": "^0.125.2",
     "three-addons": "^1.2.0",
-    "typescript": "^5.2.2",
     "vite-tsconfig-paths": "^4.2.1",
     "web-vitals": "^2.1.4",
     "zarr": "^0.6.1"
   },
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "vite build",
     "preview": "vite preview"
   },
   "eslintConfig": {
@@ -33,7 +32,7 @@
     ]
   },
   "devDependencies": {
-    "tsc": "^2.0.4",
+    "typescript": "^5.2.2",
     "vite": "^4.4.11",
     "vite-plugin-glsl": "^1.1.2"
   }

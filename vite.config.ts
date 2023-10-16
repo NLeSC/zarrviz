@@ -13,4 +13,9 @@ export default defineConfig({
     // this sets a default port to 3000
     port: 3000,
   },
+  // build destination folder
+  build: {
+    outDir: "build",
+    emptyOutDir: true,
+  },
 });
