@@ -22,7 +22,7 @@ function CloudViewerUI() {
     const fetchOptions = { redirect: 'follow', mode: 'no-cors', credentials: 'include' };
     const supportedMethods = ['GET', 'HEAD'];
     const store = new HTTPStore(url, { fetchOptions, supportedMethods });
-    console.log('🎹 store', store);
+    // console.log('🎹 store', store);
 
     const zarrdata = await openArray({ store, path, mode: "r" });
     console.log('downloading time slice', timeIndex, '...');

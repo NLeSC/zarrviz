@@ -11,9 +11,10 @@ import './Vol3dViewer.css';
 import * as THREE from 'three';
 import OrbitUnlimitedControls from '@janelia/three-orbit-unlimited-controls';
 
-import { vertexShaderVolume, fragmentShaderVolume } from './Shaders';
+// import { vertexShaderVolume, fragmentShaderVolume } from './Shaders';
+import vertexShaderVolume from './shaders/volume.vert';
+import fragmentShaderVolume from './shaders/volume.frag';
 import { getBoxSize } from './Utils';
-import { render } from '../node_modules/@testing-library/react/types/index';
 
 function Vol3dViewer(props) {
   const {
@@ -348,7 +349,7 @@ function Vol3dViewer(props) {
         cameraRef.current.aspect = width / height;
         cameraRef.current.updateProjectionMatrix();
         renderScene();
-      }, 200);
+      }, 2000);
     }
     window.addEventListener("resize", handleResize)
     return (() => window.removeEventListener("resize", handleResize));
