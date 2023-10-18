@@ -9,6 +9,7 @@ import PropTypes from 'prop-types';
 import './Vol3dViewer.css';
 
 import * as THREE from 'three';
+
 import OrbitUnlimitedControls from '@janelia/three-orbit-unlimited-controls';
 
 // import { vertexShaderVolume, fragmentShaderVolume } from './Shaders';
@@ -133,7 +134,13 @@ function Vol3dViewer(props) {
       const hemisphereLight = new THREE.HemisphereLight(seaLightColor.getHex(), toaLightColor.getHex(), 1.0);
       scene.add(hemisphereLight);
 
+
+      // Add an axes helper to the scene to help with debugging.
+      const axesHelper = new THREE.AxesHelper(5);
+      scene.add(axesHelper);
+      //
       // Adding the plane mesh to the scene to hold the Map texture
+      //
       const textureLoader = new THREE.TextureLoader();
       const texture = textureLoader.load('/maps/nl-map.webp');
       // Create a plane geometry and mesh
@@ -143,7 +150,7 @@ function Vol3dViewer(props) {
 
 
       // Position the plane underneath the box
-      planeMesh.position.set(-boxWidth / 1000, -boxHeight / 1000, boxDepth * 3);  // Adjust position as needed
+      planeMesh.position.set(-boxWidth / 1000, -boxHeight / 1000, boxDepth * -3);  // Adjust position as needed
 
       // Rotate the plane to be horizontal
       // planeMesh.rotation.x = -Math.PI / 2;
@@ -383,7 +390,7 @@ function Vol3dViewer(props) {
   // Check for WebGL 2 support, and store the result, to avoid creating too may contexts
   // when checking with each rendering.
   const gl2Ref = useRef(true);
-  useEffect(() => {
+useEffect(() => {
     gl2Ref.current = document.createElement("canvas").getContext("webgpu");
   }, [gl2Ref]);
 
@@ -406,9 +413,8 @@ function Vol3dViewer(props) {
 
 
     return () => {
-      document.getElementById("viewAbove").addEventListener("click", () => setCameraView([0, 2, 0], [0, 0, -1]));
+      document.getElementById("viewAbove").addEventListener("click", () => setCameraView([0, -2, 0], [0, 0, 1]));
       document.getElementById("viewFront").addEventListener("click", () => setCameraView([0, 0, 2], [0, 1, 0]));
-      document.getElementById("viewProfile").addEventListener("click", () => setCameraView([2, 0, 0], [0, 1, 0]));
     };
   }, [renderScene]);
 
@@ -428,9 +434,8 @@ function Vol3dViewer(props) {
         <div className="Vol3dViewer" ref={mountRef} />
         <div className="camera-control">
           {/* ...existing sliders... */}
-          <button className="btn" id="viewAbove">View from Above</button>
+          <button className="btn" id="viewAbove">View from Side</button>
           <button className="btn" id="viewFront">View from Front</button>
-          <button className="btn" id="viewProfile">View Profile</button>
         </div>
       </div>
       {/* <pre>{JSON.stringify(cameraRef, null, 2)}</pre> */}
@@ -472,9 +477,9 @@ Vol3dViewer.defaultProps = {
   bottomColor: [0.0, 0.0005, 0.0033],
   finalGamma: 4.5,
   interactionSpeedup: 1,
-  cameraPosition: [0, 0, -2],
+  cameraPosition: [0, 0, 2],
   // Gives the correct orientation for Janelia FlyLight datasets.
-  cameraUp: [0, -1, 0],
+  cameraUp: [0, 1, 0],
   cameraFovDegrees: 45.0,
   orbitZoomSpeed: 0.15,
   onCameraChange: null,

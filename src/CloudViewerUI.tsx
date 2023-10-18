@@ -1,8 +1,7 @@
 import Vol3dViewer from './Vol3dViewer';
 import * as THREE from 'three';
-import { openArray, HTTPStore } from 'zarr'
+import { openArray, HTTPStore, slice } from 'zarr'
 import React, { useEffect } from 'react';
-import './CloudViewerUI.css';
 import { Queue } from 'async-await-queue';
 
 
@@ -14,6 +13,16 @@ function CloudViewerUI() {
   const dataCellSize = React.useRef([]);
   const allTimeSlices = React.useRef(new Array(10));
   const currentTimeIndex = React.useRef(0);
+
+
+  const fetchSubset = async (url, path, timeIndex) => {
+    const z = await openArray({ store: url, path, mode: "r" });
+    // Suppose you have a 2D array and you want to select a subset
+    const subset = await z.get([slice(0, 10), slice(0, 10), slice(0, 10), slice(0, 10)]);
+
+    console.log("sub", subset);
+    return subset;
+  }
 
   const fetchData = async (url, path, timeIndex) => {
     if (allTimeSlices.current[timeIndex]) {
@@ -37,12 +46,14 @@ function CloudViewerUI() {
       const xvals = await zarrxvals.getRaw([null]);
       const yvals = await zarryvals.getRaw([null]);
       const zvals = await zarrzvals.getRaw([null]);
+
       let xvalues = xvals.data;
       let dx = xvalues[1] - xvalues[0];
       let yvalues = yvals.data;
       let dy = yvalues[1] - yvalues[0];
       let zvalues = zvals.data;
       let sumDifferences = 0;
+
       for (let i = 1; i < zvalues.length; i++) {
         sumDifferences += Math.abs(zvalues[i] - zvalues[i - 1]);
       }
@@ -70,23 +81,30 @@ function CloudViewerUI() {
     return await q.flush();
   }
 
-  useEffect(() => {
-    console.log('fetching data...');
-    fetchAllData(zarrUrl, 'ql');
-  }, [zarrUrl]);
+
+
+  // On mount equivalent
+  // useEffect(() => {
+  console.log('fetching data...');
+  fetchAllData(zarrUrl, 'ql');
+  // do not fetch all the data but just one time slice
+  // fetchSubset(zarrUrl, 'ql', 0);
+
+  // }, [zarrUrl]);
+
 
   useEffect(() => {
     const interval = setInterval(() => {
       if (allTimeSlices.current[currentTimeIndex.current]) {
         setDataUint8(allTimeSlices.current[currentTimeIndex.current]);
-        currentTimeIndex.current = (currentTimeIndex.current + 1) % 10;
+        currentTimeIndex.current = (currentTimeIndex.current + 1) % 10;   // 10 is the number of time slices, go to 0 after 9
       }
-    }, 100);
-    return () => clearInterval(interval);
-  }, []);
+    }, 3000);
+    return () => clearInterval(interval);  // run on unmount
+  }, []); //
 
   let viewer = null;
-  if (dataUint8 && dataUint8.length != 0 && dataCellSize.current.length != 0) {
+  if (dataUint8 && dataUint8.length !== 0 && dataCellSize.current.length !== 0) {
 
     viewer = (
       <Vol3dViewer
