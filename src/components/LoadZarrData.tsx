@@ -15,7 +15,7 @@ export default function LoadZarrData() {
   /**
    * Ref to an array containing all time slices.
    */
-  const allTimeSlices = useRef(new Array(10));  // 10 is the number of time slices TODO: make this dynamic
+  const allTimeSlices = useRef(new Array());  // 10 is the number of time slices TODO: make this dynamic
   const currentTimeIndex = useRef(0);           // the current time index default 0
 
 
@@ -119,7 +119,7 @@ export default function LoadZarrData() {
         setDataUint8(allTimeSlices.current[currentTimeIndex.current]);
         currentTimeIndex.current = (currentTimeIndex.current + 1) % 10;   // 10 is the number of time slices, go to 0 after 9 TODO: make this dynamic
       }
-    }, 3000);
+    }, 500);
     return () => clearInterval(interval);  // run on unmount
   }, []); //
   // setDataUint8(allTimeSlices.current[currentTimeIndex.current]);
@@ -131,6 +131,7 @@ export default function LoadZarrData() {
 
   return (
     <div className=" flex">
+      <pre> Slices downloaded: {JSON.stringify(allTimeSlices.current.length, null, 2)} </pre>
 
       {dataUint8 && dataUint8.length !== 0 && dataCellSize.current.length !== 0
         ? <Vol3dViewer
