@@ -4,7 +4,7 @@
 // Includes props for controlling the details of the rendering, but no user interface
 // controls.
 
-import { useRef, useEffect, useCallback } from 'react';
+import React, { useRef, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import * as THREE from 'three';
 import OrbitUnlimitedControls from '@janelia/three-orbit-unlimited-controls';
@@ -15,7 +15,7 @@ import vertexShaderVolume from '../shaders/volume.vert';
 import fragmentShaderVolume from '../shaders/volume.frag';
 
 
-function Vol3dViewer(props) {
+export default function Vol3dViewer(props) {
   const {
     volumeDataUint8,
     volumeSize,
@@ -421,7 +421,7 @@ function Vol3dViewer(props) {
   // The `ref` here sets up the mounting of the Three.js renderer image in the
   // appropriate place in the DOM.
   return (
-    <div className="h-screen w-screen">
+    <div className="h-full w-screen">
 
       <div className="Vol3dViewer"
         ref={mountRef}
@@ -484,4 +484,3 @@ Vol3dViewer.defaultProps = {
   onWebGLRender: null
 };
 
-export default Vol3dViewer;

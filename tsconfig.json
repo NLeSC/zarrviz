@@ -3,7 +3,13 @@
         "jsx": "react",
         "lib": ["dom", "dom.iterable", "esnext"],
         "target": "ESNext",
-        "types": ["vite/client"],
+        "types": [
+            "vite/client",
+            "vite-plugin-glsl/ext"
+        ],
         "isolatedModules": true,
+        "moduleResolution": "node",
+        "allowSyntheticDefaultImports": true,
+        "esModuleInterop": true
     },
  }

@@ -133,7 +133,7 @@ export default function CloudViewerUI() {
   // }
 
   return (
-    <div className="w-screen h-screen flex">
+    <div className=" flex">
       {dataUint8 && dataUint8.length !== 0 && dataCellSize.current.length !== 0
         ? <Vol3dViewer
           volumeDataUint8={dataUint8}
@@ -144,5 +144,6 @@ export default function CloudViewerUI() {
           finalGamma={6.0}
         />
         : 'LOADING DATA...'}
+
     </div>);
 }
