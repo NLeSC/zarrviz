@@ -1,22 +1,22 @@
 import { openArray, HTTPStore, slice } from 'zarr'
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Queue } from 'async-await-queue';
 
 import { makeCloudTransferTex } from '../utils/makeCloudTransferTex';
 import Vol3dViewer from './Vol3dViewer';
 
 
-export default function CloudViewerUI() {
-  // const [zarrUrl, setZarrUrl] = React.useState('https://surfdrive.surf.nl/files/remote.php/nonshib-webdav/Ruisdael-viz/ql.zarr');
-  const [zarrUrl, setZarrUrl] = React.useState('http://localhost:3000/data/ql.zarr');
-  const [dataUint8, setDataUint8] = React.useState(null);
-  const dataShape = React.useRef([]);
-  const dataCellSize = React.useRef([]);
+export default function LoadZarrData() {
+  // const [zarrUrl, setZarrUrl] = useState('https://surfdrive.surf.nl/files/remote.php/nonshib-webdav/Ruisdael-viz/ql.zarr');
+  const [zarrUrl, setZarrUrl] = useState('http://localhost:3000/data/ql.zarr');
+  const [dataUint8, setDataUint8] = useState(null);
+  const dataShape = useRef([]);
+  const dataCellSize = useRef([]);
   /**
    * Ref to an array containing all time slices.
    */
-  const allTimeSlices = React.useRef(new Array(10));  // 10 is the number of time slices TODO: make this dynamic
-  const currentTimeIndex = React.useRef(0);           // the current time index default 0
+  const allTimeSlices = useRef(new Array(10));  // 10 is the number of time slices TODO: make this dynamic
+  const currentTimeIndex = useRef(0);           // the current time index default 0
 
 
   const fetchSubset = async (url, path, timeIndex) => {
@@ -52,7 +52,8 @@ export default function CloudViewerUI() {
     console.log('...done.');
 
     allTimeSlices.current[timeIndex] = data;
-    if (timeIndex == 0) {
+
+    if (timeIndex === 0) {
       const zarrxvals = await openArray({ store, path: 'xt', mode: "r" });
       const zarryvals = await openArray({ store, path: 'yt', mode: "r" });
       const zarrzvals = await openArray({ store, path: 'zt', mode: "r" });
@@ -105,18 +106,14 @@ export default function CloudViewerUI() {
   }
 
 
-
   // On mount equivalent
-  // useEffect(() => {
-  console.log('fetching data...');
-  // fetchAllData(zarrUrl, 'ql');
-  fetchData(zarrUrl, 'ql', 0);
-  // do not fetch all the data but just one time slice
-  // fetchSubset(zarrUrl, 'ql', 0);
-
-  // }, [zarrUrl]);
-
   useEffect(() => {
+    console.log('fetching data...');
+    fetchAllData(zarrUrl, 'ql');
+    // fetchData(zarrUrl, 'ql', 0);
+    // fetchSubset(zarrUrl, 'ql', 0);
+
+
     const interval = setInterval(() => {
       if (allTimeSlices.current[currentTimeIndex.current]) {
         setDataUint8(allTimeSlices.current[currentTimeIndex.current]);
@@ -134,6 +131,7 @@ export default function CloudViewerUI() {
 
   return (
     <div className=" flex">
+
       {dataUint8 && dataUint8.length !== 0 && dataCellSize.current.length !== 0
         ? <Vol3dViewer
           volumeDataUint8={dataUint8}
