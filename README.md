@@ -13,3 +13,6 @@ $ npm run dev
 ```
 
 Place the [ql.zarr] data file indisde the `/public/data` folder
+
+## Technical Stack
+![Alt text](src/DIAGRAM.excalidraw.png)
