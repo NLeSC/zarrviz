@@ -1,15 +1,11 @@
-import { Vol3dViewer } from '@janelia/web-vol-viewer';
-import './App.css';
-import React from 'react';
-import CloudViewerUI from './CloudViewerUI';
+import * as React from 'react';
+import CloudViewerUI from './components/CloudViewerUI';
 
 
-function App() {
+export const App = () => {
   return (
-    <div className="App">
+    <div>
       <CloudViewerUI />
     </div>
   );
-}
-
-export default App;
+};

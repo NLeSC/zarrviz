@@ -6,16 +6,14 @@
 
 import { useRef, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
-import './Vol3dViewer.css';
-
 import * as THREE from 'three';
-
 import OrbitUnlimitedControls from '@janelia/three-orbit-unlimited-controls';
+import { getBoxSize } from '../utils/Utils';
 
 // import { vertexShaderVolume, fragmentShaderVolume } from './Shaders';
-import vertexShaderVolume from './shaders/volume.vert';
-import fragmentShaderVolume from './shaders/volume.frag';
-import { getBoxSize } from './Utils';
+import vertexShaderVolume from '../shaders/volume.vert';
+import fragmentShaderVolume from '../shaders/volume.frag';
+
 
 function Vol3dViewer(props) {
   const {
@@ -390,7 +388,7 @@ function Vol3dViewer(props) {
   // Check for WebGL 2 support, and store the result, to avoid creating too may contexts
   // when checking with each rendering.
   const gl2Ref = useRef(true);
-useEffect(() => {
+  useEffect(() => {
     gl2Ref.current = document.createElement("canvas").getContext("webgpu");
   }, [gl2Ref]);
 

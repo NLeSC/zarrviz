@@ -6,11 +6,10 @@ Ruisdael Visualizer
 
 ```bash
 # install with
-$ yarn install
+$ npm install
+
+# Run with
+$ npm run dev
 ```
 
-Place the ql.zarr data file indisde the `/public/data` folder
-
-# Documentation for maintainers
-
-- _notes on how to make a release_
+Place the [ql.zarr] data file indisde the `/public/data` folder
