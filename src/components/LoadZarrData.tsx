@@ -29,7 +29,7 @@ export default function LoadZarrData() {
   }
 
   /**
-   * Fetches data from a given URL and path for a specific time index.
+   * Fetches data from a given URL and path for a specific time index.DataTexture3D
    * @param {string} url - The URL to fetch data from.
    * @param {string} path - The path to the data to fetch.
    * @param {number} timeIndex - The time index of the data to fetch.
@@ -37,11 +37,12 @@ export default function LoadZarrData() {
    */
   const fetchData = async (url, path, timeIndex) => {
     // If the data has already been fetched, return.
-    if (allTimeSlices.current[timeIndex]) {
-      return;
-    }
+    // if (allTimeSlices.current[timeIndex]) {
+    //   return;
+    // }
 
     // Create a new Zarr HTTPStore with the given URL
+    const a = performance.now();
     const fetchOptions = { redirect: 'follow', mode: 'no-cors', credentials: 'include' };
     const supportedMethods = ['GET', 'HEAD'];
     const store = new HTTPStore(url, { fetchOptions, supportedMethods });
@@ -52,6 +53,9 @@ export default function LoadZarrData() {
     console.log('...done.');
 
     allTimeSlices.current[timeIndex] = data;
+    const b = performance.now()
+    console.log('fetching took', b - a, 'ms');
+
 
     if (timeIndex === 0) {
       const zarrxvals = await openArray({ store, path: 'xt', mode: "r" });
@@ -76,6 +80,9 @@ export default function LoadZarrData() {
       dataCellSize.current = [dx, dy, dz];
       dataShape.current = [shape[1], shape[2], shape[0]];
     }
+
+    // setDataUint8(allTimeSlices.current[currentTimeIndex.current])
+    setDataUint8(data)
   }
 
   /**
@@ -107,20 +114,21 @@ export default function LoadZarrData() {
 
 
   // On mount equivalent
+
   useEffect(() => {
     console.log('fetching data...');
-    fetchAllData(zarrUrl, 'ql');
-    // fetchData(zarrUrl, 'ql', 0);
+    // fetchAllData(zarrUrl, 'ql');
+    fetchData(zarrUrl, 'ql', 0);
     // fetchSubset(zarrUrl, 'ql', 0);
 
 
-    const interval = setInterval(() => {
-      if (allTimeSlices.current[currentTimeIndex.current]) {
-        setDataUint8(allTimeSlices.current[currentTimeIndex.current]);
-        currentTimeIndex.current = (currentTimeIndex.current + 1) % 10;   // 10 is the number of time slices, go to 0 after 9 TODO: make this dynamic
-      }
-    }, 500);
-    return () => clearInterval(interval);  // run on unmount
+    // const interval = setInterval(() => {
+    // if (allTimeSlices.current[currentTimeIndex.current]) {
+    // setDataUint8(allTimeSlices.current[currentTimeIndex.current]);
+    // currentTimeIndex.current = (currentTimeIndex.current + 1) % 10;   // 10 is the number of time slices, go to 0 after 9 TODO: make this dynamic
+    // }
+    // }, 10000);
+    // return () => clearInterval(interval);  // run on unmount
   }, []); //
   // setDataUint8(allTimeSlices.current[currentTimeIndex.current]);
 

@@ -6,19 +6,19 @@
   "dependencies": {
     "@janelia/three-orbit-unlimited-controls": "^1.1.0",
     "@janelia/web-vol-viewer": "github:janeliascicomp/web-vol-viewer",
-    "@testing-library/jest-dom": "^5.17.0",
-    "@testing-library/react": "^13.4.0",
-    "@testing-library/user-event": "^13.5.0",
-    "@vitejs/plugin-react": "^4.1.0",
+    "@testing-library/jest-dom": "^6.1.4",
+    "@testing-library/react": "^14.1.2",
+    "@testing-library/user-event": "^14.5.1",
+    "@vitejs/plugin-react": "^4.2.0",
     "async-await-queue": "^2.1.4",
     "prop-types": "^15.8.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "three": "^0.125.2",
+    "three": "^0.158.0",
     "three-addons": "^1.2.0",
     "vite-tsconfig-paths": "^4.2.1",
-    "web-vitals": "^2.1.4",
-    "zarr": "^0.6.1"
+    "web-vitals": "^3.5.0",
+    "zarr": "^0.6.2"
   },
   "scripts": {
     "dev": "vite",
@@ -32,8 +32,8 @@
     ]
   },
   "devDependencies": {
-    "typescript": "^5.2.2",
-    "vite": "^4.4.11",
-    "vite-plugin-glsl": "^1.1.2"
+    "typescript": "^5.3.2",
+    "vite": "^5.0.2",
+    "vite-plugin-glsl": "^1.2.0"
   }
 }

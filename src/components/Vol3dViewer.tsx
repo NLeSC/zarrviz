@@ -67,9 +67,9 @@ export default function Vol3dViewer(props) {
   // to `useEffect`, and the code that is first argument is executed only the when
   // those props change.
 
-  useEffect(() => {
 
-    const initRenderer = () => {
+
+    function initRenderer  () {
       console.log('initRenderer');
 
       // Three.js now uses WebGL 2 by default, so no special canvas context is needed.
@@ -84,7 +84,7 @@ export default function Vol3dViewer(props) {
       // https://github.com/mrdoob/three.js/issues/12770
 
       // Eliminates some artifacts on MacBook Pros with Retina displays.
-      renderer.setPixelRatio(window.devicePixelRatio);
+      // renderer.setPixelRatio(window.devicePixelRatio);
 
       // Must be called after setPixelRatio().
       const width = window.innerWidth || mountRef.current.clientWidth;
@@ -96,13 +96,36 @@ export default function Vol3dViewer(props) {
       prevHeightRef.current = window.innerHeight;
 
       mountRef.current.appendChild(renderer.domElement);
+
+       // Initialize the camera with aspect ratio and position.
+       console.log('initCamera');
+       const size = new THREE.Vector2();
+       renderer.getSize(size);
+       const camera = new THREE.PerspectiveCamera(
+         cameraFovDegrees,
+         size.x / size.y,
+         cameraNear,
+         cameraFar
+       );
+       camera.position.set(...cameraPosition);
+       camera.up.set(...cameraUp);
+
+       // Set up camera controls with custom settings.
+       const trackball = new OrbitUnlimitedControls(camera, renderer.domElement);
+       trackball.zoomSpeed = orbitZoomSpeed;
+       trackball.usePanModAlt = true;
+       trackball.usePanModCtrl = true;
+       trackball.usePanModMeta = true;
+
+       // Store references to the camera and trackball for access outside the effect.
+       cameraRef.current = camera;
+       trackballRef.current = trackball;
       return renderer;
     }
-    window.innerWidth = 800; // sets the window width to 800 pixels
+    // window.innerWidth = 800; // sets the window width to 800 pixels
 
-    const windowWidth = window.innerWidth;
-    console.log(`Window width: ${windowWidth}px`);
-    const initScene = () => {
+
+    function initScene () {
       console.log('initScene');
 
       const scene = new THREE.Scene();
@@ -155,13 +178,13 @@ export default function Vol3dViewer(props) {
 
 
       // Add the plane mesh to the scene
-      scene.add(planeMesh);
+      // scene.add(planeMesh);
 
       return ([scene, box, boxSize, sunLight, hemisphereLight]);
     }
 
-    const initMaterial = (renderer, box, boxSize, sunLight, hemisphereLight) => {
-      const volumeTexture = new THREE.DataTexture3D(volumeDataUint8, volumeSize[0], volumeSize[1], volumeSize[2]);
+  function initMaterial({ box, boxSize, sunLight, hemisphereLight }) {
+      const volumeTexture = new THREE.Data3DTexture(volumeDataUint8, volumeSize[0], volumeSize[1], volumeSize[2]);
       volumeTexture.format = THREE.RedFormat
       volumeTexture.type = THREE.UnsignedByteType
       // Disabling mimpaps saves memory.
@@ -207,214 +230,57 @@ export default function Vol3dViewer(props) {
       /* eslint no-param-reassign: ["error", { "props": false }] */
       box.material = boxMaterial;
 
-      return [boxMaterial]
+      return boxMaterial
+    }
+// Render the scene. This function can be reused in other effects or callbacks.
+    function renderScene() {
+      rendererRef.current.render(sceneRef.current, cameraRef.current);
     }
 
-    const renderer = initRenderer();
-    const [scene, box, boxSize, sunLight, hemisphereLight] = initScene();
-    const [boxMaterial] = initMaterial(renderer, box, boxSize, sunLight, hemisphereLight);
+    useEffect(() => {
+  // Initialize the Three.js renderer and scene components.
+  const renderer = initRenderer();
+  const [scene, box, boxSize, sunLight, hemisphereLight] = initScene();
+  const boxMaterial = initMaterial({ box, boxSize, sunLight, hemisphereLight });
 
-    // boxMaterial.blending = THREE.CustomBlending;
-    // boxMaterial.transparent = true;
+  // Store references to the renderer, scene, and box for access outside the effect.
+  rendererRef.current = renderer;
+  sceneRef.current = scene;
+  boxRef.current = box;
 
-    rendererRef.current = renderer;
-    sceneRef.current = scene;
-    boxRef.current = box;
-    boxMaterialRef.current = boxMaterial;
+  // Dispose of the old texture to free up memory.
+  boxMaterial.uniforms.volumeTex.value.dispose();
 
-    // This "clean up" function will be called when the component is unmounted.  The copy of
-    // `mountRef.current` eliminates the following warning from React: "The ref value 'mountRef.current'
-    // will likely have changed by the time this effect cleanup function runs. If this ref points to a
-    // node rendered by React, copy 'mountRef.current' to a variable inside the effect, and use that
-    // variable in the cleanup function."
-    const mnt = mountRef.current;
-    return (() => mnt.removeChild(renderer.domElement));
-  }, [volumeSize, voxelSize]/*[volumeDataUint8, volumeSize, voxelSize]*/);
+  // Create a new 3D texture for the volume data.
+  const volumeTexture = new THREE.Data3DTexture(volumeDataUint8, volumeSize[0], volumeSize[1], volumeSize[2]);
+  volumeTexture.format = THREE.RedFormat;
+  volumeTexture.type = THREE.UnsignedByteType;
+  volumeTexture.generateMipmaps = false; // Saves memory.
+  volumeTexture.minFilter = THREE.LinearFilter; // Better for volume rendering.
+  volumeTexture.magFilter = THREE.LinearFilter;
+  volumeTexture.needsUpdate = true;
 
+  // Update material uniforms with new texture and parameters.
+ boxMaterial.uniforms.volumeTex.value = volumeTexture;
+ boxMaterial.uniforms.transferTex.value = transferFunctionTex;
+ boxMaterial.uniforms.dtScale.value = dtScale;
+ boxMaterial.uniforms.inScatFactor.value = inScatFactor;
+ boxMaterial.uniforms.qLScale.value = qLScale;
+ boxMaterial.uniforms.gHG.value = gHG;
+ boxMaterial.uniforms.dataEpsilon.value = dataEpsilon;
+ boxMaterial.uniforms.bottomColor.value = bottomColor;
+ boxMaterial.uniforms.finalGamma.value = finalGamma;
 
-  useEffect(() => {
-    if (rendererRef.current) {
-      console.log('initCamera');
-      const renderer = rendererRef.current;
-      const size = new THREE.Vector2();
-      renderer.getSize(size);
-      const camera = new THREE.PerspectiveCamera(
-        cameraFovDegrees,
-        size.x / size.y,
-        cameraNear,
-        cameraFar
-      );
-      camera.position.set(cameraPosition[0], cameraPosition[1], cameraPosition[2]);
-      camera.up.set(cameraUp[0], cameraUp[1], cameraUp[2]);
+  // Initial render to display the scene.
+  renderScene();
 
-      // Calculate the camera position for a 45-degree angle
-      // const distance = 1;  // Adjust this value to position the camera closer or farther from the origin
-      // camera.position.set(distance, distance, distance);
-      // camera.lookAt(0, 0, 0);  // Adjust these values if your scene is centered at a different point
-
-
-      const trackball = new OrbitUnlimitedControls(camera, renderer.domElement);
-      trackball.zoomSpeed = orbitZoomSpeed;
-
-      // Match the modifier keys used by VVD_Viewer, as described in the FluoRender user manual:
-      // http://www.sci.utah.edu/releases/fluorender_v2.20/FluoRender2.20_Manual.pdf
-      // Appendix "C. Keyboard Shortcuts"
-      trackball.usePanModAlt = true;
-      trackball.usePanModCtrl = true;
-      trackball.usePanModMeta = true;
-
-      cameraRef.current = camera;
-      trackballRef.current = trackball;
-    }
-  }, [rendererRef, cameraPosition, cameraUp, cameraFovDegrees, orbitZoomSpeed]);
-
-  // This rendering function is "memoized" so it can be used in `useEffect` blocks.
-  const renderScene = useCallback(() => {
-
-    rendererRef.current.render(sceneRef.current, cameraRef.current);
-
-    if (onWebGLRender) {
-      onWebGLRender();
-    }
-  }, [onWebGLRender]);
-
-  useEffect(() => {
-    console.log('update OrbitUnlimitedControls');
-
-    trackballRef.current.addEventListener("change", renderScene);
-
-    // This `useEffect` should run only once, but if it ever ran again, this "clean up"
-    // function would ensure that the current `renderScene` is no longer called.
-    return (() => trackballRef.current.removeEventListener("change", renderScene));
-  }, [renderScene]);
-
-  useEffect(() => {
-    console.log('update OrbitUnlimitedControls 2');
-
-    if (onCameraChange) {
-      if (onCameraChangeRef.current) {
-        trackballRef.current.removeEventListener("change", onCameraChangeRef.current);
-      }
-      onCameraChangeRef.current = onCameraChange;
-      trackballRef.current.addEventListener("change", onCameraChangeRef.current);
-    }
-
-    // This `useEffect` should run only once, but if it ever ran again, this "clean up"
-    // function would ensure that the current `onCameraChange` is no longer called.
-    return (() => trackballRef.current.removeEventListener("change", onCameraChangeRef.current));
-  }, [onCameraChange]);
-
-  useEffect(() => {
-    console.log('update box material');
-
-    boxMaterialRef.current.uniforms.volumeTex.value.dispose();
-    let volumeTexture = new THREE.DataTexture3D(volumeDataUint8, volumeSize[0], volumeSize[1], volumeSize[2]);
-    volumeTexture.format = THREE.RedFormat
-    volumeTexture.type = THREE.UnsignedByteType
-    // Disabling mimpaps saves memory.
-    volumeTexture.generateMipmaps = false;
-    // Linear filtering disables LODs, which do not help with volume rendering.
-    volumeTexture.minFilter = THREE.LinearFilter;
-    volumeTexture.magFilter = THREE.LinearFilter;
-    volumeTexture.needsUpdate = true
-    boxMaterialRef.current.uniforms.volumeTex.value = volumeTexture;
-    boxMaterialRef.current.uniforms.transferTex.value = transferFunctionTex;
-    boxMaterialRef.current.uniforms.dtScale.value = dtScale;
-    boxMaterialRef.current.uniforms.inScatFactor.value = inScatFactor;
-    boxMaterialRef.current.uniforms.qLScale.value = qLScale;
-    boxMaterialRef.current.uniforms.gHG.value = gHG;
-    boxMaterialRef.current.uniforms.dataEpsilon.value = dataEpsilon;
-    boxMaterialRef.current.uniforms.bottomColor.value = bottomColor;
-    boxMaterialRef.current.uniforms.finalGamma.value = finalGamma;
-
-    // This `useEffect` follows the first React rendering, so it is necessary to
-    // explicitly force a Three.js rendering to make the volme visible before any
-    // interactive camera motion.
-    renderScene();
-  }, [dtScale, inScatFactor, finalGamma, renderScene, transferFunctionTex]);
-
-  // When the window is resized, force an update to the camera aspect ratio as part of scene rendering.
-  useEffect(() => {
-    let timeout;
-    const handleResize = () => {
-      clearTimeout(timeout);
-      // Wait a bit before rendering to improve performance.s
-      timeout = setTimeout(() => {
-        const width = mountRef.current.clientWidth;
-        let height = mountRef.current.clientHeight;
-
-        // The `clientHeight` does not seem to change when resizing to a shorter height.
-        // So keep track of the `innerHeight`, which does change, and use it for a correction.
-        if (window.innerHeight < prevHeightRef.current) {
-          height -= prevHeightRef.current - window.innerHeight;
-        }
-        prevHeightRef.current = window.innerHeight;
-
-        rendererRef.current.setSize(width, height);
-        cameraRef.current.aspect = width / height;
-        cameraRef.current.updateProjectionMatrix();
-        renderScene();
-      }, 2000);
-    }
-    window.addEventListener("resize", handleResize)
-    return (() => window.removeEventListener("resize", handleResize));
-  }, [renderScene]);
-
-  if (rendererRef.current) {
-    renderScene();
-  }
-
-  useEffect(() => {
-    if (interactionSpeedup > 1) {
-      const setRes = (d) => {
-        rendererRef.current.setPixelRatio(window.devicePixelRatio / d);
-        const width = mountRef.current.clientWidth;
-        const height = mountRef.current.clientHeight;
-        rendererRef.current.setSize(width, height);
-        renderScene();
-      }
-      const mousedown = () => setRes(interactionSpeedup);
-      const mouseup = () => setRes(1);
-      rendererRef.current.domElement.addEventListener("mousedown", mousedown);
-      rendererRef.current.domElement.addEventListener("mouseup", mouseup);
-      return (() => {
-        rendererRef.current.domElement.removeEventListener("mousedown", mousedown);
-        rendererRef.current.domElement.removeEventListener("mouseup", mouseup);
-      });
-    }
-    return (() => { });
-  }, [interactionSpeedup, renderScene]);
-
-  // Check for WebGL 2 support, and store the result, to avoid creating too may contexts
-  // when checking with each rendering.
-  const gl2Ref = useRef(true);
-  useEffect(() => {
-    gl2Ref.current = document.createElement("canvas").getContext("webgpu");
-  }, [gl2Ref]);
-
-  if (!gl2Ref.current) {
-    return (
-      <div className="Fallback">
-        WebGL 2 is not supported in this browser.
-      </div>
-    );
-  }
-
-  // Add some buttons to control the camera view.
-  useEffect(() => {
-    const setCameraView = (position, up) => {
-      cameraRef.current.position.set(...position);
-      cameraRef.current.up.set(...up);
-      cameraRef.current.lookAt(0, 0, 0);
-      renderScene();
-    };
+  // Define cleanup function if needed.
+  return () => {
+    // Any necessary cleanup would go here.
+  };
+}, []); // Runs only on component mount.
 
 
-    return () => {
-      document.getElementById("viewAbove").addEventListener("click", () => setCameraView([0, -2, 0], [0, 0, 1]));
-      document.getElementById("viewFront").addEventListener("click", () => setCameraView([0, 0, 2], [0, 1, 0]));
-    };
-  }, [renderScene]);
 
 
 
