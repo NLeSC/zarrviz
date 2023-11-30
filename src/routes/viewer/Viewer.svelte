@@ -1,7 +1,7 @@
 <script lang="ts">
 	import DebugButtons from './DebugButtons.svelte';
 
-	import { onMount } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import * as THREE from 'three';
 	import CameraControls from 'camera-controls';
 	import vertexShaderVolume from '$lib/shaders/volume.vert';
@@ -19,7 +19,6 @@
 		downloadedTime
 	} from '$lib/components/allSlices.store';
 	import { get } from 'svelte/store';
-
 
 	// import examplePoints from '$lib/components/3DVolumetric/examplePoints';
 
@@ -198,6 +197,9 @@
 	}
 
 	function updateMaterial({ dataUint8 }) {
+		if (!box) {
+			return;
+		}
 		// Dispose of the old texture to free up memory.
 		box.material.uniforms.volumeTex.value.dispose();
 
@@ -265,10 +267,9 @@
 	}
 
 	onMount(async () => {
+		console.log('🎹 enter');
 		// 3D scene
 		create3DScene();
-		// get url and port from the browser
-		const url = 'http://localhost:5173/' + 'data/animated/ql.zarr';
 
 		// Add exmample cube
 		// scene.add(addExampleCube());
@@ -278,17 +279,14 @@
 
 		const timing = performance.now();
 		// Download first slice of the data and calculate the voxel and volume size. It runs only once.
-		const { dataUint8, store, shape } = await fetchSlice({
-			currentTimeIndex: 0,
-			url
-		});
+		const { dataUint8, store, shape } = await fetchSlice({ currentTimeIndex: 0 });
 		// const { voxelSize, volumeSize, boxSize } = await getVoxelAndVolumeSize({ store, shape });
 		await getVoxelAndVolumeSize({ store, shape });
 
 		// Add box container for the data
 		await addVolumetricRenderingContainer({ dataUint8 });
-		fetchAllSlices({ url, path: 'ql' });
-		downloadedTime.set(Math.round(performance.now() - timing))
+		fetchAllSlices({ path: 'ql' });
+		downloadedTime.set(Math.round(performance.now() - timing));
 		console.log('⏰ data downloaded and displayed in:', Math.round(performance.now() - timing), 'ms');
 	});
 
@@ -298,6 +296,12 @@
 		if (dataUint8) {
 			updateMaterial({ dataUint8 });
 		}
+	});
+
+	onDestroy(() => {
+		// Clean up Three.js resources
+		currentTimeIndex.set(0);
+		allTimeSlices.set([]);
 	});
 </script>
 

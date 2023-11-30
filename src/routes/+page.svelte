@@ -7,13 +7,13 @@
 			title: 'Dataset 1 (80MB)',
 			description: 'If a dog chews shoes whose shoes does he choose?',
 			image: '/images/cover.webp',
-			url: 'https://storage-s3.ctwhome.com/ruisdael/data/ql.zarr'
+			url: 'https://s3.ctwhome.com/ruisdael/data/ql.zarr'
 		},
 		{
 			title: 'Dataset 2 (300MB)',
 			description: 'If a dog chews shoes whose shoes does he choose?',
 			image: '/images/cover.webp',
-			url: 'https://storage-s3.ctwhome.com/ruisdael/data/animated-data/ql.zarr'
+			url: 'https://s3.ctwhome.com/ruisdael/data/animated-data/ql.zarr'
 		}
 	];
 </script>
@@ -33,8 +33,11 @@
 
 <div class="container mx-auto i">
 	<div class="text-lg my-10">Datasets</div>
+
 	<a class="btn btn-primary" href="/viewer">Localhost</a>
-	<div class="flex gap-8">
+	<a class="btn btn-primary" href="/viewer?dataset=http://localhost:5173/data/animated/ql.zarr">Localhost animated</a>
+
+	<div class="flex gap-8 mt-4">
 		{#each datasets as data}
 			<a href={'viewer?dataset=' + data.url}>
 				<div class="flex flex-col items-center">

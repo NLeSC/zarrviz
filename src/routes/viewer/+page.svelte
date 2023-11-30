@@ -23,7 +23,7 @@
 	<!-- datashape = dataShape: {JSON.stringify($dataShape, null, 2)} -->
 </div>
 
-<Viewer {$currentTimeIndex} />
+<Viewer />
 <TimeLine
 	positionIndex={$currentTimeIndex}
 	length={$allTimeSlices.length}
