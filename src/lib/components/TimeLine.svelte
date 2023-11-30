@@ -1,14 +1,14 @@
 <script lang="ts">
 	import { createEventDispatcher, onDestroy } from 'svelte';
 	import { get } from 'svelte/store';
-	import { allTimeSlices, currentTimeIndex } from './VolumetricRenderer/allSlices.store';
+	import { allTimeSlices, currentTimeIndex, downloadedTime } from './allSlices.store';
 	export let playAnimation = false;
 	export let length = 10;
 	export let positionIndex = 0;
 
 	const dispatch = createEventDispatcher();
 	let interval;
-	export let playSpeedInMiliseconds = 500;
+	export let playSpeedInMiliseconds = 300;
 	function play() {
 		playAnimation = !playAnimation;
 		// TODO This invertal emulates the playback of the data, make it a real playback
@@ -80,8 +80,8 @@
 	<input
 		type="number"
 		value={playSpeedInMiliseconds}
-		step="500"
-		min="500"
+		step="100"
+		min="100"
 		class="w-20"
 		on:input={(event) => (playSpeedInMiliseconds = parseInt(event?.target?.value))}
 	/>
@@ -91,5 +91,7 @@
 			| Loading data
 			<progress class="progress w-56" />
 		</div>
+	{:else}
+		| All data loaded in: {$downloadedTime / 1000} seconds
 	{/if}
 </div>

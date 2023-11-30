@@ -1,8 +1,7 @@
 import { openArray, HTTPStore, create } from 'zarr';
 import type { PersistenceMode } from 'zarr/types/types';
 
-import { allTimeSlices } from "./allSlices.store";
-import { get } from 'svelte/store';
+import { allTimeSlices } from "../../lib/components/allSlices.store";
 
 
 // downloadZarrPoints

@@ -15,9 +15,11 @@
 		voxelSize,
 		volumeSize,
 		boxSize,
-		currentTimeIndex
-	} from './allSlices.store';
+		currentTimeIndex,
+		downloadedTime
+	} from '$lib/components/allSlices.store';
 	import { get } from 'svelte/store';
+
 
 	// import examplePoints from '$lib/components/3DVolumetric/examplePoints';
 
@@ -286,7 +288,7 @@
 		// Add box container for the data
 		await addVolumetricRenderingContainer({ dataUint8 });
 		fetchAllSlices({ url, path: 'ql' });
-
+		downloadedTime.set(Math.round(performance.now() - timing))
 		console.log('⏰ data downloaded and displayed in:', Math.round(performance.now() - timing), 'ms');
 	});
 
@@ -299,6 +301,9 @@
 	});
 </script>
 
+<div>
+	<a href="/"><button class="btn">← Select Sataset</button></a>
+</div>
 <canvas class="w-full h-full" bind:this={canvas} />
 
 <DebugButtons {camera} {cameraControls} />

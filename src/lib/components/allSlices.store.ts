@@ -11,6 +11,8 @@ export const voxelSize = writable()
 export const volumeSize = writable()
 export const boxSize = writable()
 
+export const downloadedTime = writable(0)
+
 
 export async function getVoxelAndVolumeSize({ store, shape, path, mode }) {
   // if (currentTimeIndex === 0) {

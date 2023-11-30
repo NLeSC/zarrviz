@@ -1,4 +1,6 @@
 <script>
+	import * as THREE from 'three';
+
 	export let camera;
 	export let cameraControls;
 </script>
