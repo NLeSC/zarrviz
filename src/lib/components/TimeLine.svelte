@@ -83,7 +83,12 @@
 		step="100"
 		min="100"
 		class="w-20"
-		on:input={(event) => (playSpeedInMiliseconds = parseInt(event?.target?.value))}
+		on:input={(event) => {
+			const wasPlaying = playAnimation;
+			wasPlaying && play(); // stop current animation the animation
+			playSpeedInMiliseconds = parseInt(event?.target?.value);
+			wasPlaying && play(); // stop current animation the animation
+		}}
 	/>
 	currentTimeIndex: {$currentTimeIndex}
 	{#if $allTimeSlices.length <= 1}
