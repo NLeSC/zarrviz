@@ -33,6 +33,7 @@
 
 <div class="container mx-auto i">
 	<div class="text-lg my-10">Datasets</div>
+	<a class="btn" href="http://localhost:5173/viewer?dataset=http://localhost:5173/data/ql.zarr">Localhost</a>
 	<div class="flex gap-8">
 		{#each datasets as data}
 			<a href={'viewer?dataset=' + data.url}>
