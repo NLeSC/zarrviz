@@ -12,7 +12,7 @@ export async function fetchSlice({
 }) {
 
   const params = new URLSearchParams(document.location.search);
-  const datasetUrl = params.get("dataset"); // is the string "Jonathan"
+  const datasetUrl = params.get("dataset") || 'http://localhost:5173/data/ql.zarr';
   console.log(datasetUrl)
 
   // Create an HTTPStore pointing to the base of your Zarr hierarchy
