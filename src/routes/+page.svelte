@@ -10,7 +10,7 @@
 <!--  Debugging info -->
 
 <div class="">
-	<a class="btn" href="/zarrExample">Zarr playground</a>
+	<!-- <a class="btn" href="/zarrExample">Zarr playground</a> -->
 	<!-- <pre>Slices downloaded: {@JSON.stringify(allTimeSlices.length, null, 2)}</pre> -->
 	<div class="flex gap-5">
 		<!-- 1073741824 = 1GB -->
@@ -19,7 +19,6 @@
 			)} GB |</pre>
 		<!-- <pre>dataCellSize: {$dataCellSize.length} |</pre> -->
 		<pre>Slices downloaded: {JSON.stringify($allTimeSlices.length, null, 2)} </pre>
-
 	</div>
 	<!-- datashape = dataShape: {JSON.stringify($dataShape, null, 2)} -->
 </div>
