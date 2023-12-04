@@ -53,7 +53,7 @@
 		<!-- Timeline -->
 		<input
 			type="range"
-			class="transparent h-[4px] w-full cursor-pointer appearance-none border-transparent bg-neutral-200 dark:bg-neutral-600"
+			class="range-slider transparent h-[4px] w-full cursor-pointer appearance-none border-transparent bg-neutral-200 dark:bg-neutral-600"
 			min="1"
 			max={length}
 			step="1"
@@ -100,3 +100,16 @@
 		| All data loaded in: {$downloadedTime / 1000} seconds
 	{/if}
 </div>
+
+<style>
+	/* .range-slider::-webkit-slider-thumb {
+		-webkit-appearance: none;
+		appearance: none;
+		width: 48px;
+		height: 48px;
+		background: #4caf50;
+		border: var(--primary) 10px solid;
+		cursor: pointer;
+		border-radius: 50%;
+	} */
+</style>
