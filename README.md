@@ -16,3 +16,5 @@ Place the [ql.zarr] data file indisde the `/public/data` folder
 
 ## Technical Stack
 ![Alt text](DIAGRAM.excalidraw.png)
+
+Running on custom VPS
