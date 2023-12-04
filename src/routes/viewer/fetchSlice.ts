@@ -17,7 +17,7 @@ export async function fetchSlice({
 
   // Create an HTTPStore pointing to the base of your Zarr hierarchy
   const store = new HTTPStore(datasetUrl, {
-    fetchOptions: { redirect: 'follow', mode: 'no-cors', credentials: 'include' }
+    fetchOptions: { redirect: 'follow', mode: 'cors', credentials: 'include' }
   });
   const zarrdata = await openArray({ store, path, mode });
 

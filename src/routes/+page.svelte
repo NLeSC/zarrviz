@@ -25,14 +25,13 @@
 				<img src={logos} alt="" class="max-h-20 w-auto mx-auto" />
 				<h1 class="font-heading mb-6 text-5xl lg:text-6xl font-black mt-10">Ruisdael on Display</h1>
 				<span class="inline-block mb-3 text-sm font-bold uppercase">3D CLOUDS VISUALIZATION</span>
-				<p class="mb-8 text-xl font-bold">Select a dataset view the 3D clouds visualization.</p>
 			</div>
 		</div>
 	</div>
 </div>
 
 <div class="container mx-auto i">
-	<div class="text-lg my-10">Datasets</div>
+	<p class="mb-8 text-lg font-bold my-10">Datasets</p>
 
 	<a class="btn btn-primary" href="/viewer">Localhost</a>
 	<a class="btn btn-primary" href="/viewer?dataset=http://localhost:5173/data/animated/ql.zarr">Localhost animated</a>
@@ -58,7 +57,7 @@
 </div>
 
 <div class="container mx-auto flex flex-col items-center mt-10">
-	Drop data is not available yet:
+	Not available yet:
 	<div class="max-w-xl">
 		<label
 			class="flex justify-center w-full h-32 px-4 transition border-2 border-gray-500 border-dashed rounded-md appearance-none cursor-pointer hover:border-gray-400 focus:outline-none"
