@@ -42,12 +42,14 @@
 	let cameraFar = 10000.0;
 	let cameraFovDegrees = 45.0;
 
-	let dtScale: number = 1.0;
-	let inScatFactor: number = 0.06;
+	let dtScale: number = 0.2;
+	let ambientFactor: number = 0.0;
+	let solarFactor: number = 0.8;
 	let qLScale: number = 0.00446;
-	let gHG: number = 0.8;
-	let dataEpsilon: number = 1e-5;
+	let gHG: number = 0.6;
+	let dataEpsilon: number = 1e-10;
 	let bottomColor: number[] = [0.0, 0.0005, 0.0033];
+	let bottomHeight: number = 675.0;
 
 	// Run only once at mount
 	const transferTexture = makeCloudTransferTex();
@@ -83,7 +85,7 @@
 	function create3DScene(): void {
 		// Set up the Three.js scene
 		scene = new THREE.Scene();
-		renderer = new THREE.WebGLRenderer({ antialias: true, canvas: canvas }); // Create a WebGLRenderer and specify the canvas to use
+		renderer = new THREE.WebGLRenderer({ antialias: true,  canvas: canvas }); // Create a WebGLRenderer and specify the canvas to use
 		camera = new THREE.PerspectiveCamera(
 			cameraFovDegrees,
 			window.innerWidth / window.innerHeight,
@@ -95,24 +97,23 @@
 		cameraControls = new CameraControls(camera, canvas);
 
 		// renderer.setSize(window.innerWidth, window.innerHeight); // Set the size of the canvas
-		renderer.setClearAlpha(0); // Make the canvas transparent
-
+		//renderer.setClearAlpha(0); // Make the canvas transparent
 		//
 		// Add an axes helper to the scene to help with debugging.
 		//
-		const axesHelper = new THREE.AxesHelper(5);
-		scene.add(axesHelper);
+		//const axesHelper = new THREE.AxesHelper(5);
+		//scene.add(axesHelper);
 		//
 		// Add a grid to the scene to help visualize camera movement.
 		//
-		const gridHelper = new THREE.GridHelper(50, 50);
-		gridHelper.position.y = -1;
-		scene.add(gridHelper);
+		//const gridHelper = new THREE.GridHelper(5, 5);
+		//gridHelper.position.z = -1;
+		//scene.add(gridHelper);
 
 		//
 		// Add a plane with the Map to the scene
 		//
-		scene.add(createPlaneMesh({ width: 100, height: 100, depth: 37.46699284324961 }));
+		scene.add(createPlaneMesh({ width: 5, height: 5, depth: 3 }));
 
 		//
 		// Lights, to be used both during rendering the volume, and rendering the optional surface.
@@ -185,11 +186,13 @@
 				// change often, and should not trigger complete re-initialization.
 				transferTex: new THREE.Uniform(null),
 				dtScale: new THREE.Uniform(0),
-				inScatFactor: new THREE.Uniform(0),
+				ambientFactor: new THREE.Uniform(0),
+				solarFactor: new THREE.Uniform(0),
 				qLScale: new THREE.Uniform(0),
 				gHG: new THREE.Uniform(0),
 				dataEpsilon: new THREE.Uniform(0),
 				bottomColor: new THREE.Uniform(new THREE.Vector3(0.0, 0.0005, 0.0033)),
+				bottomHeight: new THREE.Uniform(0),
 				finalGamma: new THREE.Uniform(0)
 			}
 		});
@@ -222,11 +225,13 @@
 		// box.material.uniforms.transferTex.value = transferFunctionTex;
 		box.material.uniforms.transferTex.value = transferTexture;
 		box.material.uniforms.dtScale.value = dtScale;
-		box.material.uniforms.inScatFactor.value = inScatFactor;
+		box.material.uniforms.ambientFactor.value = ambientFactor;
+		box.material.uniforms.solarFactor.value = solarFactor;
 		box.material.uniforms.qLScale.value = qLScale;
 		box.material.uniforms.gHG.value = gHG;
 		box.material.uniforms.dataEpsilon.value = dataEpsilon;
 		box.material.uniforms.bottomColor.value = bottomColor;
+		box.material.uniforms.bottomHeight.value = bottomHeight;
 		box.material.uniforms.finalGamma.value = finalGamma;
 	}
 
@@ -237,15 +242,16 @@
 		const textureLoader = new THREE.TextureLoader();
 		const texture = textureLoader.load('/maps/nl-map.webp');
 		// Create a plane geometry and mesh
-		const planeGeometry = new THREE.PlaneGeometry(width * 4, height * 4);
+		const planeGeometry = new THREE.PlaneGeometry(width, height);
 		const planeMaterial = new THREE.MeshBasicMaterial({
 			map: texture,
 			side: THREE.DoubleSide,
 			envMap: null
 		});
 		const planeMesh = new THREE.Mesh(planeGeometry, planeMaterial);
+		planeMesh.renderOrder=1;
 
-		planeMesh.position.set(-width / 1000, -height / 1000, depth * -3); // Adjust position as needed
+		//planeMesh.position.set(-width / 1000, -height / 1000, depth * -3); // Adjust position as needed
 		// planeMesh.position.set(0, 0, 0); // Adjust position as needed
 
 		return planeMesh;
@@ -256,14 +262,17 @@
 	 * Y (height) and Z (depth) scaled to match.
 	 */
 	async function addVolumetricRenderingContainer({ dataUint8 }) {
-		const boxGeometry = new THREE.BoxGeometry(get(volumeSize)[0], get(volumeSize)[1], get(volumeSize)[2]);
+		//const boxGeometry = new THREE.BoxGeometry(get(volumeSize)[0], get(volumeSize)[1], get(volumeSize)[2]);
+		const boxGeometry = new THREE.BoxGeometry(1, 1, get(volumeSize)[2] / get(volumeSize)[1]);
 		box = new THREE.Mesh(boxGeometry);
-		scene.add(box);
+		box.position.z=0.1;
+		box.renderOrder=0;
 
 		box.material = await initMaterial({ dataUint8 });
 
 		updateMaterial({ dataUint8 });
-		// renderScene();
+		scene.add(box);
+		renderScene();
 	}
 
 	onMount(async () => {

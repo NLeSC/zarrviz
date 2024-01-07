@@ -168,11 +168,13 @@ export default function Vol3dViewer(props) {
     volumeSize,
     voxelSize,
     dtScale,
-    inScatFactor,
+    ambientFactor,
+    solarFactor,    
     qLScale,
     gHG,
     dataEpsilon,
     bottomColor,
+    bottomHeight,
     transferFunctionTex,
     finalGamma,
     interactionSpeedup,
@@ -343,11 +345,13 @@ export default function Vol3dViewer(props) {
           // change often, and should not trigger complete re-initialization.
           transferTex: new THREE.Uniform(null),
           dtScale: new THREE.Uniform(0),
-          inScatFactor: new THREE.Uniform(0),
+          ambientFactor: new THREE.Uniform(0),
+          solarFactor: new THREE.Uniform(0),
           qLScale: new THREE.Uniform(0),
           gHG: new THREE.Uniform(0),
           dataEpsilon: new THREE.Uniform(0),
           bottomColor: new THREE.Uniform(new THREE.Vector3(0.0, 0.0005, 0.0033)),
+          bottomHeight: new THREE.Uniform(0),
           finalGamma: new THREE.Uniform(0)
         }
       });
@@ -466,18 +470,20 @@ export default function Vol3dViewer(props) {
     boxMaterialRef.current.uniforms.volumeTex.value = volumeTexture;
     boxMaterialRef.current.uniforms.transferTex.value = transferFunctionTex;
     boxMaterialRef.current.uniforms.dtScale.value = dtScale;
-    boxMaterialRef.current.uniforms.inScatFactor.value = inScatFactor;
+    boxMaterialRef.current.uniforms.ambientFactor.value = ambientFactor;
+    boxMaterialRef.current.uniforms.solarFactor.value = solarFactor;
     boxMaterialRef.current.uniforms.qLScale.value = qLScale;
     boxMaterialRef.current.uniforms.gHG.value = gHG;
     boxMaterialRef.current.uniforms.dataEpsilon.value = dataEpsilon;
     boxMaterialRef.current.uniforms.bottomColor.value = bottomColor;
+    boxMaterialRef.current.uniforms.bottomHeight.value = bottomHeight;
     boxMaterialRef.current.uniforms.finalGamma.value = finalGamma;
 
     // This `useEffect` follows the first React rendering, so it is necessary to
     // explicitly force a Three.js rendering to make the volme visible before any
     // interactive camera motion.
     renderScene();
-  }, [dtScale, inScatFactor, finalGamma, renderScene, transferFunctionTex]);
+  }, [dtScale, ambientFactor, solarFactor, finalGamma, renderScene, transferFunctionTex]);
 
   // When the window is resized, force an update to the camera aspect ratio as part of scene rendering.
   useEffect(() => {
@@ -595,11 +601,13 @@ Vol3dViewer.propTypes = {
   volumeSize: PropTypes.arrayOf(PropTypes.number).isRequired,
   voxelSize: PropTypes.arrayOf(PropTypes.number).isRequired,
   dtScale: PropTypes.number,
-  inScatFactor: PropTypes.number,
+  ambientFactor: PropTypes.number,
+  solarFactor: PropTypes.number,
   qLScale: PropTypes.number,
   gHG: PropTypes.number,
   dataEpsilon: PropTypes.number,
   bottomColor: PropTypes.arrayOf(PropTypes.number),
+  bottomHeight: PropTypes.number,
   // A Three.js `DataTexture` (https://threejs.org/docs/#api/en/textures/DataTexture)
   transferFunctionTex: PropTypes.shape({ type: PropTypes.number }).isRequired,
   finalGamma: PropTypes.number,
@@ -613,12 +621,14 @@ Vol3dViewer.propTypes = {
 };
 
 Vol3dViewer.defaultProps = {
-  dtScale: 1.0,
-  inScatFactor: 0.06,
+  dtScale: 0.4,
+  ambientFactor: 0.0001,
+  solarFactor: 0.01,
   qLScale: 0.00446,
   gHG: 0.8,
   dataEpsilon: 1.e-5,
   bottomColor: [0.0, 0.0005, 0.0033],
+  bottomHeight: 675.0,
   finalGamma: 4.5,
   interactionSpeedup: 1,
   cameraPosition: [0, 0, 2],
