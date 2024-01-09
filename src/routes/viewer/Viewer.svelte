@@ -85,7 +85,7 @@
 	function create3DScene(): void {
 		// Set up the Three.js scene
 		scene = new THREE.Scene();
-		renderer = new THREE.WebGLRenderer({ antialias: true,  canvas: canvas }); // Create a WebGLRenderer and specify the canvas to use
+		renderer = new THREE.WebGLRenderer({ antialias: true, canvas: canvas }); // Create a WebGLRenderer and specify the canvas to use
 		camera = new THREE.PerspectiveCamera(
 			cameraFovDegrees,
 			window.innerWidth / window.innerHeight,
@@ -240,16 +240,16 @@
 	//
 	function createPlaneMesh({ width = 100, height = 100, depth = 37.46699284324961 }): THREE.Mesh {
 		const textureLoader = new THREE.TextureLoader();
-		const texture = textureLoader.load('/maps/nl-map.webp');
+		const texture = textureLoader.load('/maps/nl_map 50m per pixel.webp');
+		texture.encoding = THREE.sRGBEncoding;
 		// Create a plane geometry and mesh
 		const planeGeometry = new THREE.PlaneGeometry(width, height);
 		const planeMaterial = new THREE.MeshBasicMaterial({
 			map: texture,
-			side: THREE.DoubleSide,
-			envMap: null
+			side: THREE.DoubleSide
 		});
 		const planeMesh = new THREE.Mesh(planeGeometry, planeMaterial);
-		planeMesh.renderOrder=1;
+		planeMesh.renderOrder = 1;
 
 		//planeMesh.position.set(-width / 1000, -height / 1000, depth * -3); // Adjust position as needed
 		// planeMesh.position.set(0, 0, 0); // Adjust position as needed
@@ -265,8 +265,8 @@
 		//const boxGeometry = new THREE.BoxGeometry(get(volumeSize)[0], get(volumeSize)[1], get(volumeSize)[2]);
 		const boxGeometry = new THREE.BoxGeometry(1, 1, get(volumeSize)[2] / get(volumeSize)[1]);
 		box = new THREE.Mesh(boxGeometry);
-		box.position.z=0.1;
-		box.renderOrder=0;
+		box.position.z = 0.1;
+		box.renderOrder = 0;
 
 		box.material = await initMaterial({ dataUint8 });
 
