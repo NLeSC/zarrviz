@@ -52,7 +52,7 @@
 	let bottomHeight: number = 675.0;
 
 	let gridHelper: THREE.GridHelper;
-	let showGrid = false; // Variable to track the grid's visibility
+	let showGrid = true; // Variable to track the grid's visibility
 
 	// Run only once at mount
 	const transferTexture = makeCloudTransferTex();
@@ -75,6 +75,10 @@
 
 	const finalGamma = 6.0;
 
+	// 1 unit in the scene = 1000 meters (1 kilometer) in real life
+	// Meters of the bounding box of the data
+	let scaleFactor = 33800; // TODO: calculate this value from the data
+
 	function toggleGrid() {
 		showGrid = !showGrid;
 		gridHelper.visible = showGrid; // Assuming gridHelper is your grid object
@@ -82,7 +86,7 @@
 
 	function addExampleCube() {
 		// Create a cube
-		const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
+		const cubeGeometry = new THREE.BoxGeometry(33, 33, 1);
 		const cubeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
 		const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
 		cube.position.set(-1, 0, 0); // Set the position of the cube
@@ -101,7 +105,10 @@
 			cameraFar
 		);
 		// camera.position.z = 5; // Adjust as needed
-		camera.position.set(0, -2, 1.7);
+		// camera.position.set(0, -2, 1.7);
+		// x: 0, y: -0.935916216369971, z: 0.9359162163699711
+		camera.position.set(0, -0.9, 0.9); // Adjusted for scaled scene
+		camera.lookAt(new THREE.Vector3(0, 0, 0));
 		cameraControls = new CameraControls(camera, canvas);
 
 		// renderer.setSize(window.innerWidth, window.innerHeight); // Set the size of the canvas
@@ -121,7 +128,8 @@
 		//
 		// Add a plane with the Map to the scene
 		//
-		scene.add(createPlaneMesh({ width: 5, height: 5, depth: 3 }));
+		// scene.add(createPlaneMesh({ width: 5, height: 5, depth: 3 }));
+		scene.add(createPlaneMesh());
 
 		//
 		// Add a grid to the scene to help visualize camera movement.
@@ -251,54 +259,58 @@
 	//
 	// Create and add  plane mesh to the scene to hold the Map texture
 	//
-	function createPlaneMesh({ width = 100, height = 100, depth = 37.46699284324961 }): THREE.Mesh {
+	function createPlaneMesh(): THREE.Mesh {
 		const textureLoader = new THREE.TextureLoader();
 		const texture = textureLoader.load('/maps/nl_map 50m per pixel.webp');
 		texture.encoding = THREE.sRGBEncoding;
+
+		// Scale factor: 50 meters per pixel
+		const mapWidth = (5600 * 50) / scaleFactor; // in scene units
+		const mapHeight = (6500 * 50) / scaleFactor; // in scene units
+
 		// Create a plane geometry and mesh
-		const planeGeometry = new THREE.PlaneGeometry(width, height);
+		const planeGeometry = new THREE.PlaneGeometry(mapWidth, mapHeight);
 		const planeMaterial = new THREE.MeshBasicMaterial({
 			map: texture,
 			side: THREE.DoubleSide
 		});
-		const planeMesh = new THREE.Mesh(planeGeometry, planeMaterial);
-		// planeMesh.renderOrder = 1;
 
-		//planeMesh.position.set(-width / 1000, -height / 1000, depth * -3); // Adjust position as needed
-		// planeMesh.position.set(0, 0, 0); // Adjust position as needed
+		const planeMesh = new THREE.Mesh(planeGeometry, planeMaterial);
+
+		// Rotate the plane to align it with the XY plane
+		// planeMesh.rotation.x = -Math.PI / 2;
+
+		// Assuming you want the map centered at the origin
+		planeMesh.position.set(0, 0, 0);
 
 		return planeMesh;
 	}
-
+	//
+	// Create and add a grid helper to the scene
+	//
 	function createGridHelper() {
-		// Calculate grid size and divisions
-		const gridSize = Math.max(1280000, 325000); // The larger of the two dimensions in meters
-		const cellSize = 10000; // 10 km per cell
-		const gridDivisions = Math.floor(gridSize / cellSize);
+		const gridSize = Math.max(280000, 325000) / scaleFactor; // in scene units
+		const cellSize = 10000 / scaleFactor; // 10 km per cell, in scene units
+		const gridDivisionsX = Math.floor(280000 / scaleFactor / cellSize);
+		const gridDivisionsY = Math.floor(325000 / scaleFactor / cellSize);
 
+		// Create a grid material with opacity
 		const gridMaterial = new THREE.LineBasicMaterial({
 			color: 0xffffff, // or any color you prefer
 			transparent: true,
-			opacity: 0.2
+			opacity: 0.5
 		});
+		gridHelper = new THREE.GridHelper(gridSize, Math.max(gridDivisionsX, gridDivisionsY), 0xffffff, 0xffffff);
 
-		// Create and add a grid to the scene
-		gridHelper = new THREE.GridHelper(gridSize, gridDivisions);
-		// Apply the custom material to each line of the grid
+		// Apply the custom material to each line of the gri
 		gridHelper.traverse((child) => {
 			if (child instanceof THREE.LineSegments) {
 				child.material = gridMaterial;
 			}
 		});
 
-		gridHelper.position.set(0, 0, 0); // Adjust position to align with the map
-		// gridHelper.scale.set(0.1, 0.1, 0.1); // Scale the grid to match the map's scale
-		gridHelper.scale.set(0.00001, 0.00001, 0.00001); // Scale the grid to match the map's scale
-		// Rotate the grid to align it with the XY plane
+		gridHelper.position.set(0, 0.1, 0); // Adjusted for scaled scene
 		gridHelper.rotation.x = -Math.PI / 2;
-
-		// position the grid slightly above the map
-		gridHelper.position.z = 0.001;
 
 		return gridHelper;
 	}
@@ -309,12 +321,19 @@
 	 */
 	async function addVolumetricRenderingContainer({ dataUint8 }) {
 		//const boxGeometry = new THREE.BoxGeometry(get(volumeSize)[0], get(volumeSize)[1], get(volumeSize)[2]);
-		const boxGeometry = new THREE.BoxGeometry(1, 1, get(volumeSize)[2] / get(volumeSize)[1]);
+		// const boxSizeInKm = 33.8; // 33.8 km
+		// const boxScale = boxSizeInKm; // / scaleFactor; // Convert to meters and then apply scale factor to scene units
+
+		const boxZ = get(volumeSize)[2] / get(volumeSize)[1];
+		// const boxScale = 33800 / scaleFactor; //  33.8 km in meters in scene units
+		const boxGeometry = new THREE.BoxGeometry(1, 1, boxZ);
 		box = new THREE.Mesh(boxGeometry);
-		box.position.z = 0.1;
+		box.position.z = 2000 / scaleFactor; // 570 meters above the map TODO: calculate this value from the data
 		box.renderOrder = 0;
 
 		box.material = await initMaterial({ dataUint8 });
+		// const cubeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+		// box.material = cubeMaterial;
 
 		updateMaterial({ dataUint8 });
 		scene.add(box);
@@ -322,7 +341,7 @@
 	}
 
 	onMount(async () => {
-		console.log('🎹 enter');
+		// scaleFactor = 33800; // TODO: calculate this value from the data
 		// 3D scene
 		create3DScene();
 
@@ -362,12 +381,10 @@
 
 <div>
 	<a href="/"><button class="btn">← Select dataset</button></a>
-	<button on:click={toggleGrid}>
-		{#if showGrid}
-			Hide Grid
-		{:else}
-			Show Grid
-		{/if}
+
+	<button class="btn" on:click={toggleGrid}>
+		<input type="checkbox" bind:checked={showGrid} id="gridCheckbox" />
+		<label class="pointer-events-none" for="gridCheckbox"> Show Grid </label>
 	</button>
 </div>
 <canvas class="w-full h-full" bind:this={canvas} />
