@@ -51,6 +51,9 @@
 	let bottomColor: number[] = [0.0, 0.0005, 0.0033];
 	let bottomHeight: number = 675.0;
 
+	let gridHelper: THREE.GridHelper;
+	let showGrid = false; // Variable to track the grid's visibility
+
 	// Run only once at mount
 	const transferTexture = makeCloudTransferTex();
 
@@ -71,6 +74,11 @@
 	);
 
 	const finalGamma = 6.0;
+
+	function toggleGrid() {
+		showGrid = !showGrid;
+		gridHelper.visible = showGrid; // Assuming gridHelper is your grid object
+	}
 
 	function addExampleCube() {
 		// Create a cube
@@ -101,19 +109,24 @@
 		//
 		// Add an axes helper to the scene to help with debugging.
 		//
-		//const axesHelper = new THREE.AxesHelper(5);
-		//scene.add(axesHelper);
+		const axesHelper = new THREE.AxesHelper(5);
+		scene.add(axesHelper);
 		//
 		// Add a grid to the scene to help visualize camera movement.
 		//
-		//const gridHelper = new THREE.GridHelper(5, 5);
-		//gridHelper.position.z = -1;
-		//scene.add(gridHelper);
+		// const gridHelper = new THREE.GridHelper(5, 5);
+		// gridHelper.position.z = -1;
+		// scene.add(gridHelper);
 
 		//
 		// Add a plane with the Map to the scene
 		//
 		scene.add(createPlaneMesh({ width: 5, height: 5, depth: 3 }));
+
+		//
+		// Add a grid to the scene to help visualize camera movement.
+		//
+		scene.add(createGridHelper());
 
 		//
 		// Lights, to be used both during rendering the volume, and rendering the optional surface.
@@ -249,12 +262,45 @@
 			side: THREE.DoubleSide
 		});
 		const planeMesh = new THREE.Mesh(planeGeometry, planeMaterial);
-		planeMesh.renderOrder = 1;
+		// planeMesh.renderOrder = 1;
 
 		//planeMesh.position.set(-width / 1000, -height / 1000, depth * -3); // Adjust position as needed
 		// planeMesh.position.set(0, 0, 0); // Adjust position as needed
 
 		return planeMesh;
+	}
+
+	function createGridHelper() {
+		// Calculate grid size and divisions
+		const gridSize = Math.max(1280000, 325000); // The larger of the two dimensions in meters
+		const cellSize = 10000; // 10 km per cell
+		const gridDivisions = Math.floor(gridSize / cellSize);
+
+		const gridMaterial = new THREE.LineBasicMaterial({
+			color: 0xffffff, // or any color you prefer
+			transparent: true,
+			opacity: 0.2
+		});
+
+		// Create and add a grid to the scene
+		gridHelper = new THREE.GridHelper(gridSize, gridDivisions);
+		// Apply the custom material to each line of the grid
+		gridHelper.traverse((child) => {
+			if (child instanceof THREE.LineSegments) {
+				child.material = gridMaterial;
+			}
+		});
+
+		gridHelper.position.set(0, 0, 0); // Adjust position to align with the map
+		// gridHelper.scale.set(0.1, 0.1, 0.1); // Scale the grid to match the map's scale
+		gridHelper.scale.set(0.00001, 0.00001, 0.00001); // Scale the grid to match the map's scale
+		// Rotate the grid to align it with the XY plane
+		gridHelper.rotation.x = -Math.PI / 2;
+
+		// position the grid slightly above the map
+		gridHelper.position.z = 0.001;
+
+		return gridHelper;
 	}
 
 	/* A box in which the 3D volume texture will be rendered.  The box will be
@@ -315,7 +361,14 @@
 </script>
 
 <div>
-	<a href="/"><button class="btn">← Select Sataset</button></a>
+	<a href="/"><button class="btn">← Select dataset</button></a>
+	<button on:click={toggleGrid}>
+		{#if showGrid}
+			Hide Grid
+		{:else}
+			Show Grid
+		{/if}
+	</button>
 </div>
 <canvas class="w-full h-full" bind:this={canvas} />
 
