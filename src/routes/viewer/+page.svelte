@@ -1,6 +1,5 @@
 <script lang="ts">
 	import TimeLine from '$lib/components/TimeLine.svelte';
-	import * as THREE from 'three';
 
 	import { allTimeSlices, currentTimeIndex } from '$lib/components/allSlices.store';
 
