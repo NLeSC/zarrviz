@@ -359,7 +359,7 @@
 
 		// Add box container for the data
 		await addVolumetricRenderingContainer({ dataUint8 });
-		fetchAllSlices({ path: 'ql' });
+		fetchAllSlices({ path: 'ql' }); //<-------
 		downloadedTime.set(Math.round(performance.now() - timing));
 		console.log('⏰ data downloaded and displayed in:', Math.round(performance.now() - timing), 'ms');
 	});
@@ -379,14 +379,16 @@
 	});
 </script>
 
-<div>
+<div class="flex align-middle">
 	<a href="/"><button class="btn">← Select dataset</button></a>
 
 	<button class="btn" on:click={toggleGrid}>
 		<input type="checkbox" bind:checked={showGrid} id="gridCheckbox" />
-		<label class="pointer-events-none" for="gridCheckbox"> Show Grid </label>
+		<label class="pointer-events-none" for="gridCheckbox"> Show Grid (10x10km) </label>
 	</button>
+
 </div>
 <canvas class="w-full h-full" bind:this={canvas} />
+<div>Map resolution: 100m per pixel</div>
 
 <DebugButtons {camera} {cameraControls} />
