@@ -35,7 +35,7 @@
 
 	<!-- TODO: remove these buttons when uploading from local machine is available -->
 	<a class="btn btn-primary" href="/viewer">Localhost</a>
-	<a class="btn btn-primary" href="/viewer?dataset=http://localhost:5173/data/animated/ql.zarr">Localhost animated</a>
+	<a class="btn btn-primary" href="/viewer?dataset=http://localhost:5173/data/movie.zarr">Localhost animated</a>
 	<a class="btn btn-primary" href="/viewer?dataset=http://localhost:5173/data/animated/qr.zarr&path=qr">Localhost qr</a>
 
 	<div class="flex gap-8 mt-4">

@@ -26,7 +26,12 @@ export async function fetchSlice({
   // allSlices.set(data);
   // Update the time slices store
   allTimeSlices.update((timeSlices) => {
-    timeSlices[currentTimeIndex] = data;
+    if(timeSlices[currentTimeIndex]){
+      timeSlices[currentTimeIndex][path] = data;
+    }
+    else{
+      timeSlices[currentTimeIndex] = {path: data};
+    }
     return timeSlices;
   });
   console.log('🎹 downloaded ', currentTimeIndex);

@@ -7,18 +7,18 @@ import { openArray } from 'zarr';
 export const allTimeSlices = writable([]);
 export const currentTimeIndex = writable(0);
 
-export const voxelSize = writable()
-export const volumeSize = writable()
-export const boxSize = writable()
+export const voxelSizes = writable({})
+export const volumeSizes = writable({})
+export const boxSizes = writable({})
 
 export const downloadedTime = writable(0)
 
 
-export async function getVoxelAndVolumeSize({ store, shape, path, mode }) {
+export async function getVoxelAndVolumeSize( store, shape, path ) {
   // if (currentTimeIndex === 0) {
   const zarrxvals = await openArray({ store, path: 'xt', mode: 'r' });
   const zarryvals = await openArray({ store, path: 'yt', mode: 'r' });
-  const zarrzvals = await openArray({ store, path: 'zt', mode: 'r' });
+  const zarrzvals = await openArray({ store, path: 'z_' + path, mode: 'r' });
   const xvals = await zarrxvals.getRaw([null]);
   const yvals = await zarryvals.getRaw([null]);
   const zvals = await zarrzvals.getRaw([null]);
@@ -37,13 +37,21 @@ export async function getVoxelAndVolumeSize({ store, shape, path, mode }) {
   // console.log('I calculated ', dx, dy, dz);
   // }
 
-  voxelSize.set([dx, dy, dz]); // [1536, 1536, 123]
-  volumeSize.set([shape[1], shape[2], shape[0]]); // [100, 100, 37.46699284324961]
+  voxelSizes.update((vs) => {
+    vs[path] = [dx, dy, dz];
+    return vs;
+  });
+  volumeSizes.update((vs) => {
+    vs[path] = [shape[1], shape[2], shape[0]];
+    return vs;
+  });
+  boxSizes.update((bs) => {
+    const [bw, bh, bd] = getBoxSize(get(volumeSizes)[path], get(voxelSizes)[path]);
+    bs[path] = new THREE.Vector3(bw, bh, bd);
+    return bs;
+  });
 
-  const [boxWidth, boxHeight, boxDepth] = getBoxSize(get(volumeSize), get(voxelSize));
-  boxSize.set(new THREE.Vector3(boxWidth, boxHeight, boxDepth));
-
-  console.log(`Voxel size ${get(voxelSize)[0]}, ${get(voxelSize)[1]}, ${get(voxelSize)[2]}`);
-  console.log('Box size', get(boxSize));
+  console.log(`Voxel size ${get(voxelSizes)[path][0]}, ${get(voxelSizes)[path][1]}, ${get(voxelSizes)[path][2]}`);
+  console.log('Box size', get(boxSizes)[path]);
   // return { voxelSize, volumeSize, boxSize };
 }

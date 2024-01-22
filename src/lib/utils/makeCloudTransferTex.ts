@@ -1,17 +1,17 @@
 import * as THREE from 'three';
 
 export function makeCloudTransferTex() {
-	const width = 256;
+	const width = 32;
 	const height = 1;
 	const size = width * height;
 	const data = new Uint8Array(4 * size);
 
-	const rstart = 255;
-	const rend = 50;
-	const astart = 20;
-	const aend = 255;
-	const imid = 20;
-	const amid = 40;
+	const rstart = 0;
+	const rend = 28;
+	const astart = 0;
+	const aend = 32;
+	const imid = 16;
+	const amid = 16;
 
 	for (let i = 0; i < width; i += 1) {
 		const r = rstart + (i * (rend - rstart)) / (width - 1);
@@ -23,7 +23,7 @@ export function makeCloudTransferTex() {
 		}
 
 		data[4 * i] = r;
-		data[4 * i + 1] = r;
+		data[4 * i + 1] = 0;
 		data[4 * i + 2] = r;
 		data[4 * i + 3] = alpha;
 	}
