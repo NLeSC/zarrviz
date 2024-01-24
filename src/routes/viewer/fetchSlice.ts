@@ -30,7 +30,8 @@ export async function fetchSlice({
       timeSlices[currentTimeIndex][path] = data;
     }
     else{
-      timeSlices[currentTimeIndex] = {path: data};
+      timeSlices[currentTimeIndex] = {};
+      timeSlices[currentTimeIndex][path] = data;
     }
     return timeSlices;
   });

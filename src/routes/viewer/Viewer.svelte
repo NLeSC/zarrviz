@@ -42,8 +42,7 @@
 	let cameraNear = 0.1;
 	let cameraFar = 10000.0;
 	let cameraFovDegrees = 45.0;
-
-	let dtScale: number = 0.1;
+	let dtScale: number = 0.8;
 	let ambientFactor: number = 0.0;
 	let solarFactor: number = 0.8;
 	let qlScale: number = 0.00446;
@@ -55,6 +54,8 @@
 
 	let gridHelper: THREE.GridHelper;
 	let showGrid = true; // Variable to track the grid's visibility
+
+	let boxes = {};
 
 	// Run only once at mount
 	const transferTexture = makeCloudTransferTex();
@@ -190,7 +191,7 @@
 		volumeTexture.magFilter = THREE.LinearFilter;
 		volumeTexture.needsUpdate = true;
 		let boxMaterial = null;
-		if (variable == 'ql') {
+		if (variable==='ql') {
 			boxMaterial = new THREE.ShaderMaterial({
 				vertexShader: vertexShaderVolume,
 				fragmentShader: fragmentShaderVolume,
@@ -250,11 +251,13 @@
 	}
 
 	function updateMaterial({ variable, dataUint8 }) {
-		if (!box) {
+		let localBox = boxes[variable];
+
+		if (!localBox) {
 			return;
 		}
 		// Dispose of the old texture to free up memory.
-		box.material.uniforms.volumeTex.value.dispose();
+		localBox.material.uniforms.volumeTex.value.dispose();
 
 		// Create a new 3D texture for the volume data.
 		const volumeTexture = new THREE.Data3DTexture(
@@ -271,28 +274,24 @@
 		volumeTexture.needsUpdate = true;
 
 		// Update material uniforms with new texture and parameters.
-		box.material.uniforms.volumeTex.value = volumeTexture;
-		box.material.uniforms.finalGamma.value = finalGamma;
-		switch(variable){
-			case 'ql':
-				box.material.uniforms.dataScale.value = qlScale;
-				box.material.uniforms.dtScale.value = dtScale;
-			case 'qr':
-				box.material.uniforms.dataScale.value = qrScale;
-				box.material.uniforms.dtScale.value = dtScale * 20.0;
-		}
-		
-		if(variable == 'ql'){
-			box.material.uniforms.ambientFactor.value = ambientFactor;
-			box.material.uniforms.solarFactor.value = solarFactor;
-			box.material.uniforms.gHG.value = gHG;
-			box.material.uniforms.dataEpsilon.value = dataEpsilon;
-			box.material.uniforms.bottomColor.value = bottomColor;
-			box.material.uniforms.bottomHeight.value = bottomHeight;
-		}
-		else {
-//			box.material.uniforms.transferTex.value = transferTexture;
-			box.material.uniforms.alphaNorm.value = 2.0;
+		localBox.material.uniforms.volumeTex.value = volumeTexture;
+		localBox.material.uniforms.finalGamma.value = finalGamma;
+		switch(String(variable)){
+			case "ql":
+				localBox.material.uniforms.dataScale.value = qlScale;
+				localBox.material.uniforms.dtScale.value = dtScale;
+				localBox.material.uniforms.ambientFactor.value = ambientFactor;
+				localBox.material.uniforms.solarFactor.value = solarFactor;
+				localBox.material.uniforms.gHG.value = gHG;
+				localBox.material.uniforms.dataEpsilon.value = dataEpsilon;
+				localBox.material.uniforms.bottomColor.value = bottomColor;
+				localBox.material.uniforms.bottomHeight.value = bottomHeight;
+				break;
+			case "qr":
+				localBox.material.uniforms.dataScale.value = qrScale;
+				localBox.material.uniforms.dtScale.value = dtScale * 4.0;
+				localBox.material.uniforms.alphaNorm.value = 2.0;
+				break;
 		}
 	}
 
@@ -374,7 +373,7 @@
 		box.material = await initMaterial({ variable, dataUint8 });
 		// const cubeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
 		// box.material = cubeMaterial;
-
+		boxes[variable] = box;
 		updateMaterial({ variable, dataUint8 });
 		scene.add(box);
 		renderScene();

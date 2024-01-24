@@ -65,7 +65,7 @@ void main(void){
 
   ivec3 volumeTexSize=textureSize(volumeTex,0);
   //  vec3 dt0 = 1.0 / (vec3(volumeTexSize) * abs(rayDir));
-  vec3 dt0=1./(vec3(volumeTexSize) * abs(rayDir));
+  vec3 dt0=1./(vec3(volumeTexSize)*abs(rayDir));
   float dt1=min(dt0.x,min(dt0.y,dt0.z));
   float dt=dtScale*dt1;
 
@@ -137,8 +137,8 @@ void main(void){
       */
     }
 
-    illumination.rgb += transmittance * vColor.a * vColor.rgb;
-    transmittance *= ( 1.0 - vColor.a);
+    illumination.rgb += transmittance*clamp(vColor.a,0.0,1.0)*vColor.rgb;
+    transmittance *= ( 1.0 - clamp(vColor.a,0.0,1.0));
 
     // Break on opacity
     if(transmittance<transmittance_threshold){
