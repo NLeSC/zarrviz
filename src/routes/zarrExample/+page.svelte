@@ -8,6 +8,7 @@
 	import { makeCloudTransferTex } from '$lib/utils/makeCloudTransferTex';
 	import { getBoxSize } from '$lib/utils/Utils';
 	import type { PersistenceMode } from 'zarr/types/types';
+	import DropFolder from '$lib/components/DropFolder.svelte';
 
 	// import examplePoints from '$lib/components/3DVolumetric/examplePoints';
 
@@ -100,7 +101,7 @@
 		//
 		// Add a plane with the Map to the scene
 		//
-		scene.add(createPlaneMesh({ width: 100, height: 100, depth: 37.46699284324961 }));
+		// scene.add(createPlaneMesh({ width: 100, height: 100, depth: 37.46699284324961 }));
 
 		//
 		// Lights, to be used both during rendering the volume, and rendering the optional surface.
@@ -122,8 +123,8 @@
 		}
 		animate();
 		function resize() {
-			renderer.setSize(window.innerWidth, 400);
-			camera.aspect = window.innerWidth / 400;
+			renderer.setSize(parent.innerWidth, parent.innerHeight);
+			camera.aspect = parent.innerWidth / parent.innerHeight;
 			camera.updateProjectionMatrix();
 		}
 		window.addEventListener('resize', resize);
@@ -185,7 +186,8 @@
 	//
 	function createPlaneMesh({ width = 100, height = 100, depth = 37.46699284324961 }): THREE.Mesh {
 		const textureLoader = new THREE.TextureLoader();
-		const texture = textureLoader.load('/maps/nl-map.webp');
+		const texture = textureLoader.load('/maps/nl_map 50m per pixel.webp');
+		texture.encoding = THREE.sRGBEncoding;
 		// Create a plane geometry and mesh
 		const planeGeometry = new THREE.PlaneGeometry(width * 4, height * 4);
 		const planeMaterial = new THREE.MeshBasicMaterial({
@@ -327,4 +329,5 @@
 	});
 </script>
 
+<DropFolder />
 <canvas class="w-full h-full" bind:this={canvas} />
