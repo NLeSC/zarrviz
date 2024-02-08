@@ -41,6 +41,7 @@
 	},
 	"type": "module",
 	"dependencies": {
-		"@tweenjs/tween.js": "^21.0.0"
+		"@tweenjs/tween.js": "^21.0.0",
+		"zarr-js": "^3.3.0"
 	}
 }

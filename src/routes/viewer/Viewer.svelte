@@ -100,7 +100,7 @@
 		renderer = new THREE.WebGLRenderer({ antialias: true, canvas: canvas }); // Create a WebGLRenderer and specify the canvas to use
 		camera = new THREE.PerspectiveCamera(
 			cameraFovDegrees,
-			window.innerWidth / window.innerHeight,
+			parent.innerWidth / parent.innerHeight,
 			cameraNear,
 			cameraFar
 		);
@@ -156,8 +156,8 @@
 		}
 		animate();
 		function resize() {
-			renderer.setSize(window.innerWidth, 400);
-			camera.aspect = window.innerWidth / 400;
+			renderer.setSize(parent.innerWidth, parent.innerHeight);
+			camera.aspect = parent.innerWidth / parent.innerHeight;
 			camera.updateProjectionMatrix();
 		}
 		window.addEventListener('resize', resize);
@@ -359,7 +359,7 @@
 
 		// Add box container for the data
 		await addVolumetricRenderingContainer({ dataUint8 });
-		fetchAllSlices({ path: 'ql' });
+		fetchAllSlices({ path: 'ql' }); //<-------
 		downloadedTime.set(Math.round(performance.now() - timing));
 		console.log('⏰ data downloaded and displayed in:', Math.round(performance.now() - timing), 'ms');
 	});
@@ -379,14 +379,17 @@
 	});
 </script>
 
-<div>
-	<a href="/"><button class="btn">← Select dataset</button></a>
+<div class="grid bg-green-900">
+	<div class="flex align-middle">
+		<a href="/"><button class="btn">← Select dataset</button></a>
 
-	<button class="btn" on:click={toggleGrid}>
-		<input type="checkbox" bind:checked={showGrid} id="gridCheckbox" />
-		<label class="pointer-events-none" for="gridCheckbox"> Show Grid </label>
-	</button>
+		<button class="btn" on:click={toggleGrid}>
+			<input type="checkbox" bind:checked={showGrid} id="gridCheckbox" />
+			<label class="pointer-events-none" for="gridCheckbox"> Show Grid (10x10km) </label>
+		</button>
+	</div>
+	<!-- <canvas class="w-full h-[500px]" bind:this={canvas} /> -->
+	<div>Map resolution: 100m per pixel</div>
+
+	<DebugButtons {camera} {cameraControls} />
 </div>
-<canvas class="w-full h-full" bind:this={canvas} />
-
-<DebugButtons {camera} {cameraControls} />
