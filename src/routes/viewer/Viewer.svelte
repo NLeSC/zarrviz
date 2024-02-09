@@ -1,18 +1,20 @@
 <script lang="ts">
 	import DebugButtons from './DebugButtons.svelte';
-
 	import { onDestroy, onMount } from 'svelte';
 	import * as THREE from 'three';
 	import CameraControls from 'camera-controls';
 	import vertexShaderVolume from '$lib/shaders/volume.vert';
-	import fragmentShaderVolume from '$lib/shaders/volume.frag';
+	import fragmentShaderVolume from '$lib/shaders/volume_cloud.frag';
 	import fragmentShaderVolumeTransfer from '$lib/shaders/volume_transfer.frag';
-	import { makeCloudTransferTex } from '$lib/utils/makeCloudTransferTex';
+	import vertexShaderSurface from '$lib/shaders/surface.vert';
+	import fragmentShaderSurfaceHeatMap from '$lib/shaders/surface_heatmap.frag';
+	import { makeRainTransferTex } from '$lib/utils/makeRainTransferTex';
 	import { fetchSlice } from './fetchSlice';
 	import { fetchAllSlices } from './fetchAllSlices';
 	import {
 		allTimeSlices,
 		getVoxelAndVolumeSize,
+		getVoxelAndVolumeSize2D,
 		voxelSizes,
 		volumeSizes,
 		boxSizes,
@@ -20,7 +22,7 @@
 		downloadedTime
 	} from '$lib/components/allSlices.store';
 	import { get } from 'svelte/store';
-
+	
 	// import examplePoints from '$lib/components/3DVolumetric/examplePoints';
 
 	CameraControls.install({ THREE: THREE });
@@ -32,7 +34,7 @@
 	// const zarrArray = await openArray({ store: 'http://localhost:5173/data/ql.zarr' });
 
 	let cameraControls: CameraControls | null = null;
-	let box: THREE.Mesh;
+	//let plane: THREE.Mesh;
 	let canvas: HTMLElement;
 	let scene: THREE.Scene;
 	let camera: THREE.PerspectiveCamera;
@@ -58,7 +60,7 @@
 	let boxes = {};
 
 	// Run only once at mount
-	const transferTexture = makeCloudTransferTex();
+	const transferTexture = makeRainTransferTex();
 
 	const sunLightDir = new THREE.Vector3(0.0, 0.5, 0.5);
 	const sunLightColor = new THREE.Color(0.99, 0.83, 0.62);
@@ -75,8 +77,9 @@
 		hemisphereLight.color.g,
 		hemisphereLight.color.b
 	);
-
 	const finalGamma = 6.0;
+	//const visible_data = ['ql', 'qr', 'thetavmix'];
+	const visible_data = ['thetavmix'];
 
 	// 1 unit in the scene = 1000 meters (1 kilometer) in real life
 	// Meters of the bounding box of the data
@@ -131,7 +134,7 @@
 		//
 		// Add a plane with the Map to the scene
 		//
-		scene.add(createPlaneMesh({ width: 5, height: 5, depth: 3 }));
+		//scene.add(createPlaneMesh({ width: 5, height: 5, depth: 3 }));
 		scene.add(createPlaneMesh());
 
 		//
@@ -176,12 +179,22 @@
 	}
 
 	async function initMaterial({ variable, dataUint8 }): Promise<THREE.Material> {
-		const volumeTexture = new THREE.Data3DTexture(
-			dataUint8,
-			get(volumeSizes)[variable][0],
-			get(volumeSizes)[variable][1],
-			get(volumeSizes)[variable][2]
-		);
+		let volumeTexture = null;
+		if (variable==='thetavmix'){
+			volumeTexture = new THREE.DataTexture(
+				dataUint8,
+				get(volumeSizes)[variable][0],
+				get(volumeSizes)[variable][1]
+			);
+		}
+		else {
+			volumeTexture = new THREE.Data3DTexture(
+				dataUint8,
+				get(volumeSizes)[variable][0],
+				get(volumeSizes)[variable][1],
+				get(volumeSizes)[variable][2]
+			);
+		}
 		volumeTexture.format = THREE.RedFormat;
 		volumeTexture.type = THREE.UnsignedByteType;
 		// Disabling mimpaps saves memory.
@@ -191,62 +204,83 @@
 		volumeTexture.magFilter = THREE.LinearFilter;
 		volumeTexture.needsUpdate = true;
 		let boxMaterial = null;
-		if (variable==='ql') {
-			boxMaterial = new THREE.ShaderMaterial({
-				vertexShader: vertexShaderVolume,
-				fragmentShader: fragmentShaderVolume,
-				side: THREE.DoubleSide,
-				transparent: true,
-				opacity: 1.0,
-				uniforms: {
-					boxSize: new THREE.Uniform(get(boxSizes)[variable]),
-					volumeTex: new THREE.Uniform(volumeTexture),
-					voxelSize: new THREE.Uniform(get(voxelSizes)[variable]),
-					sunLightDir: new THREE.Uniform(sunLight.position),
-					sunLightColor: new THREE.Uniform(lightColorV),
-					ambientLightColor: new THREE.Uniform(ambientLightColorV),
-					near: new THREE.Uniform(cameraNear),
-					far: new THREE.Uniform(cameraFar),
-					// The following are set separately, since they are based on `props` values that can
-					// change often, and should not trigger complete re-initialization.
-					dtScale: new THREE.Uniform(0),
-					ambientFactor: new THREE.Uniform(0),
-					solarFactor: new THREE.Uniform(0),
-					dataScale: new THREE.Uniform(0),
-					gHG: new THREE.Uniform(0),
-					dataEpsilon: new THREE.Uniform(0),
-					bottomColor: new THREE.Uniform(new THREE.Vector3(0.0, 0.0005, 0.0033)),
-					bottomHeight: new THREE.Uniform(0),
-					finalGamma: new THREE.Uniform(0)
-				}
-			});
-		}
-		else
-		{
-			boxMaterial = new THREE.ShaderMaterial({
-				vertexShader: vertexShaderVolume,
-				fragmentShader: fragmentShaderVolumeTransfer,
-				side: THREE.DoubleSide,
-				transparent: true,
-				opacity: 1.0,
-				uniforms: {
-					boxSize: new THREE.Uniform(get(boxSizes)[variable]),
-					volumeTex: new THREE.Uniform(volumeTexture),
-					sunLightDir: new THREE.Uniform(sunLight.position),
-					sunLightColor: new THREE.Uniform(lightColorV),
-					near: new THREE.Uniform(cameraNear),
-					far: new THREE.Uniform(cameraFar),
-					// The following are set separately, since they are based on `props` values that can
-					// change often, and should not trigger complete re-initialization.
-					transferTex: new THREE.Uniform(transferTexture),
-					dtScale: new THREE.Uniform(0),
-					dataScale: new THREE.Uniform(0),
-					alphaNorm: new THREE.Uniform(0),
-					finalGamma: new THREE.Uniform(0),
-					useLighting: new THREE.Uniform(false)
-				}
-			});
-		}
+		switch(variable){
+			case 'ql':
+				boxMaterial = new THREE.ShaderMaterial({
+					vertexShader: vertexShaderVolume,
+					fragmentShader: fragmentShaderVolume,
+					side: THREE.DoubleSide,
+					transparent: true,
+					opacity: 1.0,
+					uniforms: {
+						boxSize: new THREE.Uniform(get(boxSizes)[variable]),
+						volumeTex: new THREE.Uniform(volumeTexture),
+						voxelSize: new THREE.Uniform(get(voxelSizes)[variable]),
+						sunLightDir: new THREE.Uniform(sunLight.position),
+						sunLightColor: new THREE.Uniform(lightColorV),
+						ambientLightColor: new THREE.Uniform(ambientLightColorV),
+						near: new THREE.Uniform(cameraNear),
+						far: new THREE.Uniform(cameraFar),
+						// The following are set separately, since they are based on `props` values that can
+						// change often, and should not trigger complete re-initialization.
+						dtScale: new THREE.Uniform(0),
+						ambientFactor: new THREE.Uniform(0),
+						solarFactor: new THREE.Uniform(0),
+						dataScale: new THREE.Uniform(0),
+						gHG: new THREE.Uniform(0),
+						dataEpsilon: new THREE.Uniform(0),
+						bottomColor: new THREE.Uniform(new THREE.Vector3(0.0, 0.0005, 0.0033)),
+						bottomHeight: new THREE.Uniform(0),
+						finalGamma: new THREE.Uniform(0)
+					}
+				});
+				break;
+			case 'qr':
+				boxMaterial = new THREE.ShaderMaterial({
+					vertexShader: vertexShaderVolume,
+					fragmentShader: fragmentShaderVolumeTransfer,
+					side: THREE.DoubleSide,
+					transparent: true,
+					opacity: 1.0,
+					uniforms: {
+						boxSize: new THREE.Uniform(get(boxSizes)[variable]),
+						volumeTex: new THREE.Uniform(volumeTexture),
+						sunLightDir: new THREE.Uniform(sunLight.position),
+						sunLightColor: new THREE.Uniform(lightColorV),
+						near: new THREE.Uniform(cameraNear),
+						far: new THREE.Uniform(cameraFar),
+						// The following are set separately, since they are based on `props` values that can
+						// change often, and should not trigger complete re-initialization.
+						transferTex: new THREE.Uniform(transferTexture),
+						dtScale: new THREE.Uniform(0),
+						dataScale: new THREE.Uniform(0),
+						alphaNorm: new THREE.Uniform(0),
+						finalGamma: new THREE.Uniform(0),
+						useLighting: new THREE.Uniform(false)
+					}
+				});
+				break;
+			case 'thetavmix':
+				// create an elevation texture
+				boxMaterial = new THREE.ShaderMaterial({
+					vertexShader: vertexShaderSurface,
+					fragmentShader: fragmentShaderSurfaceHeatMap,
+					side: THREE.DoubleSide,
+					transparent: true,
+					opacity: 1.0,
+					clipping: true,
+					uniforms: {
+						volumeTex: new THREE.Uniform(volumeTexture),
+						heightRatio: new THREE.Uniform(0),
+						heightBias: new THREE.Uniform(0),
+						//gradientTexture: {value: gradientMap}
+						colorLow: new THREE.Uniform(new THREE.Vector3(0, 0, 1)),
+						colorMid: new THREE.Uniform(new THREE.Vector3(0, 1, 0)),
+						colorHigh: new THREE.Uniform(new THREE.Vector3(1, 0, 0))
+					},
+				});
+				break;
+			}
 		return boxMaterial;
 	}
 
@@ -260,12 +294,22 @@
 		localBox.material.uniforms.volumeTex.value.dispose();
 
 		// Create a new 3D texture for the volume data.
-		const volumeTexture = new THREE.Data3DTexture(
-			dataUint8,
-			get(volumeSizes)[variable][0],
-			get(volumeSizes)[variable][1],
-			get(volumeSizes)[variable][2]
-		);
+		let volumeTexture = null;
+		if (variable==='thetavmix'){
+			volumeTexture = new THREE.DataTexture(
+				dataUint8,
+				get(volumeSizes)[variable][0],
+				get(volumeSizes)[variable][1]
+			);
+		}
+		else {
+			volumeTexture = new THREE.Data3DTexture(
+				dataUint8,
+				get(volumeSizes)[variable][0],
+				get(volumeSizes)[variable][1],
+				get(volumeSizes)[variable][2]
+			);
+		}
 		volumeTexture.format = THREE.RedFormat;
 		volumeTexture.type = THREE.UnsignedByteType;
 		volumeTexture.generateMipmaps = false; // Saves memory.
@@ -275,7 +319,6 @@
 
 		// Update material uniforms with new texture and parameters.
 		localBox.material.uniforms.volumeTex.value = volumeTexture;
-		localBox.material.uniforms.finalGamma.value = finalGamma;
 		switch(String(variable)){
 			case "ql":
 				localBox.material.uniforms.dataScale.value = qlScale;
@@ -286,11 +329,13 @@
 				localBox.material.uniforms.dataEpsilon.value = dataEpsilon;
 				localBox.material.uniforms.bottomColor.value = bottomColor;
 				localBox.material.uniforms.bottomHeight.value = bottomHeight;
+				localBox.material.uniforms.finalGamma.value = finalGamma;
 				break;
 			case "qr":
 				localBox.material.uniforms.dataScale.value = qrScale;
 				localBox.material.uniforms.dtScale.value = dtScale * 4.0;
 				localBox.material.uniforms.alphaNorm.value = 2.0;
+				localBox.material.uniforms.finalGamma.value = finalGamma;
 				break;
 		}
 	}
@@ -311,7 +356,7 @@
 		const planeGeometry = new THREE.PlaneGeometry(mapWidth, mapHeight);
 		const planeMaterial = new THREE.MeshBasicMaterial({
 			map: texture,
-			side: THREE.DoubleSide
+//			side: THREE.DoubleSide
 		});
 
 		const planeMesh = new THREE.Mesh(planeGeometry, planeMaterial);
@@ -366,8 +411,8 @@
 		const boxZ = get(volumeSizes)[variable][2] / get(volumeSizes)[variable][1];
 		// const boxScale = 33800 / scaleFactor; //  33.8 km in meters in scene units
 		const boxGeometry = new THREE.BoxGeometry(1, 1, boxZ);
-		box = new THREE.Mesh(boxGeometry);
-		box.position.z = 2000 / scaleFactor; // 570 meters above the map TODO: calculate this value from the data
+		let box = new THREE.Mesh(boxGeometry);
+		box.position.z = 0.25 + 2000 / scaleFactor; // 570 meters above the map TODO: calculate this value from the data
 		box.renderOrder = 0;
 
 		box.material = await initMaterial({ variable, dataUint8 });
@@ -376,6 +421,33 @@
 		boxes[variable] = box;
 		updateMaterial({ variable, dataUint8 });
 		scene.add(box);
+		renderScene();
+	}
+
+	async function addPlaneRenderingContainer({ variable, dataUint8 }) {
+		//const boxGeometry = new THREE.BoxGeometry(get(volumeSize)[0], get(volumeSize)[1], get(volumeSize)[2]);
+		// const boxSizeInKm = 33.8; // 33.8 km
+		// const boxScale = boxSizeInKm; // / scaleFactor; // Convert to meters and then apply scale factor to scene units
+
+		//const planeGeometry = new THREE.PlaneGeometry(1.0, 1.0);
+		//const planeGeometry = new THREE.PlaneGeometry(1, 1, get(volumeSizes)[variable][0], get(volumeSizes)[variable][1]);
+		const planeGeometry = new THREE.PlaneGeometry(1, 1, 1000, 1000);
+		planeGeometry.rotateX(Math.PI/2);
+
+		//planeGeometry.translate(0, 0, 20);
+		let plane = new THREE.Points(planeGeometry);
+		plane.rotateX(-Math.PI/2);
+		//plane.position.z = 2000 / scaleFactor; // 570 meters above the map TODO: calculate this value from the data
+		plane.renderOrder = 0;
+		plane.position.z = 0.1;
+
+
+		plane.material = await initMaterial({ variable, dataUint8 });
+		// const cubeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+		// box.material = cubeMaterial;
+		boxes[variable] = plane;
+		updateMaterial({ variable, dataUint8 });
+		scene.add(plane);
 		renderScene();
 	}
 
@@ -392,26 +464,38 @@
 
 		const timing = performance.now();
 		// Download first slice of the data and calculate the voxel and volume size. It runs only once.
-		const { dataUint8: qldata, store: qlstore, shape: qlshape } = await fetchSlice({ currentTimeIndex: 0, path: 'ql' });
-		await getVoxelAndVolumeSize( qlstore, qlshape, 'ql' );
-		// Add box container for the data
-		await addVolumetricRenderingContainer({ variable: 'ql', dataUint8: qldata });
-		const { dataUint8: qrdata, store: qrstore, shape: qrshape } = await fetchSlice({ currentTimeIndex: 0, path: 'qr' });
-		await getVoxelAndVolumeSize( qrstore, qrshape, 'qr' );
-		await addVolumetricRenderingContainer({ variable: 'qr', dataUint8: qrdata });
-		fetchAllSlices({ path: 'ql' }); //<-------
-		fetchAllSlices({ path: 'qr' }); //<-------
+		for(var variable of visible_data){
+			if(variable == 'thetavmix'){
+				const { dataUint8: vdata, store: vstore, shape: vshape } = await fetchSlice({ currentTimeIndex: 0, path: variable, dims: 3 });
+				await getVoxelAndVolumeSize2D( vstore, vshape, variable );
+				await addPlaneRenderingContainer({ variable: variable, dataUint8: vdata });
+
+			}
+			else{
+				const { dataUint8: vdata, store: vstore, shape: vshape } = await fetchSlice({ currentTimeIndex: 0, path: variable });
+				await getVoxelAndVolumeSize( vstore, vshape, variable );
+				await addVolumetricRenderingContainer({ variable: variable, dataUint8: vdata });
+			}
+		}
+		for(var variable of visible_data){
+			var dimensions = variable == 'thetavmix' ? 3 : 4;
+			fetchAllSlices({ path: variable, dims: dimensions }); //<-------
+		}
 		downloadedTime.set(Math.round(performance.now() - timing));
 		console.log('⏰ data downloaded and displayed in:', Math.round(performance.now() - timing), 'ms');
-	});
 
+	});
 	// Update the material when the currentTimeIndex changes
 	currentTimeIndex.subscribe((index) => {
 		const data = get(allTimeSlices)[index];
 		if (data) {
-			updateMaterial({ variable: 'ql', dataUint8: data['ql'] });
+			for(var variable of visible_data){
+				updateMaterial({ variable: variable, dataUint8: data[variable] });
+			}
+/*			updateMaterial({ variable: 'ql', dataUint8: data['ql'] });
 			updateMaterial({ variable: 'qr', dataUint8: data['qr'] });
-		}
+			updateMaterial({ variable: 'thetavmix', dataUint8: data['thetavmix'] });
+		*/		}
 	});
 
 	onDestroy(() => {

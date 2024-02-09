@@ -35,6 +35,14 @@ export function getBoxSize(volumeSize, voxelSize) {
 	return boxSize;
 }
 
+export function getSquareSize(volumeSize, voxelSize) {
+	const s = volumeSize[0] * voxelSize[0];
+	const boxWidth = 1;
+	const boxHeight = (volumeSize[1] * voxelSize[1]) / s;
+	const boxSize = [boxWidth, boxHeight];
+	return boxSize;
+}
+
 export function noInternet(error) {
 	return error instanceof TypeError && error.message === 'Failed to fetch';
 }

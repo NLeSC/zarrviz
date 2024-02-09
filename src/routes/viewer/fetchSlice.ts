@@ -8,7 +8,8 @@ import { allTimeSlices } from "../../lib/components/allSlices.store";
 export async function fetchSlice({
   currentTimeIndex = 0,
   path = 'ql',
-  mode = 'r' as PersistenceMode
+  mode = 'r' as PersistenceMode,
+  dims = 4
 }) {
 
   const params = new URLSearchParams(document.location.search);
@@ -21,7 +22,7 @@ export async function fetchSlice({
   });
   const zarrdata = await openArray({ store, path, mode });
 
-  const { data, strides, shape } = await zarrdata.getRaw([currentTimeIndex, null, null, null]);
+  const { data, strides, shape } = dims == 4 ? await zarrdata.getRaw([currentTimeIndex, null, null, null]) : await zarrdata.getRaw([currentTimeIndex, null, null]);
 
   // allSlices.set(data);
   // Update the time slices store
