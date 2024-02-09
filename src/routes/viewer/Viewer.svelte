@@ -155,11 +155,24 @@
 			renderer.render(scene, camera);
 		}
 		animate();
+
 		function resize() {
-			renderer.setSize(window.innerWidth, 400);
-			camera.aspect = window.innerWidth / 400;
+			// Get the dimensions of the parent element
+			const parent = canvas.parentElement;
+			const width = parent.clientWidth;
+			const height = parent.clientHeight;
+
+			// Update the renderer and camera with the new sizes
+			renderer.setSize(width, height);
+			camera.aspect = width / height;
 			camera.updateProjectionMatrix();
 		}
+
+		// function resize() {
+		// 	renderer.setSize(window.innerWidth, 400);
+		// 	camera.aspect = window.innerWidth / 400;
+		// 	camera.updateProjectionMatrix();
+		// }
 		window.addEventListener('resize', resize);
 		resize();
 		animate();
@@ -380,13 +393,25 @@
 </script>
 
 <div>
-	<a href="/"><button class="btn">← Select dataset</button></a>
+	<div class="fixed top-0 left-0">
+		<a href="/"><button class="btn">← Select dataset</button></a>
 
-	<button class="btn" on:click={toggleGrid}>
-		<input type="checkbox" bind:checked={showGrid} id="gridCheckbox" />
-		<label class="pointer-events-none" for="gridCheckbox"> Show Grid </label>
-	</button>
+		<!-- Open the modal using ID.showModal() method -->
+		<button class="btn" onclick="camera_modal.showModal()">Camera Controls</button>
+		<dialog id="camera_modal" class="modal">
+			<div class="modal-box">
+				<h3 class="font-bold text-lg">Camera Controls!</h3>
+				<DebugButtons {camera} {cameraControls} />
+			</div>
+			<form method="dialog" class="modal-backdrop">
+				<button>close</button>
+			</form>
+		</dialog>
+
+		<button class="btn" on:click={toggleGrid}>
+			<input type="checkbox" bind:checked={showGrid} id="gridCheckbox" />
+			<label class="pointer-events-none" for="gridCheckbox"> Show Grid </label>
+		</button>
+	</div>
 </div>
 <canvas class="w-full h-full" bind:this={canvas} />
-
-<DebugButtons {camera} {cameraControls} />

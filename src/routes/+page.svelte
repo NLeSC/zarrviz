@@ -14,6 +14,12 @@
 			description: 'If a dog chews shoes whose shoes does he choose?',
 			image: '/images/cover.webp',
 			url: 'https://s3.ctwhome.com/ruisdael/data/animated-data/ql.zarr'
+		},
+		{
+			title: 'Dataset with Rain 3 (600MB)',
+			description: 'Rain and clouds',
+			image: '/images/cover.webp',
+			url: 'http://localhost:5173/data/movie.zarr'
 		}
 	];
 </script>
