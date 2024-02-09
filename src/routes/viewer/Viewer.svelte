@@ -22,7 +22,7 @@
 		downloadedTime
 	} from '$lib/components/allSlices.store';
 	import { get } from 'svelte/store';
-	
+
 	// import examplePoints from '$lib/components/3DVolumetric/examplePoints';
 
 	CameraControls.install({ THREE: THREE });
@@ -161,11 +161,24 @@
 			renderer.render(scene, camera);
 		}
 		animate();
+
 		function resize() {
-			renderer.setSize(window.innerWidth, 400);
-			camera.aspect = window.innerWidth / 400;
+			// Get the dimensions of the parent element
+			const parent = canvas.parentElement;
+			const width = parent.clientWidth;
+			const height = parent.clientHeight;
+
+			// Update the renderer and camera with the new sizes
+			renderer.setSize(width, height);
+			camera.aspect = width / height;
 			camera.updateProjectionMatrix();
 		}
+
+		// function resize() {
+		// 	renderer.setSize(window.innerWidth, 400);
+		// 	camera.aspect = window.innerWidth / 400;
+		// 	camera.updateProjectionMatrix();
+		// }
 		window.addEventListener('resize', resize);
 		resize();
 		animate();
@@ -180,14 +193,9 @@
 
 	async function initMaterial({ variable, dataUint8 }): Promise<THREE.Material> {
 		let volumeTexture = null;
-		if (variable==='thetavmix'){
-			volumeTexture = new THREE.DataTexture(
-				dataUint8,
-				get(volumeSizes)[variable][0],
-				get(volumeSizes)[variable][1]
-			);
-		}
-		else {
+		if (variable === 'thetavmix') {
+			volumeTexture = new THREE.DataTexture(dataUint8, get(volumeSizes)[variable][0], get(volumeSizes)[variable][1]);
+		} else {
 			volumeTexture = new THREE.Data3DTexture(
 				dataUint8,
 				get(volumeSizes)[variable][0],
@@ -204,7 +212,7 @@
 		volumeTexture.magFilter = THREE.LinearFilter;
 		volumeTexture.needsUpdate = true;
 		let boxMaterial = null;
-		switch(variable){
+		switch (variable) {
 			case 'ql':
 				boxMaterial = new THREE.ShaderMaterial({
 					vertexShader: vertexShaderVolume,
@@ -277,10 +285,10 @@
 						colorLow: new THREE.Uniform(new THREE.Vector3(0, 0, 1)),
 						colorMid: new THREE.Uniform(new THREE.Vector3(0, 1, 0)),
 						colorHigh: new THREE.Uniform(new THREE.Vector3(1, 0, 0))
-					},
+					}
 				});
 				break;
-			}
+		}
 		return boxMaterial;
 	}
 
@@ -295,14 +303,9 @@
 
 		// Create a new 3D texture for the volume data.
 		let volumeTexture = null;
-		if (variable==='thetavmix'){
-			volumeTexture = new THREE.DataTexture(
-				dataUint8,
-				get(volumeSizes)[variable][0],
-				get(volumeSizes)[variable][1]
-			);
-		}
-		else {
+		if (variable === 'thetavmix') {
+			volumeTexture = new THREE.DataTexture(dataUint8, get(volumeSizes)[variable][0], get(volumeSizes)[variable][1]);
+		} else {
 			volumeTexture = new THREE.Data3DTexture(
 				dataUint8,
 				get(volumeSizes)[variable][0],
@@ -319,8 +322,8 @@
 
 		// Update material uniforms with new texture and parameters.
 		localBox.material.uniforms.volumeTex.value = volumeTexture;
-		switch(String(variable)){
-			case "ql":
+		switch (String(variable)) {
+			case 'ql':
 				localBox.material.uniforms.dataScale.value = qlScale;
 				localBox.material.uniforms.dtScale.value = dtScale;
 				localBox.material.uniforms.ambientFactor.value = ambientFactor;
@@ -331,7 +334,7 @@
 				localBox.material.uniforms.bottomHeight.value = bottomHeight;
 				localBox.material.uniforms.finalGamma.value = finalGamma;
 				break;
-			case "qr":
+			case 'qr':
 				localBox.material.uniforms.dataScale.value = qrScale;
 				localBox.material.uniforms.dtScale.value = dtScale * 4.0;
 				localBox.material.uniforms.alphaNorm.value = 2.0;
@@ -355,8 +358,8 @@
 		// Create a plane geometry and mesh
 		const planeGeometry = new THREE.PlaneGeometry(mapWidth, mapHeight);
 		const planeMaterial = new THREE.MeshBasicMaterial({
-			map: texture,
-//			side: THREE.DoubleSide
+			map: texture
+			//			side: THREE.DoubleSide
 		});
 
 		const planeMesh = new THREE.Mesh(planeGeometry, planeMaterial);
@@ -403,7 +406,7 @@
 	 * centered at the origin, with X in [-0.5, 0.5] so the width is 1, and
 	 * Y (height) and Z (depth) scaled to match.
 	 */
-	 async function addVolumetricRenderingContainer({ variable, dataUint8 }) {
+	async function addVolumetricRenderingContainer({ variable, dataUint8 }) {
 		//const boxGeometry = new THREE.BoxGeometry(get(volumeSize)[0], get(volumeSize)[1], get(volumeSize)[2]);
 		// const boxSizeInKm = 33.8; // 33.8 km
 		// const boxScale = boxSizeInKm; // / scaleFactor; // Convert to meters and then apply scale factor to scene units
@@ -432,15 +435,14 @@
 		//const planeGeometry = new THREE.PlaneGeometry(1.0, 1.0);
 		//const planeGeometry = new THREE.PlaneGeometry(1, 1, get(volumeSizes)[variable][0], get(volumeSizes)[variable][1]);
 		const planeGeometry = new THREE.PlaneGeometry(1, 1, 1000, 1000);
-		planeGeometry.rotateX(Math.PI/2);
+		planeGeometry.rotateX(Math.PI / 2);
 
 		//planeGeometry.translate(0, 0, 20);
 		let plane = new THREE.Points(planeGeometry);
-		plane.rotateX(-Math.PI/2);
+		plane.rotateX(-Math.PI / 2);
 		//plane.position.z = 2000 / scaleFactor; // 570 meters above the map TODO: calculate this value from the data
 		plane.renderOrder = 0;
 		plane.position.z = 0.1;
-
 
 		plane.material = await initMaterial({ variable, dataUint8 });
 		// const cubeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
@@ -464,38 +466,44 @@
 
 		const timing = performance.now();
 		// Download first slice of the data and calculate the voxel and volume size. It runs only once.
-		for(var variable of visible_data){
-			if(variable == 'thetavmix'){
-				const { dataUint8: vdata, store: vstore, shape: vshape } = await fetchSlice({ currentTimeIndex: 0, path: variable, dims: 3 });
-				await getVoxelAndVolumeSize2D( vstore, vshape, variable );
+		for (var variable of visible_data) {
+			if (variable == 'thetavmix') {
+				const {
+					dataUint8: vdata,
+					store: vstore,
+					shape: vshape
+				} = await fetchSlice({ currentTimeIndex: 0, path: variable, dims: 3 });
+				await getVoxelAndVolumeSize2D(vstore, vshape, variable);
 				await addPlaneRenderingContainer({ variable: variable, dataUint8: vdata });
-
-			}
-			else{
-				const { dataUint8: vdata, store: vstore, shape: vshape } = await fetchSlice({ currentTimeIndex: 0, path: variable });
-				await getVoxelAndVolumeSize( vstore, vshape, variable );
+			} else {
+				const {
+					dataUint8: vdata,
+					store: vstore,
+					shape: vshape
+				} = await fetchSlice({ currentTimeIndex: 0, path: variable });
+				await getVoxelAndVolumeSize(vstore, vshape, variable);
 				await addVolumetricRenderingContainer({ variable: variable, dataUint8: vdata });
 			}
 		}
-		for(var variable of visible_data){
+		for (var variable of visible_data) {
 			var dimensions = variable == 'thetavmix' ? 3 : 4;
 			fetchAllSlices({ path: variable, dims: dimensions }); //<-------
 		}
 		downloadedTime.set(Math.round(performance.now() - timing));
 		console.log('⏰ data downloaded and displayed in:', Math.round(performance.now() - timing), 'ms');
-
 	});
 	// Update the material when the currentTimeIndex changes
 	currentTimeIndex.subscribe((index) => {
 		const data = get(allTimeSlices)[index];
 		if (data) {
-			for(var variable of visible_data){
+			for (var variable of visible_data) {
 				updateMaterial({ variable: variable, dataUint8: data[variable] });
 			}
-/*			updateMaterial({ variable: 'ql', dataUint8: data['ql'] });
+			/*			updateMaterial({ variable: 'ql', dataUint8: data['ql'] });
 			updateMaterial({ variable: 'qr', dataUint8: data['qr'] });
 			updateMaterial({ variable: 'thetavmix', dataUint8: data['thetavmix'] });
-		*/		}
+		*/
+		}
 	});
 
 	onDestroy(() => {
@@ -505,16 +513,26 @@
 	});
 </script>
 
-<div class="flex align-middle">
-	<a href="/"><button class="btn">← Select dataset</button></a>
+<div>
+	<div class="fixed top-0 left-0">
+		<a href="/"><button class="btn">← Select dataset</button></a>
 
-	<button class="btn" on:click={toggleGrid}>
-		<input type="checkbox" bind:checked={showGrid} id="gridCheckbox" />
-		<label class="pointer-events-none" for="gridCheckbox"> Show Grid (10x10km) </label>
-	</button>
+		<!-- Open the modal using ID.showModal() method -->
+		<button class="btn" onclick="camera_modal.showModal()">Camera Controls</button>
+		<dialog id="camera_modal" class="modal">
+			<div class="modal-box">
+				<h3 class="font-bold text-lg">Camera Controls!</h3>
+				<DebugButtons {camera} {cameraControls} />
+			</div>
+			<form method="dialog" class="modal-backdrop">
+				<button>close</button>
+			</form>
+		</dialog>
 
+		<button class="btn" on:click={toggleGrid}>
+			<input type="checkbox" bind:checked={showGrid} id="gridCheckbox" />
+			<label class="pointer-events-none" for="gridCheckbox"> Show Grid </label>
+		</button>
+	</div>
 </div>
 <canvas class="w-full h-full" bind:this={canvas} />
-<div>Map resolution: 100m per pixel</div>
-
-<DebugButtons {camera} {cameraControls} />

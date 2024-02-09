@@ -2,13 +2,15 @@
 	import { createEventDispatcher, onDestroy } from 'svelte';
 	import { get } from 'svelte/store';
 	import { allTimeSlices, currentTimeIndex, downloadedTime } from './allSlices.store';
+
 	export let playAnimation = false;
 	export let length = 10;
 	export let positionIndex = 0;
-
-	const dispatch = createEventDispatcher();
-	let interval;
 	export let playSpeedInMiliseconds = 300;
+
+	let interval;
+	const dispatch = createEventDispatcher();
+
 	function play() {
 		playAnimation = !playAnimation;
 		// TODO This invertal emulates the playback of the data, make it a real playback
@@ -30,6 +32,7 @@
 	});
 </script>
 
+<!-- <div class="h-[300px] bg-red-700 overflow-hidden"> -->
 <div class="flex gap-4 mt-10 items-center px-5">
 	<!--  Play icon -->
 	<button class="btn" class:btn-primary={playAnimation} on:click={() => play()}>
@@ -62,19 +65,19 @@
 				dispatch('onSelectedIndex', { index: parseInt(event.target.value) });
 			}}
 		/>
-		<div class="w-full flex justify-between text-xs px-2">
+		<div class="w-full flex justify-between text-xs px-2 h-[30px]">
 			<!-- Steps -->
 			<!--  array of steps from 0 to length -->
 			{#each Array.from({ length }, (_, index) => index) as step}
 				<div class="flex flex-col">
 					<div>|</div>
-					<div class="-ml-1">{step + 1}</div>
+					<div class="-ml-1">{step + 1 || 0}</div>
 				</div>
 			{/each}
 		</div>
 	</div>
 </div>
-<div class="flex gap-4 mt-5 p-6">
+<div class="flex gap-4 p-6">
 	Play Speed in miliseconds:
 
 	<input
@@ -90,26 +93,14 @@
 			wasPlaying && play(); // stop current animation the animation
 		}}
 	/>
-	currentTimeIndex: {$currentTimeIndex}
+	<!-- currentTimeIndex: {$currentTimeIndex} -->
 	{#if $allTimeSlices.length <= 1}
 		<div>
-			| Loading data
+			Loading data
 			<progress class="progress w-56" />
 		</div>
 	{:else}
-		| All data loaded in: {$downloadedTime / 1000} seconds
+		All data loaded in: {$downloadedTime / 1000} seconds
 	{/if}
 </div>
-
-<style>
-	/* .range-slider::-webkit-slider-thumb {
-		-webkit-appearance: none;
-		appearance: none;
-		width: 48px;
-		height: 48px;
-		background: #4caf50;
-		border: var(--primary) 10px solid;
-		cursor: pointer;
-		border-radius: 50%;
-	} */
-</style>
+<!-- </div> -->
