@@ -7,6 +7,7 @@ in vec3 lightDir;
 
 uniform sampler2D transferTex;
 uniform lowp sampler3D volumeTex;
+uniform lowp sampler3D coarseVolumeTex;
 uniform float dtScale;
 uniform float finalGamma;
 uniform vec3 sunLightColor;
@@ -63,11 +64,10 @@ void main(void){
 
   tBox.x=max(tBox.x,0.);
 
-  ivec3 volumeTexSize=textureSize(volumeTex,0);
+  ivec3 volumeTexSize=textureSize(coarseVolumeTex,0);
   //  vec3 dt0 = 1.0 / (vec3(volumeTexSize) * abs(rayDir));
   vec3 dt0=1./(vec3(volumeTexSize)*abs(rayDir));
-  float dt1=min(dt0.x,min(dt0.y,dt0.z));
-  float dt=dtScale*dt1;
+  float dt=min(dt0.x,min(dt0.y,dt0.z)) * 0.5;
 
   // Prevents a lost WebGL context.
   if(dt<.00001){
@@ -80,9 +80,6 @@ void main(void){
 
   // Dither to reduce banding (aliasing).
   // https://www.marcusbannerman.co.uk/articles/VolumeRendering.html
-  float random=fract(sin(gl_FragCoord.x*12.9898+gl_FragCoord.y*78.233)*43758.5453);
-  random*=5.;
-  p+=random*dt*rayDir;
 
   // Ray starting point, and change in ray point with each step, for the space where
   // the box has been warped to a cube, for accessing the cubical data texture.
@@ -90,6 +87,7 @@ void main(void){
   // centered at the origin, but texture look-ups have the origin at a box corner.
   vec3 pSized=p/boxSize+vec3(.5);
   vec3 dPSized=(rayDir*dt)/boxSize;
+  vec3 dPSmall = dPSized/8.0;
 
   // Most browsers do not need this initialization, but add it to be safe.
   gl_FragColor=vec4(0.);
@@ -97,56 +95,30 @@ void main(void){
 
   vec3 illumination=vec3(0.,0.,0.);
   float transmittance=1.;
-  float transmittance_threshold=0.01;
-  vec3 dg=vec3(1)/vec3(volumeTexSize);
+  float transmittance_threshold=0.05;
+  vec3 random=fract(sin(gl_FragCoord.x*12.9898+gl_FragCoord.y*78.233)*43758.5453)*dt*rayDir/8.0;
   for(float t=tBox.x;t<tBox.y;t+=dt){
 
-    float value=texture(volumeTex,pSized).r;
-    vec4 vColor = value == 0.0 ? vec4(0.0) : texture(transferTex, vec2(value, 0.5));
-    vColor.a *= alphaNorm;
-    if (useLighting && vColor.a > 0.0)
-    {
-      // Gradient approximated by the central difference.
-      float dataDxA = texture(volumeTex, pSized + vec3(dg.x, 0.0,  0.0 )).r;
-      float dataDxB = texture(volumeTex, pSized - vec3(dg.x, 0.0,  0.0 )).r;
-      float dataDyA = texture(volumeTex, pSized + vec3(0.0,  dg.y, 0.0 )).r;
-      float dataDyB = texture(volumeTex, pSized - vec3(0.0,  dg.y, 0.0 )).r;
-      float dataDzA = texture(volumeTex, pSized + vec3(0.0,  0.0,  dg.z)).r;
-      float dataDzB = texture(volumeTex, pSized - vec3(0.0,  0.0,  dg.z)).r;
-      vec3 grad = vec3(dataDxA - dataDxB, dataDyA - dataDyB, dataDzA - dataDzB);  
-
-      // When using the gradient as the surface normal for shading, we always want to
-      // act as if the surface is facing the camera.  So flip the gradient if it points
-      // away from the camera (i.e., negate it if dot(grad, rayDir) > 0.0)
-      grad *= -sign(dot(grad, rayDir));
-
-      float gradLength = length(grad);
-      grad /= gradLength;
-      float gradStrength = (gradLength < 0.0001) ? 0.0 : 1.0;
-
-      vec3 lighting = min(max(dot(grad, lightDir), 0.0) * sunLightColor, vec3(1.0));
-      vColor.rgb *= lighting;
-      vColor *= gradStrength;
-
-      /*
-      // Uncomment to visualize the gradient for debugging.
-      gl_FragColor.rgb = (grad + vec3(1.0)) / 2.0;
-      gl_FragColor.a = 1.0;
-      gl_FragColor.a *= gradStrength;
-      return;
-      */
+    float value=texture(coarseVolumeTex, pSized).r;
+    if(value != 0.0){
+      for(int i = 0; i < 8; ++i)
+      {
+        float fineValue = texture(volumeTex, pSized + random).r;
+        vec4 vColor = fineValue == 0.0 ? vec4(0.0) : texture(transferTex, vec2(fineValue, 0.5));
+        vColor.a *= alphaNorm;
+        illumination.rgb += transmittance*clamp(vColor.a,0.0,1.0)*vColor.rgb;
+        transmittance *= ( 1.0 - clamp(vColor.a,0.0,1.0));
+        pSized += dPSmall;
+      }
     }
-
-    illumination.rgb += transmittance*clamp(vColor.a,0.0,1.0)*vColor.rgb;
-    transmittance *= ( 1.0 - clamp(vColor.a,0.0,1.0));
+    else{
+      pSized += dPSized;
+    }
 
     // Break on opacity
     if(transmittance<transmittance_threshold){
       break;
     }
-
-    // Move to the next point along the ray.
-    pSized+=dPSized;
   }
 
   // Surface

@@ -79,7 +79,7 @@
 	);
 	const finalGamma = 6.0;
 	//const visible_data = ['ql', 'qr', 'thetavmix'];
-	const visible_data = ['thetavmix'];
+	const visible_data = ['qr'];
 
 	// 1 unit in the scene = 1000 meters (1 kilometer) in real life
 	// Meters of the bounding box of the data
@@ -191,26 +191,7 @@
 		console.log('🔥 rendered');
 	}
 
-	async function initMaterial({ variable, dataUint8 }): Promise<THREE.Material> {
-		let volumeTexture = null;
-		if (variable === 'thetavmix') {
-			volumeTexture = new THREE.DataTexture(dataUint8, get(volumeSizes)[variable][0], get(volumeSizes)[variable][1]);
-		} else {
-			volumeTexture = new THREE.Data3DTexture(
-				dataUint8,
-				get(volumeSizes)[variable][0],
-				get(volumeSizes)[variable][1],
-				get(volumeSizes)[variable][2]
-			);
-		}
-		volumeTexture.format = THREE.RedFormat;
-		volumeTexture.type = THREE.UnsignedByteType;
-		// Disabling mimpaps saves memory.
-		volumeTexture.generateMipmaps = false;
-		// Linear filtering disables LODs, which do not help with volume rendering.
-		volumeTexture.minFilter = THREE.LinearFilter;
-		volumeTexture.magFilter = THREE.LinearFilter;
-		volumeTexture.needsUpdate = true;
+	async function initMaterial({ variable }): Promise<THREE.Material> {
 		let boxMaterial = null;
 		switch (variable) {
 			case 'ql':
@@ -222,7 +203,7 @@
 					opacity: 1.0,
 					uniforms: {
 						boxSize: new THREE.Uniform(get(boxSizes)[variable]),
-						volumeTex: new THREE.Uniform(volumeTexture),
+						volumeTex: new THREE.Uniform(null),
 						voxelSize: new THREE.Uniform(get(voxelSizes)[variable]),
 						sunLightDir: new THREE.Uniform(sunLight.position),
 						sunLightColor: new THREE.Uniform(lightColorV),
@@ -252,7 +233,8 @@
 					opacity: 1.0,
 					uniforms: {
 						boxSize: new THREE.Uniform(get(boxSizes)[variable]),
-						volumeTex: new THREE.Uniform(volumeTexture),
+						volumeTex: new THREE.Uniform(null),
+						coarseVolumeTex: new THREE.Uniform(null),
 						sunLightDir: new THREE.Uniform(sunLight.position),
 						sunLightColor: new THREE.Uniform(lightColorV),
 						near: new THREE.Uniform(cameraNear),
@@ -278,7 +260,7 @@
 					opacity: 1.0,
 					clipping: true,
 					uniforms: {
-						volumeTex: new THREE.Uniform(volumeTexture),
+						volumeTex: new THREE.Uniform(null),
 						heightRatio: new THREE.Uniform(0),
 						heightBias: new THREE.Uniform(0),
 						//gradientTexture: {value: gradientMap}
@@ -292,14 +274,16 @@
 		return boxMaterial;
 	}
 
-	function updateMaterial({ variable, dataUint8 }) {
+	function updateMaterial({ variable, dataUint8, dataCoarse }) {
 		let localBox = boxes[variable];
 
 		if (!localBox) {
 			return;
 		}
 		// Dispose of the old texture to free up memory.
-		localBox.material.uniforms.volumeTex.value.dispose();
+		if(localBox.material.uniforms.volumeTex.value != null){
+			localBox.material.uniforms.volumeTex.value.dispose();
+		}
 
 		// Create a new 3D texture for the volume data.
 		let volumeTexture = null;
@@ -320,6 +304,25 @@
 		volumeTexture.magFilter = THREE.LinearFilter;
 		volumeTexture.needsUpdate = true;
 
+		if(localBox.material.uniforms.coarseVolumeTex.value != null){
+			localBox.material.uniforms.coarseVolumeTex.value.dispose();
+		}
+
+		let coarseVolumeTexture = null;
+		if(dataCoarse !== null){
+			coarseVolumeTexture = new THREE.Data3DTexture(
+				dataCoarse,
+				get(volumeSizes)[variable][0]/8,
+				get(volumeSizes)[variable][1]/8,
+				get(volumeSizes)[variable][2]/8);
+			coarseVolumeTexture.format = THREE.RedFormat;
+			coarseVolumeTexture.type = THREE.UnsignedByteType;
+			coarseVolumeTexture.generateMipmaps = false; // Saves memory.
+			coarseVolumeTexture.minFilter = THREE.NearestFilter; // Better for volume rendering.
+			coarseVolumeTexture.magFilter = THREE.NearestFilter;
+			coarseVolumeTexture.needsUpdate = true;
+		}
+
 		// Update material uniforms with new texture and parameters.
 		localBox.material.uniforms.volumeTex.value = volumeTexture;
 		switch (String(variable)) {
@@ -335,8 +338,9 @@
 				localBox.material.uniforms.finalGamma.value = finalGamma;
 				break;
 			case 'qr':
+				localBox.material.uniforms.coarseVolumeTex.value = coarseVolumeTexture;
 				localBox.material.uniforms.dataScale.value = qrScale;
-				localBox.material.uniforms.dtScale.value = dtScale * 4.0;
+				localBox.material.uniforms.dtScale.value = dtScale;
 				localBox.material.uniforms.alphaNorm.value = 2.0;
 				localBox.material.uniforms.finalGamma.value = finalGamma;
 				break;
@@ -406,7 +410,7 @@
 	 * centered at the origin, with X in [-0.5, 0.5] so the width is 1, and
 	 * Y (height) and Z (depth) scaled to match.
 	 */
-	async function addVolumetricRenderingContainer({ variable, dataUint8 }) {
+	async function addVolumetricRenderingContainer({ variable, dataUint8, dataCoarse }) {
 		//const boxGeometry = new THREE.BoxGeometry(get(volumeSize)[0], get(volumeSize)[1], get(volumeSize)[2]);
 		// const boxSizeInKm = 33.8; // 33.8 km
 		// const boxScale = boxSizeInKm; // / scaleFactor; // Convert to meters and then apply scale factor to scene units
@@ -418,11 +422,11 @@
 		box.position.z = 0.25 + 2000 / scaleFactor; // 570 meters above the map TODO: calculate this value from the data
 		box.renderOrder = 0;
 
-		box.material = await initMaterial({ variable, dataUint8 });
+		box.material = await initMaterial({ variable });
 		// const cubeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
 		// box.material = cubeMaterial;
 		boxes[variable] = box;
-		updateMaterial({ variable, dataUint8 });
+		updateMaterial({ variable, dataUint8, dataCoarse });
 		scene.add(box);
 		renderScene();
 	}
@@ -479,10 +483,11 @@
 				const {
 					dataUint8: vdata,
 					store: vstore,
-					shape: vshape
+					shape: vshape,
+					coarseData: vCoarseData
 				} = await fetchSlice({ currentTimeIndex: 0, path: variable });
 				await getVoxelAndVolumeSize(vstore, vshape, variable);
-				await addVolumetricRenderingContainer({ variable: variable, dataUint8: vdata });
+				await addVolumetricRenderingContainer({ variable: variable, dataUint8: vdata, dataCoarse: vCoarseData });
 			}
 		}
 		for (var variable of visible_data) {
@@ -493,18 +498,14 @@
 		console.log('⏰ data downloaded and displayed in:', Math.round(performance.now() - timing), 'ms');
 	});
 	// Update the material when the currentTimeIndex changes
-	currentTimeIndex.subscribe((index) => {
+	/*currentTimeIndex.subscribe((index) => {
 		const data = get(allTimeSlices)[index];
 		if (data) {
 			for (var variable of visible_data) {
 				updateMaterial({ variable: variable, dataUint8: data[variable] });
 			}
-			/*			updateMaterial({ variable: 'ql', dataUint8: data['ql'] });
-			updateMaterial({ variable: 'qr', dataUint8: data['qr'] });
-			updateMaterial({ variable: 'thetavmix', dataUint8: data['thetavmix'] });
-		*/
 		}
-	});
+	});*/
 
 	onDestroy(() => {
 		// Clean up Three.js resources
