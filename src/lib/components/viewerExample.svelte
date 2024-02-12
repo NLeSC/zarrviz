@@ -2,12 +2,12 @@
 	import { afterUpdate, onMount } from 'svelte';
 	import * as THREE from 'three';
 	import { openArray, HTTPStore, create } from 'zarr';
+	import type { PersistenceMode } from 'zarr/types/types';
 	import CameraControls from 'camera-controls';
 	import vertexShaderVolume from '$lib/shaders/volume.vert';
 	import fragmentShaderVolume from '$lib/shaders/volume.frag';
 	import { makeCloudTransferTex } from '$lib/utils/makeCloudTransferTex';
 	import { getBoxSize } from '$lib/utils/Utils';
-	import type { PersistenceMode } from 'zarr/types/types';
 
 	// import examplePoints from '$lib/components/3DVolumetric/examplePoints';
 

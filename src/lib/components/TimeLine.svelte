@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { createEventDispatcher, onDestroy } from 'svelte';
 	import { get } from 'svelte/store';
-	import { allTimeSlices, currentTimeIndex, downloadedTime } from './allSlices.store';
+	import { allTimeSlices, currentTimeIndex, downloadedTime } from '$lib/stores/allSlices.store';
 
 	export let playAnimation = false;
 	export let length = 10;

@@ -8,9 +8,12 @@
 	import fragmentShaderVolumeTransfer from '$lib/shaders/volume_transfer.frag';
 	import vertexShaderSurface from '$lib/shaders/surface.vert';
 	import fragmentShaderSurfaceHeatMap from '$lib/shaders/surface_heatmap.frag';
+
 	import { makeRainTransferTex } from '$lib/utils/makeRainTransferTex';
-	import { fetchSlice } from './fetchSlice';
-	import { fetchAllSlices } from './fetchAllSlices';
+
+	import { fetchSlice } from '$lib/api/fetchSlice';
+	import { fetchAllSlices } from '$lib/api/fetchAllSlices';
+
 	import {
 		allTimeSlices,
 		getVoxelAndVolumeSize,
@@ -20,8 +23,11 @@
 		boxSizes,
 		currentTimeIndex,
 		downloadedTime
-	} from '$lib/components/allSlices.store';
+	} from '$lib/stores/allSlices.store';
+
 	import { get } from 'svelte/store';
+	import { createPlaneMesh } from './planeMesh';
+	import { scaleFactor } from '$lib/stores/viewer.store';
 
 	// import examplePoints from '$lib/components/3DVolumetric/examplePoints';
 
@@ -78,25 +84,19 @@
 		hemisphereLight.color.b
 	);
 	const finalGamma = 6.0;
-	//const visible_data = ['ql', 'qr', 'thetavmix'];
-	const visible_data = ['thetavmix'];
 
-	// 1 unit in the scene = 1000 meters (1 kilometer) in real life
-	// Meters of the bounding box of the data
-	let scaleFactor = 33800; // TODO: calculate this value from the data
+	// ql:  clouds
+	// qr:  rain
+	// thetamix: surface temperature
+	const visible_data = [
+		'ql', // clouds
+		'qr', // rain
+		'thetavmix' // surface temperature
+	];
 
 	function toggleGrid() {
 		showGrid = !showGrid;
 		gridHelper.visible = showGrid; // Assuming gridHelper is your grid object
-	}
-
-	function addExampleCube() {
-		// Create a cube
-		const cubeGeometry = new THREE.BoxGeometry(33, 33, 1);
-		const cubeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-		const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
-		cube.position.set(-1, 0, 0); // Set the position of the cube
-		return cube; // Add the cube to the scene
 	}
 
 	// Create the Three.js scene
@@ -344,42 +344,13 @@
 	}
 
 	//
-	// Create and add  plane mesh to the scene to hold the Map texture
-	//
-	function createPlaneMesh(): THREE.Mesh {
-		const textureLoader = new THREE.TextureLoader();
-		const texture = textureLoader.load('/maps/nl_map 50m per pixel.webp');
-		texture.encoding = THREE.sRGBEncoding;
-
-		// Scale factor: 50 meters per pixel
-		const mapWidth = (5600 * 50) / scaleFactor; // in scene units
-		const mapHeight = (6500 * 50) / scaleFactor; // in scene units
-
-		// Create a plane geometry and mesh
-		const planeGeometry = new THREE.PlaneGeometry(mapWidth, mapHeight);
-		const planeMaterial = new THREE.MeshBasicMaterial({
-			map: texture
-			//			side: THREE.DoubleSide
-		});
-
-		const planeMesh = new THREE.Mesh(planeGeometry, planeMaterial);
-
-		// Rotate the plane to align it with the XY plane
-		// planeMesh.rotation.x = -Math.PI / 2;
-
-		// Assuming you want the map centered at the origin
-		planeMesh.position.set(0, 0, 0);
-
-		return planeMesh;
-	}
-	//
 	// Create and add a grid helper to the scene
 	//
 	function createGridHelper() {
-		const gridSize = Math.max(280000, 325000) / scaleFactor; // in scene units
-		const cellSize = 10000 / scaleFactor; // 10 km per cell, in scene units
-		const gridDivisionsX = Math.floor(280000 / scaleFactor / cellSize);
-		const gridDivisionsY = Math.floor(325000 / scaleFactor / cellSize);
+		const gridSize = Math.max(280000, 325000) / $scaleFactor; // in scene units
+		const cellSize = 10000 / $scaleFactor; // 10 km per cell, in scene units
+		const gridDivisionsX = Math.floor(280000 / $scaleFactor / cellSize);
+		const gridDivisionsY = Math.floor(325000 / $scaleFactor / cellSize);
 
 		// Create a grid material with opacity
 		const gridMaterial = new THREE.LineBasicMaterial({
@@ -409,13 +380,13 @@
 	async function addVolumetricRenderingContainer({ variable, dataUint8 }) {
 		//const boxGeometry = new THREE.BoxGeometry(get(volumeSize)[0], get(volumeSize)[1], get(volumeSize)[2]);
 		// const boxSizeInKm = 33.8; // 33.8 km
-		// const boxScale = boxSizeInKm; // / scaleFactor; // Convert to meters and then apply scale factor to scene units
+		// const boxScale = boxSizeInKm; //  $scaleFactor; // Convert to meters and then apply scale factor to scene units
 
 		const boxZ = get(volumeSizes)[variable][2] / get(volumeSizes)[variable][1];
-		// const boxScale = 33800 / scaleFactor; //  33.8 km in meters in scene units
+		// const boxScale = 33800 / $scaleFactor; //  33.8 km in meters in scene units
 		const boxGeometry = new THREE.BoxGeometry(1, 1, boxZ);
 		let box = new THREE.Mesh(boxGeometry);
-		box.position.z = 0.25 + 2000 / scaleFactor; // 570 meters above the map TODO: calculate this value from the data
+		box.position.z = 0.25 + 2000 / $scaleFactor; // 570 meters above the map TODO: calculate this value from the data
 		box.renderOrder = 0;
 
 		box.material = await initMaterial({ variable, dataUint8 });
@@ -454,14 +425,13 @@
 	}
 
 	onMount(async () => {
-		// scaleFactor = 33800; // TODO: calculate this value from the data
 		// 3D scene
 		create3DScene();
 
 		// Add exmample cube
 		// scene.add(addExampleCube());
 
-		// Add the points to the scene
+		// Add example points to the scene
 		// scene.add(examplePoints());
 
 		const timing = performance.now();
@@ -474,7 +444,9 @@
 					shape: vshape
 				} = await fetchSlice({ currentTimeIndex: 0, path: variable, dims: 3 });
 				await getVoxelAndVolumeSize2D(vstore, vshape, variable);
+				// await getVoxelAndVolumeSize2D(vstore, vshape, variable);
 				await addPlaneRenderingContainer({ variable: variable, dataUint8: vdata });
+				// addPlaneRenderingContainer({ variable: variable, dataUint8: vdata });
 			} else {
 				const {
 					dataUint8: vdata,
@@ -499,7 +471,8 @@
 			for (var variable of visible_data) {
 				updateMaterial({ variable: variable, dataUint8: data[variable] });
 			}
-			/*			updateMaterial({ variable: 'ql', dataUint8: data['ql'] });
+			/*
+			updateMaterial({ variable: 'ql', dataUint8: data['ql'] });
 			updateMaterial({ variable: 'qr', dataUint8: data['qr'] });
 			updateMaterial({ variable: 'thetavmix', dataUint8: data['thetavmix'] });
 		*/

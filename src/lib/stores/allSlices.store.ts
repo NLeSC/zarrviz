@@ -4,6 +4,7 @@ import * as THREE from "three";
 import { openArray } from 'zarr';
 
 
+export const totalSlices = writable(1); // calculated number of slices in the data
 export const allTimeSlices = writable([]);
 export const currentTimeIndex = writable(0);
 
@@ -14,7 +15,7 @@ export const boxSizes = writable({})
 export const downloadedTime = writable(0)
 
 
-export async function getVoxelAndVolumeSize( store, shape, path ) {
+export async function getVoxelAndVolumeSize(store, shape, path) {
   // if (currentTimeIndex === 0) {
   const zarrxvals = await openArray({ store, path: 'xt', mode: 'r' });
   const zarryvals = await openArray({ store, path: 'yt', mode: 'r' });
@@ -56,7 +57,7 @@ export async function getVoxelAndVolumeSize( store, shape, path ) {
   // return { voxelSize, volumeSize, boxSize };
 }
 
-export async function getVoxelAndVolumeSize2D( store, shape, path ) {
+export async function getVoxelAndVolumeSize2D(store, shape, path) {
   // if (currentTimeIndex === 0) {
   const zarrxvals = await openArray({ store, path: 'xt', mode: 'r' });
   const zarryvals = await openArray({ store, path: 'yt', mode: 'r' });

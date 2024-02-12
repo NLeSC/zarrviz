@@ -1,7 +1,7 @@
 import { openArray, HTTPStore, create } from 'zarr';
 import type { PersistenceMode } from 'zarr/types/types';
 
-import { allTimeSlices } from "../../lib/components/allSlices.store";
+import { allTimeSlices } from "$lib/stores/allSlices.store";
 
 
 // downloadZarrPoints
@@ -27,10 +27,10 @@ export async function fetchSlice({
   // allSlices.set(data);
   // Update the time slices store
   allTimeSlices.update((timeSlices) => {
-    if(timeSlices[currentTimeIndex]){
+    if (timeSlices[currentTimeIndex]) {
       timeSlices[currentTimeIndex][path] = data;
     }
-    else{
+    else {
       timeSlices[currentTimeIndex] = {};
       timeSlices[currentTimeIndex][path] = data;
     }
