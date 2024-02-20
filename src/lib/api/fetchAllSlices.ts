@@ -8,7 +8,7 @@ import { slicesToRender } from "$lib/stores/viewer.store";
 /**
  * Creates a new Queue instance with a concurrency of 1 and a timeout of 5000ms.
  */
-export async function fetchAllSlices({ path = 'ql', dims = 4 }) {
+export async function fetchAllSlices({ variable = 'ql', dimensions = 4 }) {
 
   /**
    * Creates a new Queue instance with a concurrency of 1 and a timeout of 5000ms.
@@ -22,7 +22,7 @@ export async function fetchAllSlices({ path = 'ql', dims = 4 }) {
     // const me = Symbol();
     // await q.wait(me, 10 - i);
     try {
-      promises.push(fetchSlice({ path, currentTimeIndex: i, dims: dims }));
+      promises.push(fetchSlice({ variable, currentTimeIndex: i, dimensions }));
     } catch (e) {
       console.error(e);
     } finally {

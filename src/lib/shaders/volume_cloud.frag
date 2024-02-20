@@ -24,6 +24,8 @@ uniform float bottomHeight;
 uniform float near;
 uniform float far;
 
+uniform float opacity; // Declare the opacity uniform
+
 // Three.js adds built-in uniforms and attributes:
 // https://threejs.org/docs/#api/en/renderers/webgl/WebGLProgram
 // uniform vec3 cameraPosition;
@@ -192,7 +194,7 @@ void main(void){
     float outScattering=((1.0-beer)/ext)+(1.0-beer*beer);
     //float outScattering=1.0;
     //float outScattering=((1.0-beer)/ext);
-    
+
     //transmittance*=(1.0+beer-beer*beer);
     transmittance*=beer;
 

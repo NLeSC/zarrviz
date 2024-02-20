@@ -6,11 +6,13 @@ uniform vec3 colorMid;
 uniform vec3 colorHigh;
 varying float hValue;
 
+uniform float opacity; // Declare the opacity uniform
+
 vec3 fromRedToGreen( float interpolant )
 {
  	if( interpolant < 0.5 )
     {
-       return vec3(1.0, 2.0 * interpolant, 0.0); 
+       return vec3(1.0, 2.0 * interpolant, 0.0);
     }
     else
     {
@@ -22,12 +24,12 @@ vec3 fromGreenToBlue( float interpolant )
 {
    	if( interpolant < 0.5 )
     {
-       return vec3(0.0, 1.0, 2.0 * interpolant); 
+       return vec3(0.0, 1.0, 2.0 * interpolant);
     }
     else
     {
         return vec3(0.0, 2.0 - 2.0 * interpolant, 1.0 );
-    }  
+    }
 }
 
 vec3 heat5( float interpolant )
@@ -40,7 +42,7 @@ vec3 heat5( float interpolant )
     }
     else
     {
-     	float remappedSecondHalf = 2.0 - 2.0 * invertedInterpolant; 
+     	float remappedSecondHalf = 2.0 - 2.0 * invertedInterpolant;
         return fromRedToGreen( remappedSecondHalf );
     }
 }
@@ -52,6 +54,6 @@ void main() {
     vec3 col = heat5(v);
 //    vec3 col = v < 0.5 ? mix(colorLow, colorMid, 2.0 * v) : mix(colorMid, colorHigh, 2.0 * (v - 0.5));
     //vec3 col = mix(colorMid, colorHigh, hValue);
-    gl_FragColor = vec4(col * 0.6, 0.5);
+    gl_FragColor = vec4(col * 0.6, opacity);
 //    gl_FragColor = vec4(1., 1., 1., 1.);
 }

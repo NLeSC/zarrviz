@@ -1,7 +1,9 @@
 import { persisted } from 'svelte-persisted-store'
+import { writable } from 'svelte/store';
 
 export const slicesToRender = persisted('slicesToRender', 10); // defatult 10. It can be more
 
+export const scene = writable(null);
 
 // 1 unit in the scene = 1000 meters (1 kilometer) in real life
 // Meters of the bounding box of the data

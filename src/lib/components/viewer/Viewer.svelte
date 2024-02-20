@@ -1,13 +1,8 @@
 <script lang="ts">
-	import DebugButtons from './DebugButtons.svelte';
+	import DebugButtons from '../DebugButtons.svelte';
 	import { onDestroy, onMount } from 'svelte';
 	import * as THREE from 'three';
 	import CameraControls from 'camera-controls';
-	import vertexShaderVolume from '$lib/shaders/volume.vert';
-	import fragmentShaderVolume from '$lib/shaders/volume_cloud.frag';
-	import fragmentShaderVolumeTransfer from '$lib/shaders/volume_transfer.frag';
-	import vertexShaderSurface from '$lib/shaders/surface.vert';
-	import fragmentShaderSurfaceHeatMap from '$lib/shaders/surface_heatmap.frag';
 
 	import { makeRainTransferTex } from '$lib/utils/makeRainTransferTex';
 
@@ -18,15 +13,13 @@
 		allTimeSlices,
 		getVoxelAndVolumeSize,
 		getVoxelAndVolumeSize2D,
-		voxelSizes,
 		volumeSizes,
-		boxSizes,
 		currentTimeIndex,
 		downloadedTime
 	} from '$lib/stores/allSlices.store';
 
 	import { get } from 'svelte/store';
-	import { createPlaneMesh } from './planeMesh';
+	import { createPlaneMesh } from '../planeMesh';
 	import { scaleFactor } from '$lib/stores/viewer.store';
 
 	// import examplePoints from '$lib/components/3DVolumetric/examplePoints';
@@ -50,11 +43,14 @@
 	let cameraNear = 0.1;
 	let cameraFar = 10000.0;
 	let cameraFovDegrees = 45.0;
-	let dtScale: number = 0.8;
+
+	let dtScale: number = 0.6; // 0.8
 	let ambientFactor: number = 0.0;
-	let solarFactor: number = 0.8;
+	let solarFactor: number = 0.6; // 0.8
+
 	let qlScale: number = 0.00446;
 	let qrScale: number = 0.0035;
+
 	let gHG: number = 0.6;
 	let dataEpsilon: number = 1e-10;
 	let bottomColor: number[] = [0.0, 0.0005, 0.0033];
@@ -63,40 +59,65 @@
 	let gridHelper: THREE.GridHelper;
 	let showGrid = true; // Variable to track the grid's visibility
 
+	// Store the volumetric and plane renderings for the different boxes
 	let boxes = {};
 
 	// Run only once at mount
 	const transferTexture = makeRainTransferTex();
-
-	const sunLightDir = new THREE.Vector3(0.0, 0.5, 0.5);
-	const sunLightColor = new THREE.Color(0.99, 0.83, 0.62);
-	const sunLight = new THREE.DirectionalLight(sunLightColor.getHex(), 1.0);
-	sunLight.position.copy(sunLightDir);
-
-	const seaLightColor = new THREE.Color(0.0, 0.0005, 0.0033);
-	const toaLightColor = new THREE.Color(0.0, 0.0002, 0.033);
-	const hemisphereLight = new THREE.HemisphereLight(seaLightColor.getHex(), toaLightColor.getHex(), 1.0);
-	const lightColor = sunLight.color;
-	const lightColorV = new THREE.Vector3(lightColor.r, lightColor.g, lightColor.b);
-	const ambientLightColorV = new THREE.Vector3(
-		hemisphereLight.color.r,
-		hemisphereLight.color.g,
-		hemisphereLight.color.b
-	);
 	const finalGamma = 6.0;
+
+	import { cloudLayer, rainLayer, temperatureLayer } from '$lib/stores/viewer.store';
+	import { initMaterial } from './initMaterial';
+	// Listent to changes for opacity
+	// Example subscription and update for cloudLayer
+	$: {
+		console.log('🎹 changed ranged', $cloudLayer);
+
+		// scene?.updateOpacity('cloud', $cloudLayer.opacity / 100); // Assuming opacity is a fraction
+	}
 
 	// ql:  clouds
 	// qr:  rain
 	// thetamix: surface temperature
-	const visible_data = [
-		'ql', // clouds
-		'qr', // rain
+	const visible_boxes = [
+		// 'ql', // clouds
+		// 'qr', // rain
 		'thetavmix' // surface temperature
 	];
 
 	function toggleGrid() {
 		showGrid = !showGrid;
 		gridHelper.visible = showGrid; // Assuming gridHelper is your grid object
+	}
+
+	//
+	// Create and add a grid helper to the scene
+	//
+	function createGridHelper() {
+		const gridSize = Math.max(280000, 325000) / $scaleFactor; // in scene units
+		const cellSize = 10000 / $scaleFactor; // 10 km per cell, in scene units
+		const gridDivisionsX = Math.floor(280000 / $scaleFactor / cellSize);
+		const gridDivisionsY = Math.floor(325000 / $scaleFactor / cellSize);
+
+		// Create a grid material with opacity
+		const gridMaterial = new THREE.LineBasicMaterial({
+			color: 0xffffff, // or any color you prefer
+			transparent: true,
+			opacity: 0.5
+		});
+		gridHelper = new THREE.GridHelper(gridSize, Math.max(gridDivisionsX, gridDivisionsY), 0xffffff, 0xffffff);
+
+		// Apply the custom material to each line of the gri
+		gridHelper.traverse((child) => {
+			if (child instanceof THREE.LineSegments) {
+				child.material = gridMaterial;
+			}
+		});
+
+		gridHelper.position.set(0, 0.1, 0); // Adjusted for scaled scene
+		gridHelper.rotation.x = -Math.PI / 2;
+
+		return gridHelper;
 	}
 
 	// Create the Three.js scene
@@ -110,26 +131,15 @@
 			cameraNear,
 			cameraFar
 		);
-		// camera.position.z = 5; // Adjust as needed
-		// camera.position.set(0, -2, 1.7);
-		// x: 0, y: -0.935916216369971, z: 0.9359162163699711
 		camera.position.set(0, -0.9, 0.9); // Adjusted for scaled scene
 		camera.lookAt(new THREE.Vector3(0, 0, 0));
 		cameraControls = new CameraControls(camera, canvas);
 
-		// renderer.setSize(window.innerWidth, window.innerHeight); // Set the size of the canvas
-		//renderer.setClearAlpha(0); // Make the canvas transparent
 		//
 		// Add an axes helper to the scene to help with debugging.
 		//
-		const axesHelper = new THREE.AxesHelper(5);
-		scene.add(axesHelper);
-		//
-		// Add a grid to the scene to help visualize camera movement.
-		//
-		// const gridHelper = new THREE.GridHelper(5, 5);
-		// gridHelper.position.z = -1;
-		// scene.add(gridHelper);
+		// const axesHelper = new THREE.AxesHelper(5);
+		// scene.add(axesHelper);
 
 		//
 		// Add a plane with the Map to the scene
@@ -191,115 +201,15 @@
 		console.log('🔥 rendered');
 	}
 
-	async function initMaterial({ variable, dataUint8 }): Promise<THREE.Material> {
-		let volumeTexture = null;
-		if (variable === 'thetavmix') {
-			volumeTexture = new THREE.DataTexture(dataUint8, get(volumeSizes)[variable][0], get(volumeSizes)[variable][1]);
-		} else {
-			volumeTexture = new THREE.Data3DTexture(
-				dataUint8,
-				get(volumeSizes)[variable][0],
-				get(volumeSizes)[variable][1],
-				get(volumeSizes)[variable][2]
-			);
-		}
-		volumeTexture.format = THREE.RedFormat;
-		volumeTexture.type = THREE.UnsignedByteType;
-		// Disabling mimpaps saves memory.
-		volumeTexture.generateMipmaps = false;
-		// Linear filtering disables LODs, which do not help with volume rendering.
-		volumeTexture.minFilter = THREE.LinearFilter;
-		volumeTexture.magFilter = THREE.LinearFilter;
-		volumeTexture.needsUpdate = true;
-		let boxMaterial = null;
-		switch (variable) {
-			case 'ql':
-				boxMaterial = new THREE.ShaderMaterial({
-					vertexShader: vertexShaderVolume,
-					fragmentShader: fragmentShaderVolume,
-					side: THREE.DoubleSide,
-					transparent: true,
-					opacity: 1.0,
-					uniforms: {
-						boxSize: new THREE.Uniform(get(boxSizes)[variable]),
-						volumeTex: new THREE.Uniform(volumeTexture),
-						voxelSize: new THREE.Uniform(get(voxelSizes)[variable]),
-						sunLightDir: new THREE.Uniform(sunLight.position),
-						sunLightColor: new THREE.Uniform(lightColorV),
-						ambientLightColor: new THREE.Uniform(ambientLightColorV),
-						near: new THREE.Uniform(cameraNear),
-						far: new THREE.Uniform(cameraFar),
-						// The following are set separately, since they are based on `props` values that can
-						// change often, and should not trigger complete re-initialization.
-						dtScale: new THREE.Uniform(0),
-						ambientFactor: new THREE.Uniform(0),
-						solarFactor: new THREE.Uniform(0),
-						dataScale: new THREE.Uniform(0),
-						gHG: new THREE.Uniform(0),
-						dataEpsilon: new THREE.Uniform(0),
-						bottomColor: new THREE.Uniform(new THREE.Vector3(0.0, 0.0005, 0.0033)),
-						bottomHeight: new THREE.Uniform(0),
-						finalGamma: new THREE.Uniform(0)
-					}
-				});
-				break;
-			case 'qr':
-				boxMaterial = new THREE.ShaderMaterial({
-					vertexShader: vertexShaderVolume,
-					fragmentShader: fragmentShaderVolumeTransfer,
-					side: THREE.DoubleSide,
-					transparent: true,
-					opacity: 1.0,
-					uniforms: {
-						boxSize: new THREE.Uniform(get(boxSizes)[variable]),
-						volumeTex: new THREE.Uniform(volumeTexture),
-						sunLightDir: new THREE.Uniform(sunLight.position),
-						sunLightColor: new THREE.Uniform(lightColorV),
-						near: new THREE.Uniform(cameraNear),
-						far: new THREE.Uniform(cameraFar),
-						// The following are set separately, since they are based on `props` values that can
-						// change often, and should not trigger complete re-initialization.
-						transferTex: new THREE.Uniform(transferTexture),
-						dtScale: new THREE.Uniform(0),
-						dataScale: new THREE.Uniform(0),
-						alphaNorm: new THREE.Uniform(0),
-						finalGamma: new THREE.Uniform(0),
-						useLighting: new THREE.Uniform(false)
-					}
-				});
-				break;
-			case 'thetavmix':
-				// create an elevation texture
-				boxMaterial = new THREE.ShaderMaterial({
-					vertexShader: vertexShaderSurface,
-					fragmentShader: fragmentShaderSurfaceHeatMap,
-					side: THREE.DoubleSide,
-					transparent: true,
-					opacity: 1.0,
-					clipping: true,
-					uniforms: {
-						volumeTex: new THREE.Uniform(volumeTexture),
-						heightRatio: new THREE.Uniform(0),
-						heightBias: new THREE.Uniform(0),
-						//gradientTexture: {value: gradientMap}
-						colorLow: new THREE.Uniform(new THREE.Vector3(0, 0, 1)),
-						colorMid: new THREE.Uniform(new THREE.Vector3(0, 1, 0)),
-						colorHigh: new THREE.Uniform(new THREE.Vector3(1, 0, 0))
-					}
-				});
-				break;
-		}
-		return boxMaterial;
-	}
-
 	function updateMaterial({ variable, dataUint8 }) {
-		let localBox = boxes[variable];
+		console.log('UPDATE MATERIAL FOR ', variable);
+		let layer = boxes[variable];
 
-		if (!localBox) {
+		if (!layer) {
 			return;
 		}
 		// Dispose of the old texture to free up memory.
-		localBox.material.uniforms.volumeTex.value.dispose();
+		layer.material.uniforms.volumeTex.value.dispose();
 
 		// Create a new 3D texture for the volume data.
 		let volumeTexture = null;
@@ -321,59 +231,35 @@
 		volumeTexture.needsUpdate = true;
 
 		// Update material uniforms with new texture and parameters.
-		localBox.material.uniforms.volumeTex.value = volumeTexture;
+		layer.material.uniforms.volumeTex.value = volumeTexture;
+		console.log(layer.material.uniforms);
+		// layer.material.uniforms.opacity.value = 0.1;
+
 		switch (String(variable)) {
 			case 'ql':
-				localBox.material.uniforms.dataScale.value = qlScale;
-				localBox.material.uniforms.dtScale.value = dtScale;
-				localBox.material.uniforms.ambientFactor.value = ambientFactor;
-				localBox.material.uniforms.solarFactor.value = solarFactor;
-				localBox.material.uniforms.gHG.value = gHG;
-				localBox.material.uniforms.dataEpsilon.value = dataEpsilon;
-				localBox.material.uniforms.bottomColor.value = bottomColor;
-				localBox.material.uniforms.bottomHeight.value = bottomHeight;
-				localBox.material.uniforms.finalGamma.value = finalGamma;
+				layer.material.uniforms.dataScale.value = qlScale;
+				layer.material.uniforms.dtScale.value = dtScale;
+				layer.material.uniforms.ambientFactor.value = ambientFactor;
+				layer.material.uniforms.solarFactor.value = solarFactor;
+				layer.material.uniforms.gHG.value = gHG;
+				layer.material.uniforms.dataEpsilon.value = dataEpsilon;
+				layer.material.uniforms.bottomColor.value = bottomColor;
+				layer.material.uniforms.bottomHeight.value = bottomHeight;
+				layer.material.uniforms.finalGamma.value = finalGamma;
+				layer.material.uniforms.opacity = get(cloudLayer).opacity;
 				break;
 			case 'qr':
-				localBox.material.uniforms.dataScale.value = qrScale;
-				localBox.material.uniforms.dtScale.value = dtScale * 4.0;
-				localBox.material.uniforms.alphaNorm.value = 2.0;
-				localBox.material.uniforms.finalGamma.value = finalGamma;
+				layer.material.uniforms.dataScale.value = qrScale;
+				layer.material.uniforms.dtScale.value = dtScale * 4.0;
+				layer.material.uniforms.alphaNorm.value = 2.0;
+				layer.material.uniforms.finalGamma.value = finalGamma;
+				layer.material.uniforms.opacity = get(rainLayer).opacity;
 				break;
 		}
 	}
 
-	//
-	// Create and add a grid helper to the scene
-	//
-	function createGridHelper() {
-		const gridSize = Math.max(280000, 325000) / $scaleFactor; // in scene units
-		const cellSize = 10000 / $scaleFactor; // 10 km per cell, in scene units
-		const gridDivisionsX = Math.floor(280000 / $scaleFactor / cellSize);
-		const gridDivisionsY = Math.floor(325000 / $scaleFactor / cellSize);
-
-		// Create a grid material with opacity
-		const gridMaterial = new THREE.LineBasicMaterial({
-			color: 0xffffff, // or any color you prefer
-			transparent: true,
-			opacity: 0.5
-		});
-		gridHelper = new THREE.GridHelper(gridSize, Math.max(gridDivisionsX, gridDivisionsY), 0xffffff, 0xffffff);
-
-		// Apply the custom material to each line of the gri
-		gridHelper.traverse((child) => {
-			if (child instanceof THREE.LineSegments) {
-				child.material = gridMaterial;
-			}
-		});
-
-		gridHelper.position.set(0, 0.1, 0); // Adjusted for scaled scene
-		gridHelper.rotation.x = -Math.PI / 2;
-
-		return gridHelper;
-	}
-
-	/* A box in which the 3D volume texture will be rendered.  The box will be
+	/*
+	 * A box in which the 3D volume texture will be rendered.  The box will be
 	 * centered at the origin, with X in [-0.5, 0.5] so the width is 1, and
 	 * Y (height) and Z (depth) scaled to match.
 	 */
@@ -389,7 +275,7 @@
 		box.position.z = 0.25 + 2000 / $scaleFactor; // 570 meters above the map TODO: calculate this value from the data
 		box.renderOrder = 0;
 
-		box.material = await initMaterial({ variable, dataUint8 });
+		box.material = await initMaterial({ variable, dataUint8, cameraFar, cameraNear });
 		// const cubeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
 		// box.material = cubeMaterial;
 		boxes[variable] = box;
@@ -419,7 +305,7 @@
 		// const cubeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
 		// box.material = cubeMaterial;
 		boxes[variable] = plane;
-		updateMaterial({ variable, dataUint8 });
+		// updateMaterial({ variable, dataUint8 });
 		scene.add(plane);
 		renderScene();
 	}
@@ -436,40 +322,37 @@
 
 		const timing = performance.now();
 		// Download first slice of the data and calculate the voxel and volume size. It runs only once.
-		for (var variable of visible_data) {
+		for (var variable of visible_boxes) {
 			if (variable == 'thetavmix') {
 				const {
 					dataUint8: vdata,
 					store: vstore,
 					shape: vshape
-				} = await fetchSlice({ currentTimeIndex: 0, path: variable, dims: 3 });
+				} = await fetchSlice({ currentTimeIndex: 0, variable, dimensions: 3 });
 				await getVoxelAndVolumeSize2D(vstore, vshape, variable);
 				// await getVoxelAndVolumeSize2D(vstore, vshape, variable);
 				await addPlaneRenderingContainer({ variable: variable, dataUint8: vdata });
 				// addPlaneRenderingContainer({ variable: variable, dataUint8: vdata });
 			} else {
-				const {
-					dataUint8: vdata,
-					store: vstore,
-					shape: vshape
-				} = await fetchSlice({ currentTimeIndex: 0, path: variable });
+				const { dataUint8: vdata, store: vstore, shape: vshape } = await fetchSlice({ currentTimeIndex: 0, variable });
 				await getVoxelAndVolumeSize(vstore, vshape, variable);
 				await addVolumetricRenderingContainer({ variable: variable, dataUint8: vdata });
 			}
 		}
-		for (var variable of visible_data) {
+		for (var variable of visible_boxes) {
 			var dimensions = variable == 'thetavmix' ? 3 : 4;
-			fetchAllSlices({ path: variable, dims: dimensions }); //<-------
+			fetchAllSlices({ variable, dimensions: dimensions });
 		}
 		downloadedTime.set(Math.round(performance.now() - timing));
 		console.log('⏰ data downloaded and displayed in:', Math.round(performance.now() - timing), 'ms');
 	});
+
 	// Update the material when the currentTimeIndex changes
 	currentTimeIndex.subscribe((index) => {
 		const data = get(allTimeSlices)[index];
 		if (data) {
-			for (var variable of visible_data) {
-				updateMaterial({ variable: variable, dataUint8: data[variable] });
+			for (const variable of visible_boxes) {
+				updateMaterial({ variable, dataUint8: data[variable] });
 			}
 			/*
 			updateMaterial({ variable: 'ql', dataUint8: data['ql'] });
@@ -509,3 +392,5 @@
 	</div>
 </div>
 <canvas class="w-full h-full" bind:this={canvas} />
+<div class="fixed right-0 z-100">{$cloudLayer.opacity}</div>
+<div class="fixed right-10 z-100">{$cloudLayer.enabled}</div>

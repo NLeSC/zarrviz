@@ -1,7 +1,7 @@
 <script lang="ts">
 	import TimeLine from '$lib/components/TimeLine.svelte';
 	import { allTimeSlices, currentTimeIndex, totalSlices } from '$lib/stores/allSlices.store';
-	import Viewer from '$lib/components/Viewer.svelte';
+	import Viewer from '$lib/components/viewer/Viewer.svelte';
 	import { cloudLayer, rainLayer, slicesToRender, temperatureLayer } from '$lib/stores/viewer.store';
 </script>
 

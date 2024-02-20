@@ -20,6 +20,9 @@ uniform bool useLighting;
 uniform float near;
 uniform float far;
 
+uniform float opacity; // Declare the opacity uniform
+
+
 // Three.js adds built-in uniforms and attributes:
 // https://threejs.org/docs/#api/en/renderers/webgl/WebGLProgram
 // uniform vec3 cameraPosition;
@@ -113,7 +116,7 @@ void main(void){
       float dataDyB = texture(volumeTex, pSized - vec3(0.0,  dg.y, 0.0 )).r;
       float dataDzA = texture(volumeTex, pSized + vec3(0.0,  0.0,  dg.z)).r;
       float dataDzB = texture(volumeTex, pSized - vec3(0.0,  0.0,  dg.z)).r;
-      vec3 grad = vec3(dataDxA - dataDxB, dataDyA - dataDyB, dataDzA - dataDzB);  
+      vec3 grad = vec3(dataDxA - dataDxB, dataDyA - dataDyB, dataDzA - dataDzB);
 
       // When using the gradient as the surface normal for shading, we always want to
       // act as if the surface is facing the camera.  So flip the gradient if it points

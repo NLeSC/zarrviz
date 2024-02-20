@@ -1,4 +1,4 @@
-import { openArray, HTTPStore, create } from 'zarr';
+import { openArray, HTTPStore } from 'zarr';
 import type { PersistenceMode } from 'zarr/types/types';
 
 import { allTimeSlices } from "$lib/stores/allSlices.store";
@@ -7,9 +7,9 @@ import { allTimeSlices } from "$lib/stores/allSlices.store";
 // downloadZarrPoints
 export async function fetchSlice({
   currentTimeIndex = 0,
-  path = 'ql',
+  variable = 'ql',
   mode = 'r' as PersistenceMode,
-  dims = 4
+  dimensions = 4
 }) {
 
   const params = new URLSearchParams(document.location.search);
@@ -20,24 +20,25 @@ export async function fetchSlice({
   const store = new HTTPStore(datasetUrl, {
     fetchOptions: { redirect: 'follow', mode: 'cors', credentials: 'include' }
   });
-  const zarrdata = await openArray({ store, path, mode });
+  const zarrdata = await openArray({ store, path: variable, mode });
 
-  const { data, strides, shape } = dims == 4 ? await zarrdata.getRaw([currentTimeIndex, null, null, null]) : await zarrdata.getRaw([currentTimeIndex, null, null]);
+  const { data, strides, shape } = dimensions === 4
+    ? await zarrdata.getRaw([currentTimeIndex, null, null, null])
+    : await zarrdata.getRaw([currentTimeIndex, null, null]);
 
   // allSlices.set(data);
   // Update the time slices store
   allTimeSlices.update((timeSlices) => {
     if (timeSlices[currentTimeIndex]) {
-      timeSlices[currentTimeIndex][path] = data;
+      timeSlices[currentTimeIndex][variable] = data;
     }
     else {
       timeSlices[currentTimeIndex] = {};
-      timeSlices[currentTimeIndex][path] = data;
+      timeSlices[currentTimeIndex][variable] = data;
     }
     return timeSlices;
   });
   console.log('🎹 downloaded ', currentTimeIndex);
   // console.log('🎹 downloaded ', get(allTimeSlices)[currentTimeIndex]);
   return { dataUint8: data, strides, shape, store };
-
 }
