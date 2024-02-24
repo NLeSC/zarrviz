@@ -41,9 +41,9 @@
 	let renderer: THREE.WebGLRenderer;
 
 	// Be caruful with these valies, they can clip the date in the 3D scene
-	let cameraNear = 0.1;
-	let cameraFar = 10000.0;
-	let cameraFovDegrees = 45.0;
+	let cameraNear = 0.01;
+	let cameraFar = 1000.0;
+	let cameraFovDegrees = 5.0;
 	let dtScale: number = 0.8;
 	let ambientFactor: number = 0.0;
 	let solarFactor: number = 0.8;
@@ -113,7 +113,7 @@
 		// camera.position.z = 5; // Adjust as needed
 		// camera.position.set(0, -2, 1.7);
 		// x: 0, y: -0.935916216369971, z: 0.9359162163699711
-		camera.position.set(0, -0.9, 0.9); // Adjusted for scaled scene
+		camera.position.set(0, -10, 10); // Adjusted for scaled scene
 		camera.lookAt(new THREE.Vector3(0, 0, 0));
 		cameraControls = new CameraControls(camera, canvas);
 
@@ -498,14 +498,14 @@
 		console.log('⏰ data downloaded and displayed in:', Math.round(performance.now() - timing), 'ms');
 	});
 	// Update the material when the currentTimeIndex changes
-	/*currentTimeIndex.subscribe((index) => {
+	currentTimeIndex.subscribe((index) => {
 		const data = get(allTimeSlices)[index];
 		if (data) {
 			for (var variable of visible_data) {
 				updateMaterial({ variable: variable, dataUint8: data[variable] });
 			}
 		}
-	});*/
+	});
 
 	onDestroy(() => {
 		// Clean up Three.js resources

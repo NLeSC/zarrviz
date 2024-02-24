@@ -101,6 +101,7 @@ void main(void){
 
     float value=texture(coarseVolumeTex, pSized).r;
     if(value != 0.0){
+      #pragma unroll_loop_start
       for(int i = 0; i < 8; ++i)
       {
         float fineValue = texture(volumeTex, pSized + random).r;
@@ -110,6 +111,7 @@ void main(void){
         transmittance *= ( 1.0 - clamp(vColor.a,0.0,1.0));
         pSized += dPSmall;
       }
+      #pragma unroll_loop_end
     }
     else{
       pSized += dPSized;
