@@ -4,10 +4,10 @@
 	import * as THREE from 'three';
 	import CameraControls from 'camera-controls';
 	import vertexShaderVolume from '$lib/shaders/volume.vert';
-	import fragmentShaderVolume from '$lib/shaders/volume_cloud.frag';
+	import fragmentShaderVolume from '$lib/shaders/volume.frag';
 	import fragmentShaderVolumeTransfer from '$lib/shaders/volume_transfer.frag';
-	import vertexShaderSurface from '$lib/shaders/surface.vert';
 	import fragmentShaderSurfaceHeatMap from '$lib/shaders/surface_heatmap.frag';
+	import vertexShaderSurface from '$lib/shaders/surface.vert';
 	import { makeRainTransferTex } from '$lib/utils/makeRainTransferTex';
 	import { fetchSlice } from '../fetchAndPrepareData/fetchSlice';
 	import { fetchAllSlices } from '../fetchAndPrepareData/fetchAllSlices';
@@ -89,11 +89,39 @@
 	// Meters of the bounding box of the data
 	let scaleFactor = 33800; // TODO: calculate this value from the data
 
-	$: {
-		console.log('🎹 changed ranged', $cloudLayer);
-		console.log('🎹 changed ranged', $rainLayer);
-		console.log('🎹 changed ranged', $temperatureLayer);
+	let qrBox: THREE.Mesh;
+	let qlBox: THREE.Mesh;
+	let thetavmixBox: THREE.Mesh;
 
+	let qlMaterial: THREE.Material;
+	let qrMaterial: THREE.Material;
+	let thetavmixMaterial: THREE.Material;
+
+	$: {
+		qrMaterial && (qrMaterial.uniforms.uTransparency.value = $rainLayer.opacity / 100);
+		qlMaterial && (qlMaterial.uniforms.uTransparency.value = $cloudLayer.opacity / 100);
+		thetavmixMaterial && (thetavmixMaterial.uniforms.uTransparency.value = $temperatureLayer.opacity / 100);
+		if (!!qrBox) {
+			if ($rainLayer.enabled) {
+				scene.add(qrBox);
+			} else {
+				scene.remove(qrBox);
+			}
+		}
+
+		if (!!cube) {
+			// console.log('🎹 changed ranged', $cloudLayer);
+			cube.material.uniforms.uTransparency.value = $cloudLayer.opacity / 100;
+
+			// remove the cube from the scene if the opacity is 0
+			if ($cloudLayer.enabled) {
+				scene.add(cube);
+			} else {
+				scene.remove(cube);
+			}
+		}
+		// console.log('🎹 changed ranged', $rainLayer);
+		// console.log('🎹 changed ranged', $temperatureLayer);
 		// scene?.updateOpacity('cloud', $cloudLayer.opacity / 100); // Assuming opacity is a fraction
 	}
 
@@ -112,12 +140,28 @@
 		gridHelper.visible = showGrid; // Assuming gridHelper is your grid object
 	}
 
+	let cube: THREE.Mesh;
 	function addExampleCube() {
 		// Create a cube
-		const cubeGeometry = new THREE.BoxGeometry(33, 33, 1);
+		const cubeGeometry = new THREE.BoxGeometry(0.3, 0.3, 0.1);
 		const cubeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-		const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
-		cube.position.set(-1, 0, 0); // Set the position of the cube
+
+		const fragmentShader = `uniform float uTransparency;
+                                 void main() {
+                                     gl_FragColor = vec4(1.0, 0.5, 0.0, uTransparency); // Example: Orange color
+                                 }`;
+
+		const shaderMaterial = new THREE.ShaderMaterial({
+			// vertexShader,
+			fragmentShader,
+			uniforms: {
+				uTransparency: { value: get(cloudLayer).opacity / 100 }
+			},
+			transparent: true
+		});
+
+		cube = new THREE.Mesh(cubeGeometry, shaderMaterial);
+		cube.position.set(-0.1, 0, 0.1); // Set the position of the cube
 		return cube; // Add the cube to the scene
 	}
 
@@ -144,8 +188,8 @@
 		//
 		// Add an axes helper to the scene to help with debugging.
 		//
-		const axesHelper = new THREE.AxesHelper(5);
-		scene.add(axesHelper);
+		// const axesHelper = new THREE.AxesHelper(5);
+		// scene.add(axesHelper);
 		//
 		// Add a grid to the scene to help visualize camera movement.
 		//
@@ -214,15 +258,14 @@
 	}
 
 	async function initMaterial({ variable }): Promise<THREE.Material> {
-		let boxMaterial = null;
+		let shaderMaterial = null;
 		switch (variable) {
 			case 'ql':
-				boxMaterial = new THREE.ShaderMaterial({
+				shaderMaterial = new THREE.ShaderMaterial({
 					vertexShader: vertexShaderVolume,
 					fragmentShader: fragmentShaderVolume,
 					side: THREE.DoubleSide,
 					transparent: true,
-					opacity: 1.0,
 					uniforms: {
 						boxSize: new THREE.Uniform(get(boxSizes)[variable]),
 						volumeTex: new THREE.Uniform(null),
@@ -247,13 +290,13 @@
 				});
 				break;
 			case 'qr':
-				boxMaterial = new THREE.ShaderMaterial({
+				shaderMaterial = new THREE.ShaderMaterial({
 					vertexShader: vertexShaderVolume,
 					fragmentShader: fragmentShaderVolumeTransfer,
 					side: THREE.DoubleSide,
 					transparent: true,
-					opacity: 1.0,
 					uniforms: {
+						uTransparency: { value: get(rainLayer).opacity / 100 },
 						boxSize: new THREE.Uniform(get(boxSizes)[variable]),
 						volumeTex: new THREE.Uniform(null),
 						coarseVolumeTex: new THREE.Uniform(null),
@@ -274,7 +317,7 @@
 				break;
 			case 'thetavmix':
 				// create an elevation texture
-				boxMaterial = new THREE.ShaderMaterial({
+				shaderMaterial = new THREE.ShaderMaterial({
 					vertexShader: vertexShaderSurface,
 					fragmentShader: fragmentShaderSurfaceHeatMap,
 					side: THREE.DoubleSide,
@@ -293,7 +336,8 @@
 				});
 				break;
 		}
-		return boxMaterial;
+		// shaderMaterial.uniforms.uTransparency = { value: 1 };
+		return shaderMaterial;
 	}
 
 	function updateMaterial({ variable, dataUint8, dataCoarse }) {
@@ -423,7 +467,7 @@
 			}
 		});
 
-		gridHelper.position.set(0, 0.1, 0); // Adjusted for scaled scene
+		gridHelper.position.set(0, 0, 0.01); // Adjusted for scaled scene
 		gridHelper.rotation.x = -Math.PI / 2;
 
 		return gridHelper;
@@ -441,17 +485,31 @@
 		const boxZ = get(volumeSizes)[variable][2] / get(volumeSizes)[variable][1];
 		// const boxScale = 33800 / scaleFactor; //  33.8 km in meters in scene units
 		const boxGeometry = new THREE.BoxGeometry(1, 1, boxZ);
-		let box = new THREE.Mesh(boxGeometry);
-		box.position.z = 0.25 + 2000 / scaleFactor; // 570 meters above the map TODO: calculate this value from the data
-		box.renderOrder = 0;
 
-		box.material = await initMaterial({ variable });
-		// const cubeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-		// box.material = cubeMaterial;
-		boxes[variable] = box;
-		updateMaterial({ variable, dataUint8, dataCoarse });
-		scene.add(box);
-		renderScene();
+		switch (variable) {
+			case 'ql':
+				qlBox = new THREE.Mesh(boxGeometry);
+				qlBox.position.z = 0.25 + 2000 / scaleFactor; // 570 meters above the map TODO: calculate this value from the data
+				qlBox.renderOrder = 0;
+				qlBox.material = await initMaterial({ variable });
+				qlMaterial = qlBox.material;
+				boxes[variable] = qlBox;
+				updateMaterial({ variable, dataUint8, dataCoarse });
+				scene.add(qlBox);
+				break;
+			case 'qr':
+				qrBox = new THREE.Mesh(boxGeometry);
+				qrBox.position.z = 0.25 + 2000 / scaleFactor; // 570 meters above the map TODO: calculate this value from the data
+				qrBox.renderOrder = 0;
+				qrBox.material = await initMaterial({ variable });
+				qrMaterial = qrBox.material;
+				boxes[variable] = qrBox;
+				updateMaterial({ variable, dataUint8, dataCoarse });
+				scene.add(qrBox);
+				break;
+		}
+
+		// renderScene(); // no need to render the scene
 	}
 
 	async function addPlaneRenderingContainer({ variable, dataUint8 }) {
@@ -486,7 +544,7 @@
 		create3DScene();
 
 		// Add exmample cube
-		// scene.add(addExampleCube());
+		scene.add(addExampleCube());
 
 		// Add the points to the scene
 		// scene.add(examplePoints());
@@ -510,7 +568,11 @@
 					coarseData: vCoarseData
 				} = await fetchSlice({ currentTimeIndex: 0, path: variable });
 				await getVoxelAndVolumeSize(vstore, vshape, variable);
-				await addVolumetricRenderingContainer({ variable: variable, dataUint8: vdata, dataCoarse: vCoarseData });
+				await addVolumetricRenderingContainer({
+					variable: variable,
+					dataUint8: vdata,
+					dataCoarse: vCoarseData
+				});
 			}
 		}
 		for (let variable of visible_data) {

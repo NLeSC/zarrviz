@@ -21,6 +21,8 @@ uniform bool useLighting;
 uniform float near;
 uniform float far;
 
+uniform float uTransparency;
+
 // Three.js adds built-in uniforms and attributes:
 // https://threejs.org/docs/#api/en/renderers/webgl/WebGLProgram
 // uniform vec3 cameraPosition;
@@ -130,8 +132,13 @@ void main(void){
   }
   else
   {
+    // float g=1./finalGamma;
+    // gl_FragColor=pow(vec4(illumination,1.0-transmittance),vec4(g,g,g,1));
     float g=1./finalGamma;
-    gl_FragColor=pow(vec4(illumination,1.0-transmittance),vec4(g,g,g,1));
+    vec4 finalColor = pow(vec4(illumination,1.0-transmittance),vec4(g,g,g,1));
+    // Apply uTransparency to the alpha component
+    finalColor.a *= uTransparency;
+    gl_FragColor = finalColor;
   }
 }
 // A few browsers show some artifacts if the final alpha value is not 1.0,
