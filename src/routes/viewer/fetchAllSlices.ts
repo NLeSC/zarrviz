@@ -1,12 +1,13 @@
 // import { Queue } from "async-await-queue";
-import { downloadedTime } from "$lib/components/allSlices.store";
 import { get } from "svelte/store";
 import { fetchSlice } from "./fetchSlice";
+import { downloadedTime } from "./allSlices.store";
+import { slicesToRender } from "./viewer.store";
 
 /**
  * Creates a new Queue instance with a concurrency of 1 and a timeout of 5000ms.
  */
-export async function fetchAllSlices({ path = 'ql' , dims = 4}) {
+export async function fetchAllSlices({ path = 'ql', dimensions = 4 }) {
 
   /**
    * Creates a new Queue instance with a concurrency of 1 and a timeout of 5000ms.
@@ -16,11 +17,11 @@ export async function fetchAllSlices({ path = 'ql' , dims = 4}) {
   const promises = [];
 
   console.log('📕 Downloading all slices');
-  for (let i = 1; i < 10; ++i) { // start with 1 because 0 was already fetched at mounted
+  for (let i = 1; i < get(slicesToRender); ++i) { // start with 1 because 0 was already fetched at mounted
     // const me = Symbol();
     // await q.wait(me, 10 - i);
     try {
-      promises.push(fetchSlice({ path, currentTimeIndex: i, dims: dims }));
+      promises.push(fetchSlice({ path, currentTimeIndex: i, dimensions }));
     } catch (e) {
       console.error(e);
     } finally {

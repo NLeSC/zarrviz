@@ -20,7 +20,7 @@
 		boxSizes,
 		currentTimeIndex,
 		downloadedTime
-	} from '$lib/components/allSlices.store';
+	} from './allSlices.store';
 	import { get } from 'svelte/store';
 
 	// import examplePoints from '$lib/components/3DVolumetric/examplePoints';
@@ -78,8 +78,12 @@
 		hemisphereLight.color.b
 	);
 	const finalGamma = 6.0;
-	//const visible_data = ['ql', 'qr', 'thetavmix'];
-	const visible_data = ['qr'];
+	const visible_data = [
+		// 'ql' // clouds
+		'qr' // rain
+		// 'thetavmix' // temperature
+	];
+	// const visible_data = ['qr'];
 
 	// 1 unit in the scene = 1000 meters (1 kilometer) in real life
 	// Meters of the bounding box of the data
@@ -281,7 +285,7 @@
 			return;
 		}
 		// Dispose of the old texture to free up memory.
-		if(localBox.material.uniforms.volumeTex.value != null){
+		if (localBox.material.uniforms.volumeTex.value != null) {
 			localBox.material.uniforms.volumeTex.value.dispose();
 		}
 
@@ -304,17 +308,18 @@
 		volumeTexture.magFilter = THREE.LinearFilter;
 		volumeTexture.needsUpdate = true;
 
-		if(localBox.material.uniforms.coarseVolumeTex.value != null){
+		if (localBox.material.uniforms.coarseVolumeTex.value != null) {
 			localBox.material.uniforms.coarseVolumeTex.value.dispose();
 		}
 
 		let coarseVolumeTexture = null;
-		if(dataCoarse !== null){
+		if (dataCoarse !== null) {
 			coarseVolumeTexture = new THREE.Data3DTexture(
 				dataCoarse,
-				get(volumeSizes)[variable][0]/8,
-				get(volumeSizes)[variable][1]/8,
-				get(volumeSizes)[variable][2]/8);
+				get(volumeSizes)[variable][0] / 8,
+				get(volumeSizes)[variable][1] / 8,
+				get(volumeSizes)[variable][2] / 8
+			);
 			coarseVolumeTexture.format = THREE.RedFormat;
 			coarseVolumeTexture.type = THREE.UnsignedByteType;
 			coarseVolumeTexture.generateMipmaps = false; // Saves memory.

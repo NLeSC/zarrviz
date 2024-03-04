@@ -1,7 +1,8 @@
 <script lang="ts">
-	import TimeLine from '$lib/components/TimeLine.svelte';
+	import TimeLine from './TimeLine.svelte';
 
-	import { allTimeSlices, currentTimeIndex } from '$lib/components/allSlices.store';
+	import { allTimeSlices, currentTimeIndex, totalSlices } from './allSlices.store';
+	import { cloudLayer, rainLayer, slicesToRender, temperatureLayer } from './viewer.store';
 
 	import Viewer from './Viewer.svelte';
 	// import Viewer from '$lib/components/viewerExample.svelte';
@@ -15,7 +16,7 @@
 	<div class="flex flex-col">
 		<!-- datashape = dataShape: {JSON.stringify($dataShape, null, 2)} -->
 
-		<div class="bg-green-900 w-full h-full">
+		<div class="w-full h-full">
 			<Viewer />
 		</div>
 		<TimeLine
@@ -29,32 +30,91 @@
 
 		<div class="text-sm">
 			<!-- 1073741824 = 1GB -->
+			Slices:
+			<input
+				type="number"
+				min="0"
+				bind:value={$slicesToRender}
+				on:change={(e) => {
+					$slicesToRender = e.target.value;
+				}}
+				class="input input-xs w-14"
+			/>
+			of {totalSlices}<br />
 			dataUint8 (slice) {$allTimeSlices[0]?.length} - {($allTimeSlices[0]?.byteLength / 1073741824).toFixed(3)} GB
 			<!-- <pre>dataCellSize: {$dataCellSize.length} |</pre> -->
 			Slices downloaded: {JSON.stringify($allTimeSlices.length, null, 2)}
 		</div>
 
 		<h3 class="mt-10 text-xl">Layers</h3>
+		{#if $cloudLayer}
+			<div class="form-control">
+				<div class="grid grid-cols-2 gap-2 items-center">
+					<label class="label cursor-pointer justify-start gap-3 w-1/2">
+						<input
+							type="checkbox"
+							checked={$cloudLayer.enabled}
+							class="checkbox checkbox-sm"
+							on:change={(e) => ($cloudLayer.enabled = e.target.checked)}
+						/>
+						<span class="label-text w-1/2">Clouds</span>
+					</label>
+					<input
+						type="range"
+						min="0"
+						max="100"
+						bind:value={$cloudLayer.opacity}
+						on:change={(e) => ($cloudLayer.opacity = e.target.value)}
+						disabled={!$cloudLayer.enabled}
+						class:opacity-30={!$cloudLayer.enabled}
+						class="disabled range range-xs"
+					/>
+				</div>
 
-		<div class="form-control">
-			<label class="label cursor-pointer justify-start gap-3">
-				<input type="checkbox" checked={true} class="checkbox checkbox-sm" />
-				<span class="label-text w-48">Clouds</span>
-				<input type="range" min="0" max="100" value="40" class="range range-xs" />
-			</label>
-
-			<label class="label cursor-pointer justify-start gap-3">
-				<input type="checkbox" checked={true} class="checkbox checkbox-sm" />
-				<span class="label-text w-48">Rain</span>
-				<input type="range" min="0" max="100" value="40" class="range range-xs" />
-			</label>
-
-			<label class="label cursor-pointer justify-start gap-3">
-				<input type="checkbox" checked={true} class="checkbox checkbox-sm" />
-				<span class="label-text w-48">Surface Temperature</span>
-				<input type="range" min="0" max="100" value="40" class="range range-xs" />
-			</label>
-		</div>
+				<div class="grid grid-cols-2 gap-2 items-center">
+					<label class="label cursor-pointer justify-start gap-3">
+						<input
+							type="checkbox"
+							checked={$rainLayer.enabled}
+							class="checkbox checkbox-sm"
+							on:change={(e) => ($rainLayer.enabled = e.target.checked)}
+						/>
+						<span class="label-text">Rain</span>
+					</label>
+					<input
+						type="range"
+						bind:value={$rainLayer.opacity}
+						on:change={(e) => ($rainLayer.opacity = e.target.value)}
+						min="0"
+						max="100"
+						class="range range-xs"
+						disabled={!$rainLayer.enabled}
+						class:opacity-30={!$rainLayer.enabled}
+					/>
+				</div>
+				<div class="grid grid-cols-2 gap-2 items-center">
+					<label class="label cursor-pointer justify-start gap-3 w-1/2">
+						<input
+							type="checkbox"
+							checked={$temperatureLayer.enabled}
+							class="checkbox checkbox-sm"
+							on:change={(e) => ($temperatureLayer.enabled = e.target.checked)}
+						/>
+						<span class="label-text">Surface Temperature</span>
+					</label>
+					<input
+						type="range"
+						min="0"
+						max="100"
+						bind:value={$temperatureLayer.opacity}
+						on:change={(e) => ($temperatureLayer.opacity = e.target.value)}
+						class="range range-xs"
+						disabled={!$temperatureLayer.enabled}
+						class:opacity-30={!$temperatureLayer.enabled}
+					/>
+				</div>
+			</div>
+		{/if}
 
 		<div class="mt-10 text-xl">Instruments</div>
 		<div class="flex flex-col gap-4 mt-5">

@@ -3,18 +3,18 @@
 	import logos from '$lib/assets/images/logos.webp';
 
 	const datasets = [
-		{
-			title: 'Dataset 1 (80MB)',
-			description: 'If a dog chews shoes whose shoes does he choose?',
-			image: '/images/cover.webp',
-			url: 'https://s3.ctwhome.com/ruisdael/data/ql.zarr'
-		},
-		{
-			title: 'Dataset 2 (300MB)',
-			description: 'If a dog chews shoes whose shoes does he choose?',
-			image: '/images/cover.webp',
-			url: 'https://s3.ctwhome.com/ruisdael/data/animated-data/ql.zarr'
-		},
+		// {
+		// 	title: 'Dataset 1 (80MB)',
+		// 	description: 'If a dog chews shoes whose shoes does he choose?',
+		// 	image: '/images/cover.webp',
+		// 	url: 'https://s3.ctwhome.com/ruisdael/data/ql.zarr'
+		// },
+		// {
+		// 	title: 'Dataset 2 (300MB)',
+		// 	description: 'If a dog chews shoes whose shoes does he choose?',
+		// 	image: '/images/cover.webp',
+		// 	url: 'https://s3.ctwhome.com/ruisdael/data/animated-data/ql.zarr'
+		// },
 		{
 			title: 'Dataset with Rain 3 (600MB)',
 			description: 'Rain and clouds',
@@ -40,9 +40,9 @@
 	<p class="mb-8 text-lg font-bold my-10">Datasets</p>
 
 	<!-- TODO: remove these buttons when uploading from local machine is available -->
-	<a class="btn btn-primary" href="/viewer">Localhost</a>
+	<!-- <a class="btn btn-primary" href="/viewer">Localhost</a>
 	<a class="btn btn-primary" href="/viewer?dataset=http://localhost:5173/data/movie.zarr">Localhost animated</a>
-	<a class="btn btn-primary" href="/viewer?dataset=http://localhost:5173/data/animated/qr.zarr&path=qr">Localhost qr</a>
+	<a class="btn btn-primary" href="/viewer?dataset=http://localhost:5173/data/animated/qr.zarr&path=qr">Localhost qr</a> -->
 
 	<div class="flex gap-8 mt-4">
 		{#each datasets as data}
@@ -63,7 +63,7 @@
 		{/each}
 	</div>
 </div>
-
+<!--
 <div class="container mx-auto flex flex-col items-center mt-10">
 	Not available yet:
 	<div class="max-w-xl">
@@ -93,4 +93,4 @@
 			<input type="file" name="file_upload" class="hidden" />
 		</label>
 	</div>
-</div>
+</div> -->
