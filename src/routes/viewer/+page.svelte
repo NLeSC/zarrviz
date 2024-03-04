@@ -1,10 +1,10 @@
 <script lang="ts">
-	import TimeLine from './TimeLine.svelte';
+	import TimeLine from './components/TimeLine.svelte';
 
-	import { allTimeSlices, currentTimeIndex, totalSlices } from './allSlices.store';
-	import { cloudLayer, rainLayer, slicesToRender, temperatureLayer } from './viewer.store';
+	import { allTimeSlices, currentTimeIndex, totalSlices } from './stores/allSlices.store';
+	import { cloudLayer, rainLayer, slicesToRender, temperatureLayer } from './stores/viewer.store';
 
-	import Viewer from './Viewer.svelte';
+	import Viewer from './components/Viewer.svelte';
 	// import Viewer from '$lib/components/viewerExample.svelte';
 </script>
 

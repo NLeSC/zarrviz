@@ -1,8 +1,8 @@
 // import { Queue } from "async-await-queue";
 import { get } from "svelte/store";
 import { fetchSlice } from "./fetchSlice";
-import { downloadedTime } from "./allSlices.store";
-import { slicesToRender } from "./viewer.store";
+import { downloadedTime } from "../stores/allSlices.store";
+import { slicesToRender } from "../stores/viewer.store";
 
 /**
  * Creates a new Queue instance with a concurrency of 1 and a timeout of 5000ms.

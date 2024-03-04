@@ -1,6 +1,6 @@
 <script lang="ts">
-	import DebugButtons from './DebugButtons.svelte';
 	import { onDestroy, onMount } from 'svelte';
+	import { get } from 'svelte/store';
 	import * as THREE from 'three';
 	import CameraControls from 'camera-controls';
 	import vertexShaderVolume from '$lib/shaders/volume.vert';
@@ -9,8 +9,8 @@
 	import vertexShaderSurface from '$lib/shaders/surface.vert';
 	import fragmentShaderSurfaceHeatMap from '$lib/shaders/surface_heatmap.frag';
 	import { makeRainTransferTex } from '$lib/utils/makeRainTransferTex';
-	import { fetchSlice } from './fetchSlice';
-	import { fetchAllSlices } from './fetchAllSlices';
+	import { fetchSlice } from '../fetchAndPrepareData/fetchSlice';
+	import { fetchAllSlices } from '../fetchAndPrepareData/fetchAllSlices';
 	import {
 		allTimeSlices,
 		getVoxelAndVolumeSize,
@@ -20,9 +20,9 @@
 		boxSizes,
 		currentTimeIndex,
 		downloadedTime
-	} from './allSlices.store';
-	import { get } from 'svelte/store';
-	import { cloudLayer, rainLayer, temperatureLayer } from './viewer.store';
+	} from '../stores/allSlices.store';
+	import { cloudLayer, rainLayer, temperatureLayer } from '../stores/viewer.store';
+	import DebugButtons from './DebugButtons.svelte';
 
 	// import examplePoints from '$lib/components/3DVolumetric/examplePoints';
 
@@ -84,7 +84,10 @@
 		'qr' // rain
 		// 'thetavmix' // temperature
 	];
-	// const visible_data = ['qr'];
+
+	// 1 unit in the scene = 1000 meters (1 kilometer) in real life
+	// Meters of the bounding box of the data
+	let scaleFactor = 33800; // TODO: calculate this value from the data
 
 	$: {
 		console.log('🎹 changed ranged', $cloudLayer);
@@ -93,9 +96,16 @@
 
 		// scene?.updateOpacity('cloud', $cloudLayer.opacity / 100); // Assuming opacity is a fraction
 	}
-	// 1 unit in the scene = 1000 meters (1 kilometer) in real life
-	// Meters of the bounding box of the data
-	let scaleFactor = 33800; // TODO: calculate this value from the data
+
+	// Update the material when the currentTimeIndex changes
+	currentTimeIndex.subscribe((index) => {
+		const data = get(allTimeSlices)[index];
+		if (data) {
+			for (var variable of visible_data) {
+				updateMaterial({ variable: variable, dataUint8: data[variable] });
+			}
+		}
+	});
 
 	function toggleGrid() {
 		showGrid = !showGrid;
@@ -509,15 +519,6 @@
 		}
 		downloadedTime.set(Math.round(performance.now() - timing));
 		console.log('⏰ data downloaded and displayed in:', Math.round(performance.now() - timing), 'ms');
-	});
-	// Update the material when the currentTimeIndex changes
-	currentTimeIndex.subscribe((index) => {
-		const data = get(allTimeSlices)[index];
-		if (data) {
-			for (var variable of visible_data) {
-				updateMaterial({ variable: variable, dataUint8: data[variable] });
-			}
-		}
 	});
 
 	onDestroy(() => {

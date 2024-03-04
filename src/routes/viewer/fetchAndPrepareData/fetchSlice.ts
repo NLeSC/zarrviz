@@ -1,7 +1,7 @@
 import { openArray, HTTPStore, create } from 'zarr';
 import type { PersistenceMode } from 'zarr/types/types';
 
-import { allTimeSlices } from "./allSlices.store";
+import { allTimeSlices } from "../stores/allSlices.store";
 
 // downloadZarrPoints
 export async function fetchSlice({
