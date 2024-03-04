@@ -94,7 +94,7 @@
 		}}
 	/>
 	<!-- currentTimeIndex: {$currentTimeIndex} -->
-	{#if $allTimeSlices.length <= 1}
+	{#if $allTimeSlices.length < 1}
 		<div>
 			Loading data
 			<progress class="progress w-56" />

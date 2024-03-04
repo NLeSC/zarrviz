@@ -22,6 +22,7 @@
 		downloadedTime
 	} from './allSlices.store';
 	import { get } from 'svelte/store';
+	import { cloudLayer, rainLayer, temperatureLayer } from './viewer.store';
 
 	// import examplePoints from '$lib/components/3DVolumetric/examplePoints';
 
@@ -85,6 +86,13 @@
 	];
 	// const visible_data = ['qr'];
 
+	$: {
+		console.log('🎹 changed ranged', $cloudLayer);
+		console.log('🎹 changed ranged', $rainLayer);
+		console.log('🎹 changed ranged', $temperatureLayer);
+
+		// scene?.updateOpacity('cloud', $cloudLayer.opacity / 100); // Assuming opacity is a fraction
+	}
 	// 1 unit in the scene = 1000 meters (1 kilometer) in real life
 	// Meters of the bounding box of the data
 	let scaleFactor = 33800; // TODO: calculate this value from the data
@@ -453,11 +461,11 @@
 		plane.renderOrder = 0;
 		plane.position.z = 0.1;
 
-		plane.material = await initMaterial({ variable, dataUint8 });
+		plane.material = await initMaterial({ variable });
 		// const cubeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
 		// box.material = cubeMaterial;
 		boxes[variable] = plane;
-		updateMaterial({ variable, dataUint8 });
+		updateMaterial({ variable, dataUint8, dataCoarse: null });
 		scene.add(plane);
 		renderScene();
 	}
@@ -475,13 +483,13 @@
 
 		const timing = performance.now();
 		// Download first slice of the data and calculate the voxel and volume size. It runs only once.
-		for (var variable of visible_data) {
+		for (let variable of visible_data) {
 			if (variable == 'thetavmix') {
 				const {
 					dataUint8: vdata,
 					store: vstore,
 					shape: vshape
-				} = await fetchSlice({ currentTimeIndex: 0, path: variable, dims: 3 });
+				} = await fetchSlice({ currentTimeIndex: 0, path: variable, dimensions: 3 });
 				await getVoxelAndVolumeSize2D(vstore, vshape, variable);
 				await addPlaneRenderingContainer({ variable: variable, dataUint8: vdata });
 			} else {
@@ -495,9 +503,9 @@
 				await addVolumetricRenderingContainer({ variable: variable, dataUint8: vdata, dataCoarse: vCoarseData });
 			}
 		}
-		for (var variable of visible_data) {
-			var dimensions = variable == 'thetavmix' ? 3 : 4;
-			fetchAllSlices({ path: variable, dims: dimensions }); //<-------
+		for (let variable of visible_data) {
+			const dimensions = variable === 'thetavmix' ? 3 : 4;
+			fetchAllSlices({ path: variable, dimensions }); //<-------
 		}
 		downloadedTime.set(Math.round(performance.now() - timing));
 		console.log('⏰ data downloaded and displayed in:', Math.round(performance.now() - timing), 'ms');

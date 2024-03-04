@@ -10,11 +10,10 @@ export async function fetchSlice({
   mode = 'r' as PersistenceMode,
   dimensions = 4
 }) {
-  console.log('🚀 Downloading... ', currentTimeIndex + 1);
+  console.log('🚀 Downloading slice... ', currentTimeIndex + 1);
 
   const params = new URLSearchParams(document.location.search);
   const datasetUrl = params.get("dataset") || 'http://localhost:5173/data/ql.zarr';
-  console.log(datasetUrl)
 
   // Create an HTTPStore pointing to the base of your Zarr hierarchy
   const store = new HTTPStore(datasetUrl, {
@@ -26,7 +25,7 @@ export async function fetchSlice({
 
   let coarseData = null;
   if (path == 'qr') {
-    console.log("Coarse graining...");
+    // console.log("Coarse graining...");
     coarseData = new Uint8Array(shape[0] * shape[1] * shape[2] / (8 * 8 * 8));
     for (let i = 0; i < shape[0] / 8; i++) {
       for (let j = 0; j < shape[1] / 8; j++) {
@@ -45,7 +44,7 @@ export async function fetchSlice({
         }
       }
     }
-    console.log("...Done");
+    // console.log("...Done");
   }
 
   // allSlices.set(data);
