@@ -1,7 +1,9 @@
 <script lang="ts">
-	import { createEventDispatcher, onDestroy } from 'svelte';
+	import { createEventDispatcher, onDestroy, onMount } from 'svelte';
 	import { get } from 'svelte/store';
 	import { allTimeSlices, currentTimeIndex, downloadedTime } from '../stores/allSlices.store';
+	import { updateMaterial } from '../sceneSetup/initMaterial';
+	import { visible_data } from '../sceneSetup/createScene';
 
 	export let playAnimation = false;
 	export let length = 10;
@@ -26,6 +28,25 @@
 			clearInterval(interval);
 		}
 	}
+
+	// TODO
+	// TODO
+	// TODO
+	// TODO
+	// TODO
+	// TODO
+	// TODO
+	onMount(() => {
+		// Update the material when the currentTimeIndex changes
+		currentTimeIndex.subscribe((index: number) => {
+			const data = get(allTimeSlices)[index];
+			if (data) {
+				for (const variable of visible_data) {
+					updateMaterial({ variable, dataUint8: data[variable] });
+				}
+			}
+		});
+	});
 
 	onDestroy(() => {
 		clearInterval(interval);

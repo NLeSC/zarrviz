@@ -1,8 +1,8 @@
 <script>
 	import * as THREE from 'three';
+	import { cameraControls } from '../sceneSetup/createScene';
 
 	export let camera;
-	export let cameraControls;
 </script>
 
 <div class="info p-6">

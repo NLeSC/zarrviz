@@ -12,7 +12,8 @@ import {
 } from '../stores/allSlices.store';
 import { makeRainTransferTex } from '$lib/utils/makeRainTransferTex';
 import { get } from 'svelte/store';
-import { cloudLayer, rainLayer, temperatureLayer, showGrid } from '../stores/viewer.store';
+import { cameraFar, cameraNear } from './createScene';
+import { rainLayerSettings } from '../stores/viewer.store';
 
 
 
@@ -55,6 +56,12 @@ const finalGamma = 6.0;
 
 
 
+
+let qlMaterial: THREE.Material;
+let qrMaterial: THREE.Material;
+let thetavmixMaterial: THREE.Material;
+
+
 export function initMaterial({ variable }): THREE.Material {
   let shaderMaterial = null;
   switch (variable) {
@@ -94,7 +101,7 @@ export function initMaterial({ variable }): THREE.Material {
         side: THREE.DoubleSide,
         transparent: true,
         uniforms: {
-          uTransparency: { value: get(rainLayer).opacity / 100 },
+          uTransparency: { value: get(rainLayerSettings).opacity / 100 },
           boxSize: new THREE.Uniform(get(boxSizes)[variable]),
           volumeTex: new THREE.Uniform(null),
           coarseVolumeTex: new THREE.Uniform(null),
@@ -216,3 +223,5 @@ export function updateMaterial({ variable, dataUint8, dataCoarse = null }) {
       break;
   }
 }
+
+

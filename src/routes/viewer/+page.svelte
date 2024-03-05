@@ -2,7 +2,12 @@
 	import TimeLine from './components/TimeLine.svelte';
 
 	import { allTimeSlices, currentTimeIndex, totalSlices } from './stores/allSlices.store';
-	import { cloudLayer, rainLayer, slicesToRender, temperatureLayer } from './stores/viewer.store';
+	import {
+		cloudLayerSettings,
+		rainLayerSettings,
+		slicesToRender,
+		temperatureLayerSettings
+	} from './stores/viewer.store';
 
 	import Stats from '$lib/components/Stats.svelte';
 	import Viewer from './components/Viewer.svelte';
@@ -49,15 +54,15 @@
 		</div>
 
 		<h3 class="mt-10 text-xl">Layers</h3>
-		{#if $cloudLayer}
+		{#if $cloudLayerSettings}
 			<div class="form-control">
 				<div class="grid grid-cols-2 gap-2 items-center">
 					<label class="label cursor-pointer justify-start gap-3 w-1/2">
 						<input
 							type="checkbox"
-							checked={$cloudLayer.enabled}
+							checked={$cloudLayerSettings.enabled}
 							class="checkbox checkbox-sm"
-							on:change={(e) => ($cloudLayer.enabled = e.target.checked)}
+							on:change={(e) => ($cloudLayerSettings.enabled = e.target.checked)}
 						/>
 						<span class="label-text w-1/2">Clouds</span>
 					</label>
@@ -65,10 +70,10 @@
 						type="range"
 						min="0"
 						max="100"
-						bind:value={$cloudLayer.opacity}
-						on:change={(e) => ($cloudLayer.opacity = e.target.value)}
-						disabled={!$cloudLayer.enabled}
-						class:opacity-30={!$cloudLayer.enabled}
+						bind:value={$cloudLayerSettings.opacity}
+						on:change={(e) => ($cloudLayerSettings.opacity = e.target.value)}
+						disabled={!$cloudLayerSettings.enabled}
+						class:opacity-30={!$cloudLayerSettings.enabled}
 						class="disabled range range-xs"
 					/>
 				</div>
@@ -77,30 +82,30 @@
 					<label class="label cursor-pointer justify-start gap-3">
 						<input
 							type="checkbox"
-							checked={$rainLayer.enabled}
+							checked={$rainLayerSettings.enabled}
 							class="checkbox checkbox-sm"
-							on:change={(e) => ($rainLayer.enabled = e.target.checked)}
+							on:change={(e) => ($rainLayerSettings.enabled = e.target.checked)}
 						/>
 						<span class="label-text">Rain</span>
 					</label>
 					<input
 						type="range"
-						bind:value={$rainLayer.opacity}
-						on:change={(e) => ($rainLayer.opacity = e.target.value)}
+						bind:value={$rainLayerSettings.opacity}
+						on:change={(e) => ($rainLayerSettings.opacity = e.target.value)}
 						min="0"
 						max="100"
 						class="range range-xs"
-						disabled={!$rainLayer.enabled}
-						class:opacity-30={!$rainLayer.enabled}
+						disabled={!$rainLayerSettings.enabled}
+						class:opacity-30={!$rainLayerSettings.enabled}
 					/>
 				</div>
 				<div class="grid grid-cols-2 gap-2 items-center">
 					<label class="label cursor-pointer justify-start gap-3 w-1/2">
 						<input
 							type="checkbox"
-							checked={$temperatureLayer.enabled}
+							checked={$temperatureLayerSettings.enabled}
 							class="checkbox checkbox-sm"
-							on:change={(e) => ($temperatureLayer.enabled = e.target.checked)}
+							on:change={(e) => ($temperatureLayerSettings.enabled = e.target.checked)}
 						/>
 						<span class="label-text">Surface Temperature</span>
 					</label>
@@ -108,11 +113,11 @@
 						type="range"
 						min="0"
 						max="100"
-						value={$temperatureLayer.opacity}
-						on:change={(e) => ($temperatureLayer.opacity = e.target.value)}
+						value={$temperatureLayerSettings.opacity}
+						on:change={(e) => ($temperatureLayerSettings.opacity = e.target.value)}
 						class="range range-xs"
-						disabled={!$temperatureLayer.enabled}
-						class:opacity-30={!$temperatureLayer.enabled}
+						disabled={!$temperatureLayerSettings.enabled}
+						class:opacity-30={!$temperatureLayerSettings.enabled}
 					/>
 				</div>
 			</div>

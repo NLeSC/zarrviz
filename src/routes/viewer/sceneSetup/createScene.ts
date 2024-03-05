@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import CameraControls from 'camera-controls';
-import { cloudLayer, scaleFactor, showGrid } from '../stores/viewer.store';
+import { cloudLayerSettings, scaleFactor, showGrid } from '../stores/viewer.store';
 import { get } from 'svelte/store';
 import { createPlaneMesh } from './createPlaneMesh';
 CameraControls.install({ THREE: THREE });
@@ -10,6 +10,15 @@ let renderer: THREE.WebGLRenderer;
 // Create the Three.js scene
 let gridHelper: THREE.GridHelper;
 
+export const cameraFovDegrees = 5.0;
+export const cameraNear = 0.01;
+export const cameraFar = 1000.0;
+
+export const visible_data = [
+  // 'ql', // clouds
+  'qr' // rain
+  // 'thetavmix' // temperature
+];
 
 
 // TODO:
@@ -20,8 +29,6 @@ let gridHelper: THREE.GridHelper;
 export function toggleGrid() {
   // toggle showGrid
   showGrid.update($showGrid => !$showGrid);
-
-
   gridHelper.visible = get(showGrid); // Assuming gridHelper is your grid object
 }
 
@@ -57,7 +64,7 @@ function createGridHelper() {
 }
 
 
-
+//! DELETE AFTER TESTING
 let cube: THREE.Mesh;
 function addExampleCube(scene) {
   // Create a cube
@@ -73,7 +80,7 @@ function addExampleCube(scene) {
     // vertexShader,
     fragmentShader,
     uniforms: {
-      uTransparency: { value: get(cloudLayer).opacity / 100 }
+      uTransparency: { value: get(cloudLayerSettings).opacity / 100 }
     },
     transparent: true
   });
@@ -82,12 +89,12 @@ function addExampleCube(scene) {
   cube.position.set(-0.1, 0, 0.1); // Set the position of the cube
 
 
-  cloudLayer.subscribe($cloudLayer => {
-    // console.log('🎹 changed ranged', $cloudLayer);
-    cube.material.uniforms.uTransparency.value = $cloudLayer.opacity / 100;
+  cloudLayerSettings.subscribe($cloudLayerSettings => {
+    // console.log('🎹 changed ranged', $cloudLayerSettings);
+    cube.material.uniforms.uTransparency.value = $cloudLayerSettings.opacity / 100;
 
     // remove the cube from the scene if the opacity is 0
-    if ($cloudLayer.enabled) {
+    if ($cloudLayerSettings.enabled) {
       scene.add(cube);
     } else {
       scene.remove(cube);
@@ -96,10 +103,22 @@ function addExampleCube(scene) {
 
   return cube; // Add the cube to the scene
 }
+//! DELETE AFTER TESTING
 
-export async function create3DScene({ canvas, camera, cameraNear, cameraFar, cameraFovDegrees }): Promise<THREE.Scene> {
+function resize(canvas, camera) {
+  // Get the dimensions of the parent element
+  const parent = canvas.parentElement;
+  const width = parent.clientWidth;
+  const height = parent.clientHeight;
+
+  // Update the renderer and camera with the new sizes
+  renderer.setSize(width, height);
+  camera.aspect = width / height;
+  camera.updateProjectionMatrix();
+}
+
+export function create3DScene({ canvas, camera }): Promise<THREE.Scene> {
   // Set up the Three.js scene
-  console.log('🎹 3DDDDDD');
 
   const scene = new THREE.Scene();
   renderer = new THREE.WebGLRenderer({ antialias: true, canvas: canvas }); // Create a WebGLRenderer and specify the canvas to use
@@ -118,9 +137,9 @@ export async function create3DScene({ canvas, camera, cameraNear, cameraFar, cam
 
   cameraControls = new CameraControls(camera, canvas);
 
-  //
-  // Add a plane with the Map to the scene
-  //
+  /*
+  * Add a plane with the Map to the scene
+  // */
   scene.add(createPlaneMesh());
 
   //
@@ -152,27 +171,10 @@ export async function create3DScene({ canvas, camera, cameraNear, cameraFar, cam
   }
   animate();
 
-  function resize() {
-    // Get the dimensions of the parent element
-    const parent = canvas.parentElement;
-    const width = parent.clientWidth;
-    const height = parent.clientHeight;
-
-    // Update the renderer and camera with the new sizes
-    renderer.setSize(width, height);
-    camera.aspect = width / height;
-    camera.updateProjectionMatrix();
-  }
-
-  // function resize() {
-  // 	renderer.setSize(window.innerWidth, 400);
-  // 	camera.aspect = window.innerWidth / 400;
-  // 	camera.updateProjectionMatrix();
-  // }
-  window.addEventListener('resize', resize);
-  resize();
+  window.addEventListener('resize', () => resize(canvas, camera)); // Fix: Pass the correct arguments to the resize function
+  resize(canvas, camera);
   animate();
 
-  return scene;
+  return Promise.resolve(scene); // Fix: Wrap the scene variable in a Promise.resolve() function
   // console.log('🔋 3d scene created');
 }

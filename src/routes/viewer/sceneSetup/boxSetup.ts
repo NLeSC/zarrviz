@@ -25,7 +25,7 @@ export function createVolumetricRenderingBox({ scene, boxes, variable, dataUint8
   const boxGeometry = new THREE.BoxGeometry(1, 1, boxZ);
 
   switch (variable) {
-    case 'ql':
+    case 'ql': {
       const qlBox = new THREE.Mesh(boxGeometry);
       qlBox.position.z = 0.25 + 2000 / get(scaleFactor); // 570 meters above the map TODO: calculate this value from the data
       qlBox.renderOrder = 0;
@@ -35,7 +35,8 @@ export function createVolumetricRenderingBox({ scene, boxes, variable, dataUint8
       updateMaterial({ variable, dataUint8, dataCoarse });
       scene.add(qlBox);
       break;
-    case 'qr':
+    }
+    case 'qr': {
       const qrBox = new THREE.Mesh(boxGeometry);
       qrBox.position.z = 0.25 + 2000 / get(scaleFactor); // 570 meters above the map TODO: calculate this value from the data
       qrBox.renderOrder = 0;
@@ -45,6 +46,7 @@ export function createVolumetricRenderingBox({ scene, boxes, variable, dataUint8
       updateMaterial({ variable, dataUint8, dataCoarse });
       scene.add(qrBox);
       break;
+    }
   }
 
   // renderScene(); // no need to render the scene
@@ -71,7 +73,7 @@ export function createPlaneRenderingBox({ variable, dataUint8, dataCoarse }): TH
   // const cubeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
   // box.material = cubeMaterial;
   // boxes[variable] = plane;
-  // updateMaterial({ variable, dataUint8, dataCoarse });
+  updateMaterial({ variable, dataUint8, dataCoarse });
   // scene.add(plane);
   // renderScene();
   return plane;
