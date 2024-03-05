@@ -2,6 +2,7 @@ import { persisted } from 'svelte-persisted-store'
 import { writable } from 'svelte/store';
 
 export const slicesToRender = persisted('slicesToRender', 10); // defatult 10. It can be more
+export const showGrid = persisted('showGrid', true); // defatult 10. It can be more
 
 export const scene = writable(null);
 

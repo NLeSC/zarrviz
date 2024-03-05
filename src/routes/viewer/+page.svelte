@@ -4,6 +4,7 @@
 	import { allTimeSlices, currentTimeIndex, totalSlices } from './stores/allSlices.store';
 	import { cloudLayer, rainLayer, slicesToRender, temperatureLayer } from './stores/viewer.store';
 
+	import Stats from '$lib/components/Stats.svelte';
 	import Viewer from './components/Viewer.svelte';
 	// import Viewer from '$lib/components/viewerExample.svelte';
 </script>
@@ -27,6 +28,7 @@
 	</div>
 	<div class="px-4 py-4">
 		<h2 class="text-2xl mb-3">Scene Title</h2>
+		<Stats />
 
 		<div class="text-sm">
 			<!-- 1073741824 = 1GB -->
