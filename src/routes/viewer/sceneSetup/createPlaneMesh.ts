@@ -16,8 +16,8 @@ export function createPlaneMesh(): THREE.Mesh {
   // Create a plane geometry and mesh
   const planeGeometry = new THREE.PlaneGeometry(mapWidth, mapHeight);
   const planeMaterial = new THREE.MeshBasicMaterial({
-    map: texture
-    //			side: THREE.DoubleSide
+    map: texture,
+    side: THREE.DoubleSide
   });
 
   const planeMesh = new THREE.Mesh(planeGeometry, planeMaterial);

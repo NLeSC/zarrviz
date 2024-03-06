@@ -1,14 +1,45 @@
 import * as THREE from 'three';
-
 import { get } from "svelte/store";
 import { volumeSizes } from "../stores/allSlices.store";
 import { scaleFactor } from '../stores/viewer.store';
 import { initMaterial, updateMaterial } from './initMaterial';
 
+
 // TODO:
 // TODO:
-// TODO: MAKE THIS WORK
 // TODO:
+// TODO: CONTINUE HERE
+// TODO: add and remove the layers from the scene and materials as needed
+// TODO:
+// TODO:
+//
+// Rendering containers and materials for the volume rendering layers
+//
+type Boxes = {
+  qlBox?: THREE.Mesh;
+  qlMaterial?: THREE.ShaderMaterial;
+
+  qrBox?: THREE.Mesh;
+  qrMaterial?: THREE.ShaderMaterial;
+
+  thetavmixBox?: THREE.Points;
+  thetavmixMaterial?: THREE.ShaderMaterial;
+};
+export const boxes: Boxes = {};
+
+//
+// Layers to be fetch and rendered in the scene programatically
+// Add and remove for debugging and testing
+// They should be all enabled by default
+//
+export const visible_data = [
+  // 'ql', // clouds
+  'qr' // rain
+  // 'thetavmix' // temperature
+];
+
+
+
 
 /*
  * A box in which the 3D volume texture will be rendered.
@@ -30,8 +61,10 @@ export function createVolumetricRenderingBox({ scene, boxes, variable, dataUint8
       qlBox.position.z = 0.25 + 2000 / get(scaleFactor); // 570 meters above the map TODO: calculate this value from the data
       qlBox.renderOrder = 0;
       qlBox.material = initMaterial({ variable });
-      qlMaterial = qlBox.material;
-      boxes[variable] = qlBox;
+
+      boxes.qlMaterial = qlBox.material;
+      boxes.qlBox = qlBox;
+
       updateMaterial({ variable, dataUint8, dataCoarse });
       scene.add(qlBox);
       break;
@@ -41,17 +74,40 @@ export function createVolumetricRenderingBox({ scene, boxes, variable, dataUint8
       qrBox.position.z = 0.25 + 2000 / get(scaleFactor); // 570 meters above the map TODO: calculate this value from the data
       qrBox.renderOrder = 0;
       qrBox.material = initMaterial({ variable });
-      qrMaterial = qrBox.material;
-      boxes[variable] = qrBox;
+      boxes.qrMaterial = qrBox.material;
+      boxes.qrBox = qrBox;
+
       updateMaterial({ variable, dataUint8, dataCoarse });
       scene.add(qrBox);
       break;
+    }
+    case 'thetavmix': {
+      const planeGeometry = new THREE.PlaneGeometry(1, 1, 1000, 1000);
+      planeGeometry.rotateX(Math.PI / 2);
+
+      //planeGeometry.translate(0, 0, 20);
+      const plane: THREE.Points = new THREE.Points(planeGeometry);
+      plane.rotateX(-Math.PI / 2);
+      //plane.position.z = 2000 / scaleFactor; // 570 meters above the map TODO: calculate this value from the data
+      plane.renderOrder = 0;
+      plane.position.z = 0.1;
+
+      plane.material = initMaterial({ variable });
+      // const cubeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+      // box.material = cubeMaterial;
+      // boxes[variable] = plane;
+      updateMaterial({ variable, dataUint8, dataCoarse });
+      // scene.add(plane);
+      // renderScene();
+      break;
+
+
     }
   }
 
   // renderScene(); // no need to render the scene
 }
-// A plane in whcin the plane texture will be rendered.
+/* // A plane in whcin the plane texture will be rendered.
 export function createPlaneRenderingBox({ variable, dataUint8, dataCoarse }): THREE.Points {
   //const boxGeometry = new THREE.BoxGeometry(get(volumeSize)[0], get(volumeSize)[1], get(volumeSize)[2]);
   // const boxSizeInKm = 33.8; // 33.8 km
@@ -78,3 +134,4 @@ export function createPlaneRenderingBox({ variable, dataUint8, dataCoarse }): TH
   // renderScene();
   return plane;
 }
+ */

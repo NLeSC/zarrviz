@@ -14,13 +14,6 @@ export const boxSizes = writable({})
 
 export const downloadedTime = writable(0)
 
-type Boxes = {
-  qrBox?: THREE.Mesh;
-  qlBox?: THREE.Mesh;
-  thetavmixBox?: THREE.Points;
-};
-export const boxes: Boxes = {};
-
 export async function getVoxelAndVolumeSize(store, shape, path) {
   // if (currentTimeIndex === 0) {
   const zarrxvals = await openArray({ store, path: 'xt', mode: 'r' });

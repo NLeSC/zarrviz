@@ -1,70 +1,21 @@
 import * as THREE from 'three';
 import CameraControls from 'camera-controls';
-import { cloudLayerSettings, scaleFactor, showGrid } from '../stores/viewer.store';
+import { cloudLayerSettings } from '../stores/viewer.store';
 import { get } from 'svelte/store';
 import { createPlaneMesh } from './createPlaneMesh';
 CameraControls.install({ THREE: THREE });
 
 export let cameraControls: CameraControls | null = null;
 let renderer: THREE.WebGLRenderer;
-// Create the Three.js scene
-let gridHelper: THREE.GridHelper;
+
 
 export const cameraFovDegrees = 5.0;
 export const cameraNear = 0.01;
 export const cameraFar = 1000.0;
 
-export const visible_data = [
-  // 'ql', // clouds
-  'qr' // rain
-  // 'thetavmix' // temperature
-];
-
-
-// TODO:
-// TODO:
-// TODO: MAKE THIS WORK
-// TODO:
-
-export function toggleGrid() {
-  // toggle showGrid
-  showGrid.update($showGrid => !$showGrid);
-  gridHelper.visible = get(showGrid); // Assuming gridHelper is your grid object
-}
-
-//
-// Create and add a grid helper to the scene
-//
-function createGridHelper() {
-  const gridSize = Math.max(280000, 325000) / get(scaleFactor); // in scene units
-  const cellSize = 10000 / get(scaleFactor); // 10 km per cell, in scene units
-  const gridDivisionsX = Math.floor(280000 / get(scaleFactor) / cellSize);
-  const gridDivisionsY = Math.floor(325000 / get(scaleFactor) / cellSize);
-
-  // Create a grid material with opacity
-  const gridMaterial = new THREE.LineBasicMaterial({
-    color: 0xffffff, // or any color you prefer
-    transparent: true,
-    opacity: 0.5
-  });
-  gridHelper = new THREE.GridHelper(gridSize, Math.max(gridDivisionsX, gridDivisionsY), 0xffffff, 0xffffff);
-
-  // Apply the custom material to each line of the gri
-  gridHelper.traverse((child) => {
-    if (child instanceof THREE.LineSegments) {
-      child.material = gridMaterial;
-    }
-  });
-
-  gridHelper.position.set(0, 0, 0.01); // Adjusted for scaled scene
-  gridHelper.rotation.x = -Math.PI / 2;
-
-  gridHelper.visible = get(showGrid);
-  return gridHelper;
-}
-
 
 //! DELETE AFTER TESTING
+//! cube to play with custom shader
 let cube: THREE.Mesh;
 function addExampleCube(scene) {
   // Create a cube
@@ -105,6 +56,7 @@ function addExampleCube(scene) {
 }
 //! DELETE AFTER TESTING
 
+// Resize the canvas and camera when the window is resized
 function resize(canvas, camera) {
   // Get the dimensions of the parent element
   const parent = canvas.parentElement;
@@ -118,8 +70,7 @@ function resize(canvas, camera) {
 }
 
 export function create3DScene({ canvas, camera }): Promise<THREE.Scene> {
-  // Set up the Three.js scene
-
+  // Set up the Three.js scene and renderer
   const scene = new THREE.Scene();
   renderer = new THREE.WebGLRenderer({ antialias: true, canvas: canvas }); // Create a WebGLRenderer and specify the canvas to use
 
@@ -129,27 +80,18 @@ export function create3DScene({ canvas, camera }): Promise<THREE.Scene> {
     cameraNear,
     cameraFar
   );
-  // camera.position.z = 5; // Adjust as needed
-  // camera.position.set(0, -2, 1.7);
-  // x: 0, y: -0.935916216369971, z: 0.9359162163699711
+
   camera.position.set(0, -10, 10); // Adjusted for scaled scene
   camera.lookAt(new THREE.Vector3(0, 0, 0));
 
   cameraControls = new CameraControls(camera, canvas);
 
-  /*
-  * Add a plane with the Map to the scene
-  // */
+  // Add a plane with the Map to the scene
   scene.add(createPlaneMesh());
 
-  //
-  // Add a grid to the scene to help visualize camera movement.
-  //
-  scene.add(createGridHelper());
 
   // Add exmample cube
   scene.add(addExampleCube(scene));
-
 
   //
   // Lights, to be used both during rendering the volume, and rendering the optional surface.
@@ -160,7 +102,7 @@ export function create3DScene({ canvas, camera }): Promise<THREE.Scene> {
   // scene.add(hemisphereLight);
 
   //
-  // Render loop
+  // Render loop for aniamtion and updating the scene
   //
   const clock = new THREE.Clock();
   function animate() {
@@ -169,8 +111,6 @@ export function create3DScene({ canvas, camera }): Promise<THREE.Scene> {
     cameraControls.update(delta);
     renderer.render(scene, camera);
   }
-  animate();
-
   window.addEventListener('resize', () => resize(canvas, camera)); // Fix: Pass the correct arguments to the resize function
   resize(canvas, camera);
   animate();

@@ -3,7 +3,7 @@
 	import { get } from 'svelte/store';
 	import { allTimeSlices, currentTimeIndex, downloadedTime } from '../stores/allSlices.store';
 	import { updateMaterial } from '../sceneSetup/initMaterial';
-	import { visible_data } from '../sceneSetup/createScene';
+	import { visible_data } from '../sceneSetup/boxSetup';
 
 	export let playAnimation = false;
 	export let length = 10;
@@ -32,7 +32,7 @@
 	// TODO
 	// TODO
 	// TODO
-	// TODO
+	// TODO  update the material when the currentTimeIndex changes
 	// TODO
 	// TODO
 	// TODO

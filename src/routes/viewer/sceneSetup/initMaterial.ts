@@ -13,7 +13,8 @@ import {
 import { makeRainTransferTex } from '$lib/utils/makeRainTransferTex';
 import { get } from 'svelte/store';
 import { cameraFar, cameraNear } from './createScene';
-import { rainLayerSettings } from '../stores/viewer.store';
+import { cloudLayerSettings, rainLayerSettings, temperatureLayerSettings } from '../stores/viewer.store';
+import { boxes } from './boxSetup';
 
 
 
@@ -56,12 +57,6 @@ const finalGamma = 6.0;
 
 
 
-
-let qlMaterial: THREE.Material;
-let qrMaterial: THREE.Material;
-let thetavmixMaterial: THREE.Material;
-
-
 export function initMaterial({ variable }): THREE.Material {
   let shaderMaterial = null;
   switch (variable) {
@@ -72,6 +67,7 @@ export function initMaterial({ variable }): THREE.Material {
         side: THREE.DoubleSide,
         transparent: true,
         uniforms: {
+          uTransparency: { value: get(cloudLayerSettings).opacity / 100 },   // TODO: Implement this uniform in the shader
           boxSize: new THREE.Uniform(get(boxSizes)[variable]),
           volumeTex: new THREE.Uniform(null),
           voxelSize: new THREE.Uniform(get(voxelSizes)[variable]),
@@ -121,7 +117,7 @@ export function initMaterial({ variable }): THREE.Material {
       });
       break;
     case 'thetavmix':
-      // create an elevation texture
+      // Create an elevation texture
       shaderMaterial = new THREE.ShaderMaterial({
         vertexShader: vertexShaderSurface,
         fragmentShader: fragmentShaderSurfaceHeatMap,
@@ -130,6 +126,7 @@ export function initMaterial({ variable }): THREE.Material {
         opacity: 1.0,
         clipping: true,
         uniforms: {
+          uTransparency: { value: get(temperatureLayerSettings).opacity / 100 },   // TODO: Implement this uniform in the shader
           volumeTex: new THREE.Uniform(null),
           heightRatio: new THREE.Uniform(0),
           heightBias: new THREE.Uniform(0),
