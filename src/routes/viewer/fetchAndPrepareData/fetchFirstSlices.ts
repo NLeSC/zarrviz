@@ -1,45 +1,39 @@
 import {
-  // createPlaneRenderingBox,
+  boxes,
+  createPlaneRenderingBox,
   createVolumetricRenderingBox
 } from "../sceneSetup/boxSetup";
 import {
   getVoxelAndVolumeSize,
-  // getVoxelAndVolumeSize2D
+  getVoxelAndVolumeSize2D
 } from "../stores/allSlices.store";
 import { fetchAllSlices } from "./fetchAllSlices";
 import { fetchSlice } from "./fetchSlice";
 
-export async function fetchFirstSlices(visible_data, scene, boxes) {
+export async function fetchFirstSlices(visible_data, scene) {
+
   for (const variable of visible_data) {
     const dimensions = variable === 'thetavmix' ? 3 : 4;
     // Common operation for all variables
-    fetchAllSlices({ path: variable, dimensions });
+    // fetchAllSlices({ path: variable, dimensions }); // TODO: FETCH ALL SLICES ONCE I HAVE THE FIRST ONE
 
     // Conditional operations based on the variable value
     if (variable === 'thetavmix') {
-
-
-      // TODO
-      // TODO
-      // TODO  use only one createRenderingBox function?
-      // TODO  and check if only one dataUint8 is returned (also for the compressed data)
-      // TODO
-      // TODO
-      // TODO
-      /*
       const {
         dataUint8: vdata,
         store: vstore,
         shape: vshape
       } = await fetchSlice({ currentTimeIndex: 0, path: variable, dimensions: 3 });
 
+      // TODO MAKE NOOOOO SIDE EFECTS FUNCTION!!!!
       await getVoxelAndVolumeSize2D(vstore, vshape, variable);
-
-      boxes.thetavmixBox = createPlaneRenderingBox({ variable, dataUint8: vdata });
-      */
-      // TODO
-      // TODO
-      // TODO
+      // boxes.thetavmixBox = createPlaneRenderingBox({ variable, dataUint8: vdata });
+      // boxes.thetavmixBox = createVolumetricRenderingBox({ variable, dataUint8: vdata });
+      boxes[variable] = await createVolumetricRenderingBox({
+        scene,
+        variable,
+        dataUint8: vdata
+      });
 
     }
     else {
@@ -49,11 +43,12 @@ export async function fetchFirstSlices(visible_data, scene, boxes) {
         shape: vshape,
         coarseData: vCoarseData
       } = await fetchSlice({ currentTimeIndex: 0, path: variable });
+
+      // TODO NOOOOO SIDE EFECTS FUNCTION!!!!
       await getVoxelAndVolumeSize(vstore, vshape, variable);
 
-      await createVolumetricRenderingBox({
+      boxes[variable] = await createVolumetricRenderingBox({
         scene,
-        boxes,
         variable,
         dataUint8: vdata,
         dataCoarse: vCoarseData

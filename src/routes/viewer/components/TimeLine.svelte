@@ -3,7 +3,7 @@
 	import { get } from 'svelte/store';
 	import { allTimeSlices, currentTimeIndex, downloadedTime } from '../stores/allSlices.store';
 	import { updateMaterial } from '../sceneSetup/initMaterial';
-	import { visible_data } from '../sceneSetup/boxSetup';
+	import { data_layers } from '../sceneSetup/boxSetup';
 
 	export let playAnimation = false;
 	export let length = 10;
@@ -41,7 +41,7 @@
 		currentTimeIndex.subscribe((index: number) => {
 			const data = get(allTimeSlices)[index];
 			if (data) {
-				for (const variable of visible_data) {
+				for (const variable of data_layers) {
 					updateMaterial({ variable, dataUint8: data[variable] });
 				}
 			}

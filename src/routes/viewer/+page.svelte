@@ -113,8 +113,7 @@
 						type="range"
 						min="0"
 						max="100"
-						value={$temperatureLayerSettings.opacity}
-						on:change={(e) => ($temperatureLayerSettings.opacity = e.target.value)}
+						bind:value={$temperatureLayerSettings.opacity}
 						class="range range-xs"
 						disabled={!$temperatureLayerSettings.enabled}
 						class:opacity-30={!$temperatureLayerSettings.enabled}

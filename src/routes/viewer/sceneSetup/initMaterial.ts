@@ -12,7 +12,7 @@ import {
 } from '../stores/allSlices.store';
 import { makeRainTransferTex } from '$lib/utils/makeRainTransferTex';
 import { get } from 'svelte/store';
-import { cameraFar, cameraNear } from './createScene';
+import { cameraFar, cameraNear } from './create3DScene';
 import { cloudLayerSettings, rainLayerSettings, temperatureLayerSettings } from '../stores/viewer.store';
 import { boxes } from './boxSetup';
 
@@ -58,7 +58,7 @@ const finalGamma = 6.0;
 
 
 export function initMaterial({ variable }): THREE.Material {
-  let shaderMaterial = null;
+  let shaderMaterial: THREE.Material = null;
   switch (variable) {
     case 'ql':
       shaderMaterial = new THREE.ShaderMaterial({

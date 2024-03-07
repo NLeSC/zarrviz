@@ -8,25 +8,27 @@ export function createPlaneMesh(): THREE.Mesh {
   const textureLoader = new THREE.TextureLoader();
   const texture = textureLoader.load('/maps/nl_map 50m per pixel.webp');
   texture.encoding = THREE.sRGBEncoding;
+  // TODO Replace with the following line when the texture is in sRGB
+  // texture.colorSpace = THREE.SRGBColorSpace;
 
   // Scale factor: 50 meters per pixel
   const mapWidth = (5600 * 50) / get(scaleFactor); // in scene units
   const mapHeight = (6500 * 50) / get(scaleFactor); // in scene units
 
   // Create a plane geometry and mesh
-  const planeGeometry = new THREE.PlaneGeometry(mapWidth, mapHeight);
-  const planeMaterial = new THREE.MeshBasicMaterial({
+  const geometry = new THREE.PlaneGeometry(mapWidth, mapHeight);
+  const material = new THREE.MeshBasicMaterial({
     map: texture,
     side: THREE.DoubleSide
   });
 
-  const planeMesh = new THREE.Mesh(planeGeometry, planeMaterial);
+  const mesh = new THREE.Mesh(geometry, material);
 
   // Rotate the plane to align it with the XY plane
-  // planeMesh.rotation.x = -Math.PI / 2;
+  // mesh.rotation.x = -Math.PI / 2;
 
   // Assuming you want the map centered at the origin
-  planeMesh.position.set(0, 0, 0);
+  mesh.position.set(0, 0, 0);
 
-  return planeMesh;
+  return mesh;
 }

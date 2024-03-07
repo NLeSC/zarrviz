@@ -1,6 +1,6 @@
 <script>
 	import * as THREE from 'three';
-	import { cameraControls } from '../sceneSetup/createScene';
+	import { cameraControls } from '../sceneSetup/create3DScene';
 
 	export let camera;
 </script>

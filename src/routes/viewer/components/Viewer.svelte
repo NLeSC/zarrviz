@@ -5,11 +5,11 @@
 
 	import { allTimeSlices, currentTimeIndex, downloadedTime } from '../stores/allSlices.store';
 	import { cloudLayerSettings, rainLayerSettings, temperatureLayerSettings, showGrid } from '../stores/viewer.store';
-	import { create3DScene } from '../sceneSetup/createScene';
+	import { create3DScene } from '../sceneSetup/create3DScene';
 
 	import { fetchFirstSlices } from '../fetchAndPrepareData/fetchFirstSlices';
 	import { createGridHelper } from '../sceneSetup/createGridHelper';
-	import { boxes, visible_data } from '../sceneSetup/boxSetup';
+	import { boxes, data_layers } from '../sceneSetup/boxSetup';
 	// import examplePoints from '../fetchAndPrepareData/examplePoints';
 
 	let canvas: HTMLElement;
@@ -22,27 +22,30 @@
 	// and add and remove the layers from the scene
 	//
 	$: {
-		// Change transparency of the materials
-		boxes.qrMaterial && (boxes.qrMaterial.uniforms.uTransparency.value = $rainLayerSettings.opacity / 100);
-		boxes.qlMaterial && (boxes.qlMaterial.uniforms.uTransparency.value = $cloudLayerSettings.opacity / 100);
-		boxes.thetavmixMaterial &&
-			(boxes.thetavmixMaterial.uniforms.uTransparency.value = $temperatureLayerSettings.opacity / 100);
-
-		// TODO:
-		// TODO:  make this work
-		// TODO:
-		// TODO:
-		// Enable and disable the layers
 		if (scene) {
+			// Change transparency of the materials
+			// TODO: TESTING THESE ARE THE ORIGINAL
+			// boxes.qlBox && (boxes.qlBox.material.uniforms.uTransparency.value = $cloudLayerSettings.opacity / 100);
+			// boxes.qrBox && (boxes.qrBox.material.uniforms.uTransparency.value = $rainLayerSettings.opacity / 100);
+			// boxes.thetavmixBox &&
+			// (boxes.thetavmixBox.material.uniforms.uTransparency.value = $temperatureLayerSettings.opacity / 100);
+
+			// TODO: TESTING
+			boxes.qlBox && (boxes.qlBox.material.opacity = $cloudLayerSettings.opacity / 100);
+			boxes.qrBox && (boxes.qrBox.material.opacity = $rainLayerSettings.opacity / 100);
+			boxes.thetavmixBox && (boxes.thetavmixBox.material.opacity = $temperatureLayerSettings.opacity / 100);
+
+			// TODO:
+			// TODO:  make this work
+			// TODO:
+			// TODO:
+			// Enable and disable the layers
 			$rainLayerSettings.enabled && !!boxes.qrBox ? scene.add(boxes.qrBox) : scene.remove(boxes.qrBox);
 			$cloudLayerSettings.enabled && !!boxes.qlBox ? scene.add(boxes.qlBox) : scene.remove(boxes.qlBox);
 			$temperatureLayerSettings.enabled && !!boxes.thetavmixBox
 				? scene.add(boxes.thetavmixBox)
 				: scene.remove(boxes.thetavmixBox);
 		}
-		// console.log('🎹 changed ranged', $rainLayerSettings);
-		// console.log('🎹 changed ranged', $temperatureLayerSettings);
-		// scene?.updateOpacity('cloud', $cloudLayerSettings.opacity / 100); // Assuming opacity is a fraction
 	}
 
 	// Toggle showGrid helper
@@ -53,18 +56,21 @@
 
 	onMount(async () => {
 		const timing = performance.now();
-		// 3D scene
+
+		// Create the base 3D scene (camera, renderer, etc.)
 		scene = await create3DScene({ canvas, camera });
 
 		// Add the grid helper to the scene
 		gridHelper = createGridHelper();
 		scene.add(gridHelper);
 
+		//
+		// Download first slice of the data and calculate the voxel and volume size. It runs only once.
+		//
+		fetchFirstSlices(data_layers, scene);
+
 		// Add the example points to the scene
 		// scene.add(examplePoints());
-
-		// Download first slice of the data and calculate the voxel and volume size. It runs only once.
-		fetchFirstSlices(visible_data, scene, boxes);
 
 		downloadedTime.set(Math.round(performance.now() - timing));
 		console.log('⏰ data downloaded and displayed in:', Math.round(performance.now() - timing), 'ms');
