@@ -6,13 +6,18 @@ import { createPlaneMesh } from './createPlaneMesh';
 CameraControls.install({ THREE: THREE });
 
 export let cameraControls: CameraControls | null = null;
-let renderer: THREE.WebGLRenderer;
+export let renderer: THREE.WebGLRenderer;
 
 
 export const cameraFovDegrees = 5.0;
 export const cameraNear = 0.01;
 export const cameraFar = 1000.0;
 
+// Render the scene. This function can be reused in other effects or callbacks.
+function renderScene(scene, camera): void {
+  renderer.render(scene, camera);
+  console.log('🔥 rendered');
+}
 
 //! DELETE AFTER TESTING
 //! cube to play with custom shader

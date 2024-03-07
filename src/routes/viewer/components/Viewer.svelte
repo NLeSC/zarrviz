@@ -15,7 +15,6 @@
 	let canvas: HTMLElement;
 	let scene: THREE.Scene;
 	let camera: THREE.PerspectiveCamera;
-	let renderer: THREE.WebGLRenderer; // TODO, do i need the renderer?? i don't think so
 	let gridHelper: THREE.GridHelper;
 
 	//
@@ -50,12 +49,6 @@
 	export function toggleGrid() {
 		showGrid.update(($showGrid) => !$showGrid);
 		gridHelper.visible = $showGrid; // Assuming gridHelper is your grid object
-	}
-
-	// Render the scene. This function can be reused in other effects or callbacks.
-	function renderScene(): void {
-		renderer.render(scene, camera);
-		console.log('🔥 rendered');
 	}
 
 	onMount(async () => {
