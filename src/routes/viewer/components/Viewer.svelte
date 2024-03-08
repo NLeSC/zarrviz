@@ -66,6 +66,11 @@
 		// It runs only once.
 		dataSetup(data_layers, scene);
 
+		// TODO:
+		// TODO: FETCH THE REST OF THE DATA
+		// TODO:
+		// TODO:
+
 		// Add the example points to the scene
 		// scene.add(examplePoints());
 
