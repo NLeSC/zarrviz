@@ -7,9 +7,9 @@ import { scaleFactor } from '../stores/viewer.store';
 export function createPlaneMesh(): THREE.Mesh {
   const textureLoader = new THREE.TextureLoader();
   const texture = textureLoader.load('/maps/nl_map 50m per pixel.webp');
-  texture.encoding = THREE.sRGBEncoding;
+  // texture.encoding = THREE.sRGBEncoding;
   // TODO Replace with the following line when the texture is in sRGB
-  // texture.colorSpace = THREE.SRGBColorSpace;
+  texture.colorSpace = THREE.SRGBColorSpace;
 
   // Scale factor: 50 meters per pixel
   const mapWidth = (5600 * 50) / get(scaleFactor); // in scene units

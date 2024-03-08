@@ -7,7 +7,7 @@
 	import { cloudLayerSettings, rainLayerSettings, temperatureLayerSettings, showGrid } from '../stores/viewer.store';
 	import { create3DScene } from '../sceneSetup/create3DScene';
 
-	import { fetchFirstSlices } from '../fetchAndPrepareData/fetchFirstSlices';
+	import { dataSetup } from '../fetchAndPrepareData/dataSetup';
 	import { createGridHelper } from '../sceneSetup/createGridHelper';
 	import { boxes, data_layers } from '../sceneSetup/boxSetup';
 	// import examplePoints from '../fetchAndPrepareData/examplePoints';
@@ -25,26 +25,26 @@
 		if (scene) {
 			// Change transparency of the materials
 			// TODO: TESTING THESE ARE THE ORIGINAL
-			// boxes.qlBox && (boxes.qlBox.material.uniforms.uTransparency.value = $cloudLayerSettings.opacity / 100);
+			boxes.ql && (boxes.ql.material.uniforms.uTransparency.value = $cloudLayerSettings.opacity / 100);
 			// boxes.qrBox && (boxes.qrBox.material.uniforms.uTransparency.value = $rainLayerSettings.opacity / 100);
 			// boxes.thetavmixBox &&
-			// (boxes.thetavmixBox.material.uniforms.uTransparency.value = $temperatureLayerSettings.opacity / 100);
+			// 	(boxes.thetavmixBox.material.uniforms.uTransparency.value = $temperatureLayerSettings.opacity / 100);
 
 			// TODO: TESTING
-			boxes.qlBox && (boxes.qlBox.material.opacity = $cloudLayerSettings.opacity / 100);
-			boxes.qrBox && (boxes.qrBox.material.opacity = $rainLayerSettings.opacity / 100);
-			boxes.thetavmixBox && (boxes.thetavmixBox.material.opacity = $temperatureLayerSettings.opacity / 100);
+			// boxes.ql && (boxes.ql.material.opacity = $cloudLayerSettings.opacity / 100);
+			// boxes.qrBox && (boxes.qrBox.material.opacity = $rainLayerSettings.opacity / 100);
+			// boxes.thetavmixBox && (boxes.thetavmixBox.material.opacity = $temperatureLayerSettings.opacity / 100);
 
 			// TODO:
 			// TODO:  make this work
 			// TODO:
 			// TODO:
 			// Enable and disable the layers
-			$rainLayerSettings.enabled && !!boxes.qrBox ? scene.add(boxes.qrBox) : scene.remove(boxes.qrBox);
-			$cloudLayerSettings.enabled && !!boxes.qlBox ? scene.add(boxes.qlBox) : scene.remove(boxes.qlBox);
-			$temperatureLayerSettings.enabled && !!boxes.thetavmixBox
-				? scene.add(boxes.thetavmixBox)
-				: scene.remove(boxes.thetavmixBox);
+			$rainLayerSettings.enabled && !!boxes.qr ? scene.add(boxes.qr) : scene.remove(boxes.qr);
+			$cloudLayerSettings.enabled && !!boxes.ql ? scene.add(boxes.ql) : scene.remove(boxes.ql);
+			$temperatureLayerSettings.enabled && !!boxes.thetavmix
+				? scene.add(boxes.thetavmix)
+				: scene.remove(boxes.thetavmix);
 		}
 	}
 
@@ -64,10 +64,10 @@
 		gridHelper = createGridHelper();
 		scene.add(gridHelper);
 
-		//
-		// Download first slice of the data and calculate the voxel and volume size. It runs only once.
-		//
-		fetchFirstSlices(data_layers, scene);
+		// Download first slice of the data and
+		// calculate the voxel and volume size.
+		// It runs only once.
+		dataSetup(data_layers, scene);
 
 		// Add the example points to the scene
 		// scene.add(examplePoints());

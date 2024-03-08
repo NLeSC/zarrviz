@@ -10,7 +10,11 @@ import {
 import { fetchAllSlices } from "./fetchAllSlices";
 import { fetchSlice } from "./fetchSlice";
 
-export async function fetchFirstSlices(visible_data, scene) {
+
+// Download first slice of the data and
+// calculate the voxel and volume size.
+// It runs only once.
+export async function dataSetup(visible_data, scene) {
 
   for (const variable of visible_data) {
     const dimensions = variable === 'thetavmix' ? 3 : 4;
@@ -20,38 +24,37 @@ export async function fetchFirstSlices(visible_data, scene) {
     // Conditional operations based on the variable value
     if (variable === 'thetavmix') {
       const {
-        dataUint8: vdata,
-        store: vstore,
-        shape: vshape
+        dataUint8,
+        store,
+        shape
       } = await fetchSlice({ currentTimeIndex: 0, path: variable, dimensions: 3 });
 
       // TODO MAKE NOOOOO SIDE EFECTS FUNCTION!!!!
-      await getVoxelAndVolumeSize2D(vstore, vshape, variable);
+      await getVoxelAndVolumeSize2D(store, shape, variable);
       // boxes.thetavmixBox = createPlaneRenderingBox({ variable, dataUint8: vdata });
       // boxes.thetavmixBox = createVolumetricRenderingBox({ variable, dataUint8: vdata });
-      boxes[variable] = await createVolumetricRenderingBox({
+      await createVolumetricRenderingBox({
         scene,
         variable,
-        dataUint8: vdata
+        dataUint8
       });
-
     }
     else {
       const {
-        dataUint8: vdata,
-        store: vstore,
-        shape: vshape,
-        coarseData: vCoarseData
+        dataUint8,
+        dataCoarse,  // TODO COMBINE WITH DATAUINT8
+        store,
+        shape,
       } = await fetchSlice({ currentTimeIndex: 0, path: variable });
 
       // TODO NOOOOO SIDE EFECTS FUNCTION!!!!
-      await getVoxelAndVolumeSize(vstore, vshape, variable);
+      await getVoxelAndVolumeSize(store, shape, variable);
 
-      boxes[variable] = await createVolumetricRenderingBox({
+      await createVolumetricRenderingBox({
         scene,
         variable,
-        dataUint8: vdata,
-        dataCoarse: vCoarseData
+        dataUint8,
+        dataCoarse // TODO COMBINE WITH DATAUINT8
       });
     }
   }

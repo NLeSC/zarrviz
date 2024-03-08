@@ -1,22 +1,18 @@
 import * as THREE from 'three';
+import { get } from 'svelte/store';
 
 import vertexShaderVolume from '$lib/shaders/volume.vert';
-import fragmentShaderVolume from '$lib/shaders/volume.frag';
-import fragmentShaderVolumeTransfer from '$lib/shaders/volume_transfer.frag';
-import fragmentShaderSurfaceHeatMap from '$lib/shaders/surface_heatmap.frag';
+import fragmentShaderVolume from '$lib/shaders/volume.frag'; // ql
+import fragmentShaderVolumeTransfer from '$lib/shaders/volume_transfer.frag'; // qr
 import vertexShaderSurface from '$lib/shaders/surface.vert';
-import {
-  voxelSizes,
-  volumeSizes,
-  boxSizes,
-} from '../stores/allSlices.store';
+import fragmentShaderSurfaceHeatMap from '$lib/shaders/surface_heatmap.frag';  // heat map
+
+import { voxelSizes, volumeSizes, boxSizes } from '../stores/allSlices.store';
 import { makeRainTransferTex } from '$lib/utils/makeRainTransferTex';
-import { get } from 'svelte/store';
+
 import { cameraFar, cameraNear } from './create3DScene';
 import { cloudLayerSettings, rainLayerSettings, temperatureLayerSettings } from '../stores/viewer.store';
 import { boxes } from './boxSetup';
-
-
 
 // TODO:
 // TODO:
@@ -56,7 +52,6 @@ const ambientLightColorV = new THREE.Vector3(
 const finalGamma = 6.0;
 
 
-
 export function initMaterial({ variable }): THREE.Material {
   let shaderMaterial: THREE.Material = null;
   switch (variable) {
@@ -67,7 +62,7 @@ export function initMaterial({ variable }): THREE.Material {
         side: THREE.DoubleSide,
         transparent: true,
         uniforms: {
-          uTransparency: { value: get(cloudLayerSettings).opacity / 100 },   // TODO: Implement this uniform in the shader
+          uTransparency: { value: get(cloudLayerSettings).opacity / 100 },
           boxSize: new THREE.Uniform(get(boxSizes)[variable]),
           volumeTex: new THREE.Uniform(null),
           voxelSize: new THREE.Uniform(get(voxelSizes)[variable]),
@@ -144,7 +139,7 @@ export function initMaterial({ variable }): THREE.Material {
 
 // TODO:
 // TODO:
-// TODO: dataUint8 is the same that dataCoarse, just a comperssed one,
+// TODO: dataUint8 is the same that dataCoarse, just a compressed one,
 // TODO: but it sohuld not be different params depending on the variable
 // TODO:
 export function updateMaterial({ variable, dataUint8, dataCoarse = null }) {
@@ -163,12 +158,7 @@ export function updateMaterial({ variable, dataUint8, dataCoarse = null }) {
   if (variable === 'thetavmix') {
     volumeTexture = new THREE.DataTexture(dataUint8, get(volumeSizes)[variable][0], get(volumeSizes)[variable][1]);
   } else {
-    volumeTexture = new THREE.Data3DTexture(
-      dataUint8,
-      get(volumeSizes)[variable][0],
-      get(volumeSizes)[variable][1],
-      get(volumeSizes)[variable][2]
-    );
+    volumeTexture = new THREE.Data3DTexture(dataUint8, get(volumeSizes)[variable][0], get(volumeSizes)[variable][1], get(volumeSizes)[variable][2]);
   }
   volumeTexture.format = THREE.RedFormat;
   volumeTexture.type = THREE.UnsignedByteType;
@@ -177,9 +167,13 @@ export function updateMaterial({ variable, dataUint8, dataCoarse = null }) {
   volumeTexture.magFilter = THREE.LinearFilter;
   volumeTexture.needsUpdate = true;
 
-  if (localBox.material.uniforms.coarseVolumeTex.value != null) {
-    localBox.material.uniforms.coarseVolumeTex.value.dispose();
-  }
+
+  // TODO:
+  // TODO: DISPSE OF THE OLD TEXTURE TO FREE UP MEMORY
+  // TODO:
+  // if (localBox.material.uniforms.coarseVolumeTex.value != null) {
+  //   localBox.material.uniforms.coarseVolumeTex.value.dispose();
+  // }
 
   let coarseVolumeTexture = null;
   if (dataCoarse !== null) {

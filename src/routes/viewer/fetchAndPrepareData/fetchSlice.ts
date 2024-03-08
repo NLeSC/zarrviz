@@ -31,10 +31,10 @@ export async function fetchSlice({
   // TODO move to its file
   // TODO
   // Coarse data to compress the ammount of data
-  let coarseData = null;
+  let dataCoarse = null;
   if (path == 'qr') {
     // console.log("Coarse graining...");
-    coarseData = new Uint8Array(shape[0] * shape[1] * shape[2] / (8 * 8 * 8));
+    dataCoarse = new Uint8Array(shape[0] * shape[1] * shape[2] / (8 * 8 * 8));
     for (let i = 0; i < shape[0] / 8; i++) {
       for (let j = 0; j < shape[1] / 8; j++) {
         for (let k = 0; k < shape[2] / 8; k++) {
@@ -48,7 +48,7 @@ export async function fetchSlice({
             }
           }
           const index2 = k + j * shape[2] / 8 + i * (shape[2] / 8) * (shape[1] / 8);
-          coarseData[index2] = x
+          dataCoarse[index2] = x
         }
       }
     }
@@ -69,5 +69,5 @@ export async function fetchSlice({
   });
   console.log('🎹 downloaded ', currentTimeIndex + 1);
   // console.log('🎹 downloaded ', get(allTimeSlices)[currentTimeIndex]);
-  return { dataUint8: data, shape, store, coarseData };
+  return { dataUint8: data, shape, store, dataCoarse };
 }

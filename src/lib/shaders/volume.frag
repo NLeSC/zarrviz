@@ -24,6 +24,8 @@ uniform float bottomHeight;
 uniform float near;
 uniform float far;
 
+uniform float uTransparency;
+
 // Three.js adds built-in uniforms and attributes:
 // https://threejs.org/docs/#api/en/renderers/webgl/WebGLProgram
 // uniform vec3 cameraPosition;
@@ -192,7 +194,7 @@ void main(void){
     float outScattering=((1.0-beer)/ext)+(1.0-beer*beer);
     //float outScattering=1.0;
     //float outScattering=((1.0-beer)/ext);
-    
+
     //transmittance*=(1.0+beer-beer*beer);
     transmittance*=beer;
 
@@ -209,14 +211,13 @@ void main(void){
   }
 
   // Surface
-  if(transmittance>=(1.-transmittance_threshold))
-  {
+  if(transmittance>=(1.-transmittance_threshold)) {
     transmittance=0.0;
   }
-  else
-  {
+  else {
     float g=1./finalGamma;
-    gl_FragColor=pow(vec4(illumination, (1.0-transmittance)),vec4(g,g,g,1));
+    // Modulate the alpha value of the final color by uTransparency
+    gl_FragColor=pow(vec4(illumination, (1.0-transmittance) * uTransparency), vec4(g,g,g,1));
   }
 }
 // A few browsers show some artifacts if the final alpha value is not 1.0,

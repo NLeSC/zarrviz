@@ -16,23 +16,14 @@ import { initMaterial, updateMaterial } from './initMaterial';
 //
 // Rendering containers and materials for the volume rendering layers
 //
-type Boxes = {
-  qlBox?: THREE.Mesh;
-  // qlMaterial?: THREE.ShaderMaterial;
-
-  qrBox?: THREE.Mesh;
-  // qrMaterial?: THREE.ShaderMaterial;
-
-  thetavmixBox?: THREE.Points;
-  // thetavmixMaterial?: THREE.ShaderMaterial;
-};
-export const boxes: Boxes = {
-  qlBox: undefined,
-  // qlMaterial: undefined,
-  qrBox: undefined,
-  // qrMaterial: undefined,
-  thetavmixBox: undefined,
-  // thetavmixMaterial: undefined
+export const boxes: {
+  ql?: THREE.Mesh;
+  qr?: THREE.Mesh;
+  thetavmix?: THREE.Points;
+} = {
+  ql: undefined,
+  qr: undefined,
+  thetavmix: undefined,
 };
 
 //
@@ -64,35 +55,35 @@ export function createVolumetricRenderingBox({ scene, variable, dataUint8, dataC
   switch (variable) {
     // Clouds Layer
     case 'ql': {
-      boxes.qlBox = new THREE.Mesh(boxGeometry);
-      boxes.qlBox.position.z = 0.25 + 2000 / get(scaleFactor); // 570 meters above the map TODO: calculate this value from the data
-      boxes.qlBox.renderOrder = 0;
-      boxes.qlBox.material = initMaterial({ variable });
+      boxes.ql = new THREE.Mesh(boxGeometry);
+      boxes.ql.position.z = 0.25 + 2000 / get(scaleFactor); // 570 meters above the map TODO: calculate this value from the data
+      boxes.ql.renderOrder = 0;
+      boxes.ql.material = initMaterial({ variable });
+
+      console.log('🎹 ', boxes.ql.material);
 
       // boxes.qlBox.material = new THREE.MeshBasicMaterial({
       //   color: 0x00ff00, transparent: true,
       //   opacity: get(cloudLayerSettings).opacity / 100
       // });
 
-      // boxes.qlMaterial = qlBox.material;
-      // boxes.qlBox = qlBox;
 
-      updateMaterial({ variable, dataUint8, dataCoarse });
+      updateMaterial({ variable, dataUint8 });
       // scene.add(qlBox);
-      get(cloudLayerSettings).enabled && scene.add(boxes.qlBox);
+      get(cloudLayerSettings).enabled && scene.add(boxes.ql);
       break;
     }
     // Rain Layer
     case 'qr': {
-      boxes.qrBox = new THREE.Mesh(boxGeometry);
-      boxes.qrBox.position.z = 0.25 + 2000 / get(scaleFactor); // 570 meters above the map TODO: calculate this value from the data
-      boxes.qrBox.renderOrder = 0;
+      boxes.qr = new THREE.Mesh(boxGeometry);
+      boxes.qr.position.z = 0.25 + 2000 / get(scaleFactor); // 570 meters above the map TODO: calculate this value from the data
+      boxes.qr.renderOrder = 0;
       // qrBox.material = initMaterial({ variable });
-      boxes.qrBox.material = new THREE.MeshBasicMaterial({ color: 'purple', transparent: true, opacity: get(rainLayerSettings).opacity / 100 });
+      boxes.qr.material = new THREE.MeshBasicMaterial({ color: 'purple', transparent: true, opacity: get(rainLayerSettings).opacity / 100 });
 
 
       updateMaterial({ variable, dataUint8, dataCoarse });
-      get(rainLayerSettings).enabled && scene.add(boxes.qrBox);
+      get(rainLayerSettings).enabled && scene.add(boxes.qr);
       break;
     }
     // Temperature Layer
@@ -114,7 +105,7 @@ export function createVolumetricRenderingBox({ scene, variable, dataUint8, dataC
 
       // plane.material = initMaterial({ variable });
       // plane.material = initMaterial({ variable });
-      boxes.thetavmixBox = plane
+      boxes.thetavmix = plane
       plane.material = new THREE.PointsMaterial({
         color: 'red', transparent: true,
         size: 2, // Adjust the size to simulate larger voxels
@@ -127,7 +118,7 @@ export function createVolumetricRenderingBox({ scene, variable, dataUint8, dataC
       // updateMaterial({ variable, dataUint8, dataCoarse });
       console.log('🎹 get(temperatureLayerSettings).enabled ', get(temperatureLayerSettings).enabled);
 
-      get(temperatureLayerSettings).enabled && scene.add(boxes.thetavmixBox);
+      get(temperatureLayerSettings).enabled && scene.add(boxes.thetavmix);
       // renderScene();
       break;
 
