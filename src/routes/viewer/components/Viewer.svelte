@@ -3,7 +3,7 @@
 	import * as THREE from 'three';
 	import DebugButtons from './DebugButtons.svelte';
 
-	import { allTimeSlices, currentTimeIndex, downloadedTime } from '../stores/allSlices.store';
+	import { dataSlices, currentTimeIndex, downloadedTime } from '../stores/allSlices.store';
 	import { cloudLayerSettings, rainLayerSettings, temperatureLayerSettings, showGrid } from '../stores/viewer.store';
 	import { create3DScene } from '../sceneSetup/create3DScene';
 
@@ -24,21 +24,18 @@
 	$: {
 		if (scene) {
 			// Change transparency of the materials
-			// TODO: TESTING THESE ARE THE ORIGINAL
 			boxes.ql && (boxes.ql.material.uniforms.uTransparency.value = $cloudLayerSettings.opacity / 100);
-			// boxes.qrBox && (boxes.qrBox.material.uniforms.uTransparency.value = $rainLayerSettings.opacity / 100);
-			// boxes.thetavmixBox &&
-			// 	(boxes.thetavmixBox.material.uniforms.uTransparency.value = $temperatureLayerSettings.opacity / 100);
+			boxes.qr && (boxes.qr.material.uniforms.uTransparency.value = $rainLayerSettings.opacity / 100);
+
+			// TODO WORK IN PROGRSS< ADDING THE TEMPERATURE LAYER
+			boxes.thetavmix &&
+				(boxes.thetavmix.material.uniforms.uTransparency.value = $temperatureLayerSettings.opacity / 100);
 
 			// TODO: TESTING
 			// boxes.ql && (boxes.ql.material.opacity = $cloudLayerSettings.opacity / 100);
 			// boxes.qrBox && (boxes.qrBox.material.opacity = $rainLayerSettings.opacity / 100);
 			// boxes.thetavmixBox && (boxes.thetavmixBox.material.opacity = $temperatureLayerSettings.opacity / 100);
 
-			// TODO:
-			// TODO:  make this work
-			// TODO:
-			// TODO:
 			// Enable and disable the layers
 			$rainLayerSettings.enabled && !!boxes.qr ? scene.add(boxes.qr) : scene.remove(boxes.qr);
 			$cloudLayerSettings.enabled && !!boxes.ql ? scene.add(boxes.ql) : scene.remove(boxes.ql);
@@ -79,7 +76,7 @@
 	onDestroy(() => {
 		// Clean up Three.js resources
 		currentTimeIndex.set(0);
-		allTimeSlices.set([]);
+		dataSlices.set([]);
 	});
 </script>
 

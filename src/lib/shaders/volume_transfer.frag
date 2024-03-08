@@ -1,7 +1,7 @@
 // This code is based upon Janelia's web-vol-viewer
 // https://github.com/JaneliaSciComp/web-vol-viewer
 
-precision mediump float;
+precision highp float;
 in vec3 rayDirUnnorm;
 in vec3 lightDir;
 
@@ -106,7 +106,7 @@ void main(void){
       #pragma unroll_loop_start
       for(int i = 0; i < 8; ++i)
       {
-        float fineValue = texture(volumeTex, pSized + random).r;
+        float fineValue = texture(coarseVolumeTex, pSized + random).r;
         vec4 vColor = fineValue == 0.0 ? vec4(0.0) : texture(transferTex, vec2(fineValue, 0.5));
         vColor.a *= alphaNorm;
         illumination.rgb += transmittance*clamp(vColor.a,0.0,1.0)*vColor.rgb;

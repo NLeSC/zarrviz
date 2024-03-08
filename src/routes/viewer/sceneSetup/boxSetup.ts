@@ -32,8 +32,8 @@ export const boxes: {
 // They should be all enabled by default
 //
 export const data_layers = [
+  'qr', // rain
   'ql', // clouds
-  // 'qr', // rain
   // 'thetavmix' // temperature
 ];
 
@@ -62,25 +62,24 @@ export function createVolumetricRenderingBox({ scene, variable, dataUint8, dataC
 
       console.log('🎹 ', boxes.ql.material);
 
-      // boxes.qlBox.material = new THREE.MeshBasicMaterial({
-      //   color: 0x00ff00, transparent: true,
-      //   opacity: get(cloudLayerSettings).opacity / 100
-      // });
-
+      // Example material
+      // boxes.ql.material = new THREE.MeshBasicMaterial({ color: 0x00ff00, transparent: true, opacity: get(cloudLayerSettings).opacity / 100 });
 
       updateMaterial({ variable, dataUint8 });
       // scene.add(qlBox);
       get(cloudLayerSettings).enabled && scene.add(boxes.ql);
       break;
     }
+
     // Rain Layer
     case 'qr': {
       boxes.qr = new THREE.Mesh(boxGeometry);
       boxes.qr.position.z = 0.25 + 2000 / get(scaleFactor); // 570 meters above the map TODO: calculate this value from the data
       boxes.qr.renderOrder = 0;
-      // qrBox.material = initMaterial({ variable });
-      boxes.qr.material = new THREE.MeshBasicMaterial({ color: 'purple', transparent: true, opacity: get(rainLayerSettings).opacity / 100 });
+      boxes.qr.material = initMaterial({ variable });
 
+      // Example material
+      // boxes.qr.material = new THREE.MeshBasicMaterial({ color: 'purple', transparent: true, opacity: get(rainLayerSettings).opacity / 100 });
 
       updateMaterial({ variable, dataUint8, dataCoarse });
       get(rainLayerSettings).enabled && scene.add(boxes.qr);
@@ -128,6 +127,10 @@ export function createVolumetricRenderingBox({ scene, variable, dataUint8, dataC
 
   // renderScene(); // no need to render the scene
 }
+
+//!
+//! ORIGINAL thetamix data
+//!
 /* // A plane in whcin the plane texture will be rendered.
 export function createPlaneRenderingBox({ variable, dataUint8 }): THREE.Points {
   //const boxGeometry = new THREE.BoxGeometry(get(volumeSize)[0], get(volumeSize)[1], get(volumeSize)[2]);

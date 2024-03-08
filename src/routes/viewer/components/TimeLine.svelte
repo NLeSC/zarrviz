@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { createEventDispatcher, onDestroy, onMount } from 'svelte';
 	import { get } from 'svelte/store';
-	import { allTimeSlices, currentTimeIndex, downloadedTime } from '../stores/allSlices.store';
+	import { dataSlices, currentTimeIndex, downloadedTime } from '../stores/allSlices.store';
 	import { updateMaterial } from '../sceneSetup/initMaterial';
 	import { data_layers } from '../sceneSetup/boxSetup';
 
@@ -19,8 +19,8 @@
 
 		if (playAnimation) {
 			interval = setInterval(() => {
-				if (get(allTimeSlices)[get(currentTimeIndex)]) {
-					const next = (get(currentTimeIndex) + 1) % get(allTimeSlices).length;
+				if (get(dataSlices)[get(currentTimeIndex)]) {
+					const next = (get(currentTimeIndex) + 1) % get(dataSlices).length;
 					currentTimeIndex.set(next);
 				}
 			}, playSpeedInMiliseconds);
@@ -39,7 +39,7 @@
 	onMount(() => {
 		// Update the material when the currentTimeIndex changes
 		currentTimeIndex.subscribe((index: number) => {
-			const data = get(allTimeSlices)[index];
+			const data = get(dataSlices)[index];
 			if (data) {
 				for (const variable of data_layers) {
 					updateMaterial({ variable, dataUint8: data[variable] });
@@ -115,7 +115,7 @@
 		}}
 	/>
 	<!-- currentTimeIndex: {$currentTimeIndex} -->
-	{#if $allTimeSlices.length < 1}
+	{#if $dataSlices.length < 1}
 		<div>
 			Loading data
 			<progress class="progress w-56" />

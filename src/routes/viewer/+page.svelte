@@ -1,7 +1,7 @@
 <script lang="ts">
 	import TimeLine from './components/TimeLine.svelte';
 
-	import { allTimeSlices, currentTimeIndex, totalSlices } from './stores/allSlices.store';
+	import { dataSlices, currentTimeIndex, totalSlices } from './stores/allSlices.store';
 	import {
 		cloudLayerSettings,
 		rainLayerSettings,
@@ -27,7 +27,7 @@
 		</div>
 		<TimeLine
 			positionIndex={$currentTimeIndex}
-			length={$allTimeSlices.length}
+			length={$dataSlices.length}
 			on:onSelectedIndex={(value) => currentTimeIndex.set(value.detail.index)}
 		/>
 	</div>
@@ -48,9 +48,9 @@
 				class="input input-xs w-14"
 			/>
 			of {totalSlices}<br />
-			dataUint8 (slice) {$allTimeSlices[0]?.length} - {($allTimeSlices[0]?.byteLength / 1073741824).toFixed(3)} GB
+			dataUint8 (slice) {$dataSlices[0]?.length} - {($dataSlices[0]?.byteLength / 1073741824).toFixed(3)} GB
 			<!-- <pre>dataCellSize: {$dataCellSize.length} |</pre> -->
-			Slices downloaded: {JSON.stringify($allTimeSlices.length, null, 2)}
+			Slices downloaded: {JSON.stringify($dataSlices.length, null, 2)}
 		</div>
 
 		<h3 class="mt-10 text-xl">Layers</h3>

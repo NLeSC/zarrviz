@@ -27,9 +27,8 @@ export async function dataSetup(visible_data, scene) {
         dataUint8,
         store,
         shape
-      } = await fetchSlice({ currentTimeIndex: 0, path: variable, dimensions: 3 });
+      } = await fetchSlice({ currentTimeIndex: 0, path: variable, dimensions });
 
-      // TODO MAKE NOOOOO SIDE EFECTS FUNCTION!!!!
       await getVoxelAndVolumeSize2D(store, shape, variable);
       // boxes.thetavmixBox = createPlaneRenderingBox({ variable, dataUint8: vdata });
       // boxes.thetavmixBox = createVolumetricRenderingBox({ variable, dataUint8: vdata });
@@ -42,19 +41,16 @@ export async function dataSetup(visible_data, scene) {
     else {
       const {
         dataUint8,
-        dataCoarse,  // TODO COMBINE WITH DATAUINT8
         store,
         shape,
-      } = await fetchSlice({ currentTimeIndex: 0, path: variable });
+      } = await fetchSlice({ currentTimeIndex: 0, path: variable, dimensions });
 
-      // TODO NOOOOO SIDE EFECTS FUNCTION!!!!
       await getVoxelAndVolumeSize(store, shape, variable);
 
       await createVolumetricRenderingBox({
         scene,
         variable,
         dataUint8,
-        dataCoarse // TODO COMBINE WITH DATAUINT8
       });
     }
   }

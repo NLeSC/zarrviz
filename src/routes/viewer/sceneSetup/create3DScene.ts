@@ -18,58 +18,6 @@ function renderScene(scene, camera): void {
   renderer.render(scene, camera);
   console.log('🔥 rendered');
 }
-
-//! DELETE AFTER TESTING
-//! DELETE AFTER TESTING
-//! DELETE AFTER TESTING
-//! DELETE AFTER TESTING
-//! DELETE AFTER TESTING
-//! cube to play with custom shader
-// let cube: THREE.Mesh;
-// function addExampleCube(scene) {
-//   // Create a cube
-//   const cubeGeometry = new THREE.BoxGeometry(0.3, 0.3, 0.1);
-//   const cubeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-
-//   const fragmentShader = `uniform float uTransparency;
-//                                void main() {
-//                                    gl_FragColor = vec4(1.0, 0.5, 0.0, uTransparency); // Example: Orange color
-//                                }`;
-
-//   const shaderMaterial = new THREE.ShaderMaterial({
-//     // vertexShader,
-//     fragmentShader,
-//     uniforms: {
-//       uTransparency: { value: get(cloudLayerSettings).opacity / 100 }
-//     },
-//     transparent: true
-//   });
-
-//   cube = new THREE.Mesh(cubeGeometry, shaderMaterial);
-//   cube.position.set(-0.1, 0, 0.1); // Set the position of the cube
-
-
-//   cloudLayerSettings.subscribe($cloudLayerSettings => {
-//     // console.log('🎹 changed ranged', $cloudLayerSettings);
-//     cube.material.uniforms.uTransparency.value = $cloudLayerSettings.opacity / 100;
-
-//     // remove the cube from the scene if the opacity is 0
-//     if ($cloudLayerSettings.enabled) {
-//       scene.add(cube);
-//     } else {
-//       scene.remove(cube);
-//     }
-//   })
-
-//   return cube; // Add the cube to the scene
-// }
-
-//! DELETE AFTER TESTING
-//! DELETE AFTER TESTING
-//! DELETE AFTER TESTING
-//! DELETE AFTER TESTING
-//! DELETE AFTER TESTING
-
 // Resize the canvas and camera when the window is resized
 function resize(canvas, camera) {
   // Get the dimensions of the parent element
@@ -103,12 +51,6 @@ export function create3DScene({ canvas, camera }): Promise<THREE.Scene> {
   // Add a plane with the Map to the scene
   scene.add(createPlaneMesh());
 
-  //! DELETE AFTER TESTING
-  //! DELETE AFTER TESTING
-  // Add exmample cube
-  // scene.add(addExampleCube(scene));
-  //! DELETE AFTER TESTING
-  //! DELETE AFTER TESTING
 
   //
   // Lights, to be used both during rendering the volume, and rendering the optional surface.

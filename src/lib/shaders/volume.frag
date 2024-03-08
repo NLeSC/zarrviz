@@ -1,8 +1,8 @@
-precision mediump float;
+precision highp float;
 in vec3 rayDirUnnorm;
 in vec3 lightDir;
 
-uniform lowp sampler3D volumeTex;
+uniform sampler3D volumeTex;
 uniform float dtScale;
 uniform float inScatFactor;
 uniform float finalGamma;
@@ -11,7 +11,7 @@ uniform float solarFactor;
 uniform vec3 ambientLightColorTop;
 uniform vec3 ambientLightColorBot;
 uniform vec3 sunLightColor;
-uniform highp vec3 boxSize;
+uniform vec3 boxSize;
 uniform ivec3 voxelSize;
 uniform float dataScale;
 uniform float gHG;
@@ -29,7 +29,6 @@ uniform float uTransparency;
 // Three.js adds built-in uniforms and attributes:
 // https://threejs.org/docs/#api/en/renderers/webgl/WebGLProgram
 // uniform vec3 cameraPosition;
-
 vec2 intersectBox(vec3 orig,vec3 dir){
   vec3 boxMin=vec3(-.5)*boxSize;
   vec3 boxMax=vec3(.5)*boxSize;
@@ -105,12 +104,13 @@ void main(void){
   vec2 tBoxShadow = intersectBox(vec3(0.0), lightDir);
 
   if(tBox.x>=tBox.y){
-    discard;
+    discard; // Discard the fragment if it does not intersect the volume
   }
 
   tBox.x=max(tBox.x,0.);
   tBoxShadow.x = max(tBoxShadow.x, 0.0);
 
+// Prepare for ray marching
   ivec3 volumeTexSize=textureSize(volumeTex,0);
   vec3 dt0=1./(vec3(volumeTexSize));
   float dt1=min(dt0.x,min(dt0.y,dt0.z));
@@ -220,6 +220,7 @@ void main(void){
     gl_FragColor=pow(vec4(illumination, (1.0-transmittance) * uTransparency), vec4(g,g,g,1));
   }
 }
+
 // A few browsers show some artifacts if the final alpha value is not 1.0,
 // probably a version of the issues discussed here:
 // https://webglfundamentals.org/webgl/lessons/webgl-and-alpha.html
