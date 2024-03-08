@@ -1,6 +1,6 @@
 import {
   boxes,
-  createPlaneRenderingBox,
+  // createPlaneRenderingBox,
   createVolumetricRenderingBox
 } from "../sceneSetup/boxSetup";
 import {

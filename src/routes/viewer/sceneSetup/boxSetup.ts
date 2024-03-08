@@ -3,7 +3,6 @@ import { get } from "svelte/store";
 import { volumeSizes } from "../stores/allSlices.store";
 import { cloudLayerSettings, rainLayerSettings, scaleFactor, temperatureLayerSettings } from '../stores/viewer.store';
 import { initMaterial, updateMaterial } from './initMaterial';
-import { circOut } from 'svelte/easing';
 
 
 // TODO:
@@ -43,8 +42,8 @@ export const boxes: Boxes = {
 //
 export const data_layers = [
   'ql', // clouds
-  'qr', // rain
-  'thetavmix' // temperature
+  // 'qr', // rain
+  // 'thetavmix' // temperature
 ];
 
 
@@ -68,18 +67,17 @@ export function createVolumetricRenderingBox({ scene, variable, dataUint8, dataC
       boxes.qlBox = new THREE.Mesh(boxGeometry);
       boxes.qlBox.position.z = 0.25 + 2000 / get(scaleFactor); // 570 meters above the map TODO: calculate this value from the data
       boxes.qlBox.renderOrder = 0;
-      // qlBox.material = initMaterial({ variable });
-      console.log('🎹 get(cloudLayerSettings)', get(cloudLayerSettings));
+      boxes.qlBox.material = initMaterial({ variable });
 
-      boxes.qlBox.material = new THREE.MeshBasicMaterial({
-        color: 0x00ff00, transparent: true,
-        opacity: get(cloudLayerSettings).opacity / 100
-      });
+      // boxes.qlBox.material = new THREE.MeshBasicMaterial({
+      //   color: 0x00ff00, transparent: true,
+      //   opacity: get(cloudLayerSettings).opacity / 100
+      // });
 
       // boxes.qlMaterial = qlBox.material;
       // boxes.qlBox = qlBox;
 
-      // updateMaterial({ variable, dataUint8, dataCoarse });
+      updateMaterial({ variable, dataUint8, dataCoarse });
       // scene.add(qlBox);
       get(cloudLayerSettings).enabled && scene.add(boxes.qlBox);
       break;
@@ -139,7 +137,7 @@ export function createVolumetricRenderingBox({ scene, variable, dataUint8, dataC
 
   // renderScene(); // no need to render the scene
 }
-// A plane in whcin the plane texture will be rendered.
+/* // A plane in whcin the plane texture will be rendered.
 export function createPlaneRenderingBox({ variable, dataUint8 }): THREE.Points {
   //const boxGeometry = new THREE.BoxGeometry(get(volumeSize)[0], get(volumeSize)[1], get(volumeSize)[2]);
   // const boxSizeInKm = 33.8; // 33.8 km
@@ -166,3 +164,4 @@ export function createPlaneRenderingBox({ variable, dataUint8 }): THREE.Points {
   // renderScene();
   return plane;
 }
+ */
