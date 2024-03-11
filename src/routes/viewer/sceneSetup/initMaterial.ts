@@ -7,29 +7,16 @@ import fragmentShaderVolumeTransfer from '$lib/shaders/volume_transfer.frag'; //
 import vertexShaderSurface from '$lib/shaders/surface.vert';
 import fragmentShaderSurfaceHeatMap from '$lib/shaders/surface_heatmap.frag';  // heat map
 
-import { voxelSizes, volumeSizes, boxSizes } from '../stores/allSlices.store';
+import { voxelSizes, boxSizes } from '../stores/allSlices.store';
 import { makeRainTransferTex } from '$lib/utils/makeRainTransferTex';
 
 import { cameraFar, cameraNear } from './create3DScene';
 import { cloudLayerSettings, rainLayerSettings, temperatureLayerSettings } from '../stores/viewer.store';
-import { boxes } from './boxSetup';
 
 // TODO:
 // TODO:
 // TODO: MAKE THIS WORK
 // TODO:
-
-// Be caruful with these valies, they can clip the data in the 3D scene
-const dtScale: number = 0.8;
-const ambientFactor: number = 0.0;
-const solarFactor: number = 0.8;
-const qlScale: number = 0.00446;
-const qrScale: number = 0.0035;
-const gHG: number = 0.6;
-const dataEpsilon: number = 1e-10;
-const bottomColor: number[] = [0.0, 0.0005, 0.0033];
-const bottomHeight: number = 675.0;
-
 
 // Run only once at mount
 const transferTexture = makeRainTransferTex();
@@ -49,7 +36,6 @@ const ambientLightColorV = new THREE.Vector3(
   hemisphereLight.color.g,
   hemisphereLight.color.b
 );
-const finalGamma = 6.0;
 
 
 export function initMaterial({ variable }): THREE.Material {
@@ -60,6 +46,7 @@ export function initMaterial({ variable }): THREE.Material {
         vertexShader: vertexShaderVolume,
         fragmentShader: fragmentShaderVolume,
         side: THREE.DoubleSide,
+        clipping: true,
         transparent: true,
         depthTest: false,
         uniforms: {
@@ -92,6 +79,7 @@ export function initMaterial({ variable }): THREE.Material {
         fragmentShader: fragmentShaderVolumeTransfer,
         side: THREE.DoubleSide,
         transparent: true,
+        clipping: true,
         depthTest: false,
         uniforms: {
           uTransparency: { value: get(rainLayerSettings).opacity / 100 },
@@ -120,17 +108,20 @@ export function initMaterial({ variable }): THREE.Material {
         fragmentShader: fragmentShaderSurfaceHeatMap,
         side: THREE.DoubleSide,
         transparent: true,
-        opacity: 1.0,
         clipping: true,
         uniforms: {
-          uTransparency: { value: get(temperatureLayerSettings).opacity / 100 },   // TODO: Implement this uniform in the shader
+          uTransparency: { value: get(temperatureLayerSettings).opacity / 100 },
           volumeTex: new THREE.Uniform(null),
+
+          //
+          // Not being used at the moment:
+          //
           heightRatio: new THREE.Uniform(0),
           heightBias: new THREE.Uniform(0),
-          //gradientTexture: {value: gradientMap}
           colorLow: new THREE.Uniform(new THREE.Vector3(0, 0, 1)),
           colorMid: new THREE.Uniform(new THREE.Vector3(0, 1, 0)),
-          colorHigh: new THREE.Uniform(new THREE.Vector3(1, 0, 0))
+          colorHigh: new THREE.Uniform(new THREE.Vector3(1, 0, 0)),
+          //gradientTexture: {value: gradientMap}
         }
       });
       break;
@@ -139,152 +130,5 @@ export function initMaterial({ variable }): THREE.Material {
   return shaderMaterial;
 }
 
-export function updateMaterial({ variable, dataUint8, dataCoarse = null }) {
-  const localBox = boxes[variable];
-
-  if (!localBox) { return }
-
-  // TODO:
-  // TODO: DISPSE OF THE OLD TEXTURE TO FREE UP MEMORY
-  // TODO:
-  // Dispose of the old texture to free up memory.
-  // if (localBox.material.uniforms?.volumeTex.value !== null) {
-  //   localBox.material.uniforms.volumeTex.value.dispose();
-  // }
-
-  let volumeTexture = null;
-
-  switch (variable) {
-    case 'ql':
-      volumeTexture = new THREE.Data3DTexture(
-        dataUint8, get(volumeSizes)[variable][0], get(volumeSizes)[variable][1], get(volumeSizes)[variable][2]
-      );
-
-      break;
-    case 'qr':
-      // Coarsed data
-      volumeTexture = new THREE.Data3DTexture(
-        dataUint8, get(volumeSizes)[variable][0] / 8, get(volumeSizes)[variable][1] / 8, get(volumeSizes)[variable][2] / 8
-      );
-      break;
-
-    case 'thetavmix':
-      volumeTexture = new THREE.DataTexture(
-        dataUint8, get(volumeSizes)[variable][0], get(volumeSizes)[variable][1]
-      );
-
-      break;
-  }
-
-  //
-  // Used by all the shaders
-  //
-  volumeTexture.format = THREE.RedFormat;
-  volumeTexture.type = THREE.UnsignedByteType;
-  volumeTexture.generateMipmaps = false; // Saves memory.
-  volumeTexture.needsUpdate = true;
-
-  switch (variable) {
-    case 'ql':
-      volumeTexture.minFilter = THREE.LinearFilter; // Better for volume rendering.
-      volumeTexture.magFilter = THREE.LinearFilter;
-
-      localBox.material.uniforms.dataScale.value = qlScale;
-      localBox.material.uniforms.dtScale.value = dtScale;
-      localBox.material.uniforms.ambientFactor.value = ambientFactor;
-      localBox.material.uniforms.solarFactor.value = solarFactor;
-      localBox.material.uniforms.gHG.value = gHG;
-      localBox.material.uniforms.dataEpsilon.value = dataEpsilon;
-      localBox.material.uniforms.bottomColor.value = bottomColor;
-      localBox.material.uniforms.bottomHeight.value = bottomHeight;
-      localBox.material.uniforms.finalGamma.value = finalGamma;
-
-      // Update material uniforms with new texture and parameters.
-      localBox.material.uniforms.volumeTex.value = volumeTexture;
-      break;
-    case 'qr':
-      volumeTexture.minFilter = THREE.NearestFilter; // Better for volume rendering.
-      volumeTexture.magFilter = THREE.NearestFilter;
-      // localBox.material.uniforms.volumeTex.value = volumeTexture;
-
-      // localBox.material.uniforms.coarseVolumeTex.value = coarseVolumeTexture;
-      localBox.material.uniforms.dataScale.value = qrScale;
-      localBox.material.uniforms.dtScale.value = dtScale;
-      localBox.material.uniforms.alphaNorm.value = 2.0;
-      localBox.material.uniforms.finalGamma.value = finalGamma;
-
-      // Update material uniforms with new texture and parameters.
-      // localBox.material.uniforms.volumeTex.value = volumeTexture;
-      localBox.material.uniforms.coarseVolumeTex.value = volumeTexture;
-      break;
-  }
-
-
-  return
-  //====================================================================================
-  // Create a new 3D texture for the volume data.
-  if (variable === 'thetavmix') {
-    volumeTexture = new THREE.DataTexture(dataUint8, get(volumeSizes)[variable][0], get(volumeSizes)[variable][1]);
-  } else {
-    // volumeTexture = new THREE.Data3DTexture(dataUint8, get(volumeSizes)[variable][0], get(volumeSizes)[variable][1], get(volumeSizes)[variable][2]);
-
-  }
-
-
-  volumeTexture.format = THREE.RedFormat;
-  volumeTexture.type = THREE.UnsignedByteType;
-  volumeTexture.generateMipmaps = false; // Saves memory.
-  volumeTexture.minFilter = THREE.LinearFilter; // Better for volume rendering.
-  volumeTexture.magFilter = THREE.LinearFilter;
-  volumeTexture.needsUpdate = true;
-
-
-  // TODO:
-  // TODO: DISPSE OF THE OLD TEXTURE TO FREE UP MEMORY
-  // TODO:
-  // if (localBox.material.uniforms.coarseVolumeTex.value != null) {
-  //   localBox.material.uniforms.coarseVolumeTex.value.dispose();
-  // }
-
-  let coarseVolumeTexture = null;
-  if (dataCoarse !== null) {
-    coarseVolumeTexture = new THREE.Data3DTexture(
-      dataCoarse,
-      get(volumeSizes)[variable][0] / 8,
-      get(volumeSizes)[variable][1] / 8,
-      get(volumeSizes)[variable][2] / 8
-    );
-    coarseVolumeTexture.format = THREE.RedFormat;
-    coarseVolumeTexture.type = THREE.UnsignedByteType;
-    coarseVolumeTexture.generateMipmaps = false; // Saves memory.
-    coarseVolumeTexture.needsUpdate = true;
-
-    coarseVolumeTexture.minFilter = THREE.NearestFilter; // Better for volume rendering.
-    coarseVolumeTexture.magFilter = THREE.NearestFilter;
-  }
-
-  // Update material uniforms with new texture and parameters.
-  localBox.material.uniforms.volumeTex.value = volumeTexture;
-  switch (String(variable)) {
-    case 'ql':
-      localBox.material.uniforms.dataScale.value = qlScale;
-      localBox.material.uniforms.dtScale.value = dtScale;
-      localBox.material.uniforms.ambientFactor.value = ambientFactor;
-      localBox.material.uniforms.solarFactor.value = solarFactor;
-      localBox.material.uniforms.gHG.value = gHG;
-      localBox.material.uniforms.dataEpsilon.value = dataEpsilon;
-      localBox.material.uniforms.bottomColor.value = bottomColor;
-      localBox.material.uniforms.bottomHeight.value = bottomHeight;
-      localBox.material.uniforms.finalGamma.value = finalGamma;
-      break;
-    case 'qr':
-      localBox.material.uniforms.coarseVolumeTex.value = coarseVolumeTexture;
-      localBox.material.uniforms.dataScale.value = qrScale;
-      localBox.material.uniforms.dtScale.value = dtScale;
-      localBox.material.uniforms.alphaNorm.value = 2.0;
-      localBox.material.uniforms.finalGamma.value = finalGamma;
-      break;
-  }
-}
 
 

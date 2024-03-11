@@ -34,7 +34,7 @@
 			// TODO: TESTING
 			// boxes.ql && (boxes.ql.material.opacity = $cloudLayerSettings.opacity / 100);
 			// boxes.qrBox && (boxes.qrBox.material.opacity = $rainLayerSettings.opacity / 100);
-			// boxes.thetavmixBox && (boxes.thetavmixBox.material.opacity = $temperatureLayerSettings.opacity / 100);
+			// boxes.thetavmix && (boxes.thetavmix.material.opacity = $temperatureLayerSettings.opacity / 100);
 
 			// Enable and disable the layers
 			$rainLayerSettings.enabled && !!boxes.qr ? scene.add(boxes.qr) : scene.remove(boxes.qr);

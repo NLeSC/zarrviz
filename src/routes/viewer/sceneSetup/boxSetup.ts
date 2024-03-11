@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import { get } from "svelte/store";
 import { volumeSizes } from "../stores/allSlices.store";
 import { cloudLayerSettings, rainLayerSettings, scaleFactor, temperatureLayerSettings } from '../stores/viewer.store';
-import { initMaterial, updateMaterial } from './initMaterial';
+import { initMaterial } from './initMaterial';
+import { updateMaterial } from './updateMaterial';
 
 
 // TODO:
@@ -19,7 +20,8 @@ import { initMaterial, updateMaterial } from './initMaterial';
 export const boxes: {
   ql?: THREE.Mesh;
   qr?: THREE.Mesh;
-  thetavmix?: THREE.Points;
+  // thetavmix?: THREE.Points;
+  thetavmix?: THREE.Mesh;
 } = {
   ql: undefined,
   qr: undefined,
@@ -34,7 +36,7 @@ export const boxes: {
 export const data_layers = [
   'qr', // rain
   'ql', // clouds
-  // 'thetavmix' // temperature
+  'thetavmix' // temperature
 ];
 
 
@@ -43,7 +45,7 @@ export const data_layers = [
  * The box will be centered at the origin, with X in [-0.5, 0.5] so the width is 1, and
  * Y (height) and Z (depth) scaled to match.
  */
-export function createVolumetricRenderingBox({ scene, variable, dataUint8, dataCoarse = null }) {
+export function createVolumetricRenderingBox({ scene, variable, dataUint8 }) {
   //const boxGeometry = new THREE.BoxGeometry(get(volumeSize)[0], get(volumeSize)[1], get(volumeSize)[2]);
   // const boxSizeInKm = 33.8; // 33.8 km
   // const boxScale = boxSizeInKm; // / scaleFactor; // Convert to meters and then apply scale factor to scene units
@@ -81,7 +83,7 @@ export function createVolumetricRenderingBox({ scene, variable, dataUint8, dataC
       // Example material
       // boxes.qr.material = new THREE.MeshBasicMaterial({ color: 'purple', transparent: true, opacity: get(rainLayerSettings).opacity / 100 });
 
-      updateMaterial({ variable, dataUint8, dataCoarse });
+      updateMaterial({ variable, dataUint8 });
       get(rainLayerSettings).enabled && scene.add(boxes.qr);
       break;
     }
@@ -91,35 +93,50 @@ export function createVolumetricRenderingBox({ scene, variable, dataUint8, dataC
       //!
       //! CHAGE PLANE GEOMETRY TO TEXTURE GEOMETRY????? 1000 * 1000 generates 1 million vertices
       //!
+      // TODO:  CONTINUE HERE
       //!
-      const planeGeometry = new THREE.PlaneGeometry(1, 1, 100, 100);
       // const planeGeometry = new THREE.PlaneGeometry(1, 1, get(volumeSizes)[variable][0], get(volumeSizes)[variable][1]);
-      planeGeometry.rotateX(Math.PI / 2);
-      //planeGeometry.translate(0, 0, 20);
-      const plane: THREE.Points = new THREE.Points(planeGeometry);
-      plane.rotateX(-Math.PI / 2);
-      //plane.position.z = 2000 / scaleFactor; // 570 meters above the map TODO: calculate this value from the data
-      plane.renderOrder = 0;
-      // plane.position.z = 0.04;
+      const planeGeometry = new THREE.PlaneGeometry(1, 1);
+      planeGeometry.translate(0, 0, 0.02);
+      // boxes.thetavmix.rotateX(Math.PI / 2);
 
-      // plane.material = initMaterial({ variable });
-      // plane.material = initMaterial({ variable });
-      boxes.thetavmix = plane
-      plane.material = new THREE.PointsMaterial({
-        color: 'red', transparent: true,
-        size: 2, // Adjust the size to simulate larger voxels
-        sizeAttenuation: true, // Ensure size diminishes with distance (optional)
-        opacity: get(temperatureLayerSettings).opacity / 100
-      });
-      // const cubeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-      // box.material = cubeMaterial;
-      // boxes.thetavmixMaterial = plane.material;
-      // updateMaterial({ variable, dataUint8, dataCoarse });
-      console.log('🎹 get(temperatureLayerSettings).enabled ', get(temperatureLayerSettings).enabled);
+
+
+
+      // boxes.thetavmix = new THREE.Points(planeGeometry);
+      boxes.thetavmix = new THREE.Mesh(planeGeometry);
+      // boxes.thetavmix.material = shaderMaterial
+      boxes.thetavmix.material = initMaterial({ variable });
+      // boxes.thetavmix.material = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, color: 0x00ff00, transparent: true, opacity: get(temperatureLayerSettings).opacity / 100 });
+      updateMaterial({ variable, dataUint8 });
+
 
       get(temperatureLayerSettings).enabled && scene.add(boxes.thetavmix);
       // renderScene();
       break;
+
+      // rotate the plane 90 degrees
+      // boxes.thetavmix.rotateX(Math.PI / 2);
+
+
+      // boxes.thetavmix.rotateX(-Math.PI / 2);
+      // plane.rotateX(-Math.PI / 2);
+      //plane.position.z = 2000 / scaleFactor; // 570 meters above the map TODO: calculate this value from the data
+      // plane.renderOrder = 0;
+      // plane.position.z = 0.04;
+
+      // plane.material = initMaterial({ variable });
+      // plane.material = initMaterial({ variable });
+      // boxes.thetavmix = plane
+      // plane.material = new THREE.PointsMaterial({
+      //   color: 'red', transparent: true,
+      //   size: 2, // Adjust the size to simulate larger voxels
+      //   sizeAttenuation: true, // Ensure size diminishes with distance (optional)
+      //   opacity: get(temperatureLayerSettings).opacity / 100
+      // });
+      // const cubeMaterial = new THREE.PointsMaterial({ color: 0x00ff00 });
+      // plane.material = cubeMaterial;
+      // boxes.thetavmixMaterial = plane.material;
 
 
     }

@@ -2,8 +2,8 @@
 	import { createEventDispatcher, onDestroy, onMount } from 'svelte';
 	import { get } from 'svelte/store';
 	import { dataSlices, currentTimeIndex, downloadedTime } from '../stores/allSlices.store';
-	import { updateMaterial } from '../sceneSetup/initMaterial';
 	import { data_layers } from '../sceneSetup/boxSetup';
+	import { updateMaterial } from '../sceneSetup/updateMaterial';
 
 	export let playAnimation = false;
 	export let length = 10;
@@ -53,7 +53,6 @@
 	});
 </script>
 
-<!-- <div class="h-[300px] bg-red-700 overflow-hidden"> -->
 <div class="flex gap-4 mt-10 items-center px-5">
 	<!--  Play icon -->
 	<button class="btn" class:btn-primary={playAnimation} on:click={() => play()}>
@@ -114,7 +113,6 @@
 			wasPlaying && play(); // stop current animation the animation
 		}}
 	/>
-	<!-- currentTimeIndex: {$currentTimeIndex} -->
 	{#if $dataSlices.length < 1}
 		<div>
 			Loading data
@@ -124,4 +122,3 @@
 		All data loaded in: {$downloadedTime / 1000} seconds
 	{/if}
 </div>
-<!-- </div> -->

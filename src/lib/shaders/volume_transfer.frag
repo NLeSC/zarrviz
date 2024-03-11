@@ -6,8 +6,8 @@ in vec3 rayDirUnnorm;
 in vec3 lightDir;
 
 uniform sampler2D transferTex;
+// uniform lowp sampler3D volumeTex;
 uniform lowp sampler3D volumeTex;
-uniform lowp sampler3D coarseVolumeTex;
 uniform float dtScale;
 uniform float finalGamma;
 uniform vec3 sunLightColor;
@@ -66,7 +66,7 @@ void main(void){
 
   tBox.x=max(tBox.x,0.);
 
-  ivec3 volumeTexSize=textureSize(coarseVolumeTex,0);
+  ivec3 volumeTexSize=textureSize(volumeTex,0);
   //  vec3 dt0 = 1.0 / (vec3(volumeTexSize) * abs(rayDir));
   vec3 dt0=1./(vec3(volumeTexSize)*abs(rayDir));
   float dt=min(dt0.x,min(dt0.y,dt0.z)) * 0.5;
@@ -101,12 +101,12 @@ void main(void){
   vec3 random=fract(sin(gl_FragCoord.x*12.9898+gl_FragCoord.y*78.233)*43758.5453)*dt*rayDir/8.0;
   for(float t=tBox.x;t<tBox.y;t+=dt){
 
-    float value=texture(coarseVolumeTex, pSized).r;
+    float value=texture(volumeTex, pSized).r;
     if(value != 0.0){
       #pragma unroll_loop_start
       for(int i = 0; i < 8; ++i)
       {
-        float fineValue = texture(coarseVolumeTex, pSized + random).r;
+        float fineValue = texture(volumeTex, pSized + random).r;
         vec4 vColor = fineValue == 0.0 ? vec4(0.0) : texture(transferTex, vec2(fineValue, 0.5));
         vColor.a *= alphaNorm;
         illumination.rgb += transmittance*clamp(vColor.a,0.0,1.0)*vColor.rgb;

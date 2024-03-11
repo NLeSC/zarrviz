@@ -52,7 +52,7 @@ export async function getVoxelAndVolumeSize(store, shape, path) {
   });
 
   console.log(`Voxel size ${get(voxelSizes)[path][0]}, ${get(voxelSizes)[path][1]}, ${get(voxelSizes)[path][2]}`);
-  console.log('Box size', get(boxSizes)[path]);
+  // console.log('Box size', get(boxSizes)[path]);
   // return { voxelSize, volumeSize, boxSize };
 }
 
@@ -82,7 +82,7 @@ export async function getVoxelAndVolumeSize2D(store, shape, path) {
     return bs;
   });
 
-  console.log(`Voxel size {${get(voxelSizes)[path][0]}, ${get(voxelSizes)[path][1]}}`);
-  console.log('Box size', get(boxSizes)[path]);
+  // console.log(`Voxel size {${get(voxelSizes)[path][0]}, ${get(voxelSizes)[path][1]}}`);
+  // console.log('Box size', get(boxSizes)[path]);
   // return { voxelSize, volumeSize, boxSize };
 }
