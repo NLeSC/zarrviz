@@ -16,7 +16,6 @@ const bottomColor: number[] = [0.0, 0.0005, 0.0033];
 const bottomHeight: number = 675.0;
 const finalGamma = 6.0;
 
-
 export function updateMaterial({ variable, dataUint8 }) {
   const localBox = boxes[variable];
 
@@ -61,8 +60,62 @@ export function updateMaterial({ variable, dataUint8 }) {
       break;
 
     case 'thetavmix':
+      // volumeTexture = new THREE.DataTexture(dataUint8, 1000, 1000);
       volumeTexture = new THREE.DataTexture(dataUint8, sizes[0], sizes[1]);
+      console.log('🎹 volumeTexture', volumeTexture);
+      // const material = new THREE.MeshBasicMaterial({ map: volumeTexture });
+
+      // boxes.thetavmix.material = new THREE.MeshBasicMaterial({ map: volumeTexture });
+      console.log('🎹 ', JSON.stringify(volumeTexture));
+
       console.log('thetavmix', uniforms.volumeTex);
+
+
+
+
+      // Create an array with your pixel data
+      // For simplicity, we're creating a texture with 2x2 pixels, each pixel has RGBA values, so we need 16 values
+      const data = new Uint8Array([
+        255,
+        0,
+        0,
+        255, // Red
+        0,
+        255,
+        0,
+        255, // Green
+        0,
+        0,
+        255,
+        255, // Blue
+        255,
+        255,
+        0,
+        255 // Yellow
+      ]);
+
+      // Create the DataTexture
+      volumeTexture = new THREE.DataTexture(data, 2, 2, THREE.RGBAFormat);
+      // const texture = new THREE.DataTexture(data, 2, 2, THREE.RGBAFormat);
+      // texture.needsUpdate = true; // Tell Three.js to update the texture
+      //
+      // Now you can use this texture in a material and apply it to a mesh
+      // const material = new THREE.MeshBasicMaterial({ map: texture });
+      // const geometry = new THREE.PlaneGeometry(1, 1);
+      // const mesh = new THREE.Mesh(geometry, material);
+      //
+      // Add your mesh to the scene, and you're done!
+      // scene.add(mesh);
+
+
+
+
+
+
+
+
+
+
       break;
 
   }
@@ -78,4 +131,8 @@ export function updateMaterial({ variable, dataUint8 }) {
   // Apply the updated material uniforms with new texture and parameters.
   //
   uniforms.volumeTex.value = volumeTexture;
+
+
+
+
 }

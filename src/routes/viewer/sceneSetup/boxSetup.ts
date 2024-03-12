@@ -34,8 +34,8 @@ export const boxes: {
 // They should be all enabled by default
 //
 export const data_layers = [
-  'qr', // rain
-  'ql', // clouds
+  // 'qr', // rain
+  // 'ql', // clouds
   'thetavmix' // temperature
 ];
 
@@ -62,13 +62,7 @@ export function createVolumetricRenderingBox({ scene, variable, dataUint8 }) {
       boxes.ql.renderOrder = 0;
       boxes.ql.material = initMaterial({ variable });
 
-      console.log('🎹 ', boxes.ql.material);
-
-      // Example material
-      // boxes.ql.material = new THREE.MeshBasicMaterial({ color: 0x00ff00, transparent: true, opacity: get(cloudLayerSettings).opacity / 100 });
-
       updateMaterial({ variable, dataUint8 });
-      // scene.add(qlBox);
       get(cloudLayerSettings).enabled && scene.add(boxes.ql);
       break;
     }
@@ -79,9 +73,6 @@ export function createVolumetricRenderingBox({ scene, variable, dataUint8 }) {
       boxes.qr.position.z = 0.25 + 2000 / get(scaleFactor); // 570 meters above the map TODO: calculate this value from the data
       boxes.qr.renderOrder = 0;
       boxes.qr.material = initMaterial({ variable });
-
-      // Example material
-      // boxes.qr.material = new THREE.MeshBasicMaterial({ color: 'purple', transparent: true, opacity: get(rainLayerSettings).opacity / 100 });
 
       updateMaterial({ variable, dataUint8 });
       get(rainLayerSettings).enabled && scene.add(boxes.qr);
@@ -97,15 +88,8 @@ export function createVolumetricRenderingBox({ scene, variable, dataUint8 }) {
       //!
       // const planeGeometry = new THREE.PlaneGeometry(1, 1, get(volumeSizes)[variable][0], get(volumeSizes)[variable][1]);
       const planeGeometry = new THREE.PlaneGeometry(1, 1);
-      planeGeometry.translate(0, 0, 0.02);
-      // boxes.thetavmix.rotateX(Math.PI / 2);
-
-
-
-
       // boxes.thetavmix = new THREE.Points(planeGeometry);
       boxes.thetavmix = new THREE.Mesh(planeGeometry);
-      // boxes.thetavmix.material = shaderMaterial
       boxes.thetavmix.material = initMaterial({ variable });
       // boxes.thetavmix.material = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, color: 0x00ff00, transparent: true, opacity: get(temperatureLayerSettings).opacity / 100 });
       updateMaterial({ variable, dataUint8 });

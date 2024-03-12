@@ -27,8 +27,8 @@ export function createPlaneMesh(): THREE.Mesh {
   // Rotate the plane to align it with the XY plane
   // mesh.rotation.x = -Math.PI / 2;
 
-  // Assuming you want the map centered at the origin
-  mesh.position.set(0, 0, 0);
+  // Position the plane 1 meter below the scene origin
+  mesh.position.set(0, 0, -0.02);
 
   return mesh;
 }

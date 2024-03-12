@@ -39,7 +39,7 @@ const ambientLightColorV = new THREE.Vector3(
 
 
 export function initMaterial({ variable }): THREE.Material {
-  let shaderMaterial: THREE.Material = null;
+  let shaderMaterial: THREE.ShaderMaterial = null;
   switch (variable) {
     case 'ql':
       shaderMaterial = new THREE.ShaderMaterial({

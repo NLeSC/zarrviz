@@ -45,7 +45,7 @@ export async function fetchSlice({
     }
     return timeSlices;
   });
-  console.log('🎹 downloaded ', currentTimeIndex + 1);
+  // console.log('🎹 downloaded ', currentTimeIndex + 1);
   // console.log('🎹 downloaded ', get(allTimeSlices)[currentTimeIndex]);
   return { dataUint8, shape, store };
 }
