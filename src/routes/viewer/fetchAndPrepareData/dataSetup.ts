@@ -1,6 +1,4 @@
 import {
-  boxes,
-  // createPlaneRenderingBox,
   createVolumetricRenderingBox
 } from "../sceneSetup/boxSetup";
 import {
@@ -21,37 +19,11 @@ export async function dataSetup(visible_data, scene) {
     // Common operation for all variables
     // fetchAllSlices({ path: variable, dimensions }); // TODO: FETCH ALL SLICES ONCE I HAVE THE FIRST ONE
 
-    // Conditional operations based on the variable value
-    if (variable === 'thetavmix') {
-      const {
-        dataUint8,
-        store,
-        shape
-      } = await fetchSlice({ currentTimeIndex: 0, path: variable, dimensions });
+    const { dataUint8, store, shape } = await fetchSlice({ currentTimeIndex: 0, path: variable, dimensions });
+    variable === 'thetavmix'
+      ? await getVoxelAndVolumeSize2D(store, shape, variable)
+      : await getVoxelAndVolumeSize(store, shape, variable);
 
-      await getVoxelAndVolumeSize2D(store, shape, variable);
-      // boxes.thetavmixBox = createPlaneRenderingBox({ variable, dataUint8: vdata });
-      // boxes.thetavmixBox = createVolumetricRenderingBox({ variable, dataUint8: vdata });
-      await createVolumetricRenderingBox({
-        scene,
-        variable,
-        dataUint8
-      });
-    }
-    else {
-      const {
-        dataUint8,
-        store,
-        shape,
-      } = await fetchSlice({ currentTimeIndex: 0, path: variable, dimensions });
-
-      await getVoxelAndVolumeSize(store, shape, variable);
-
-      await createVolumetricRenderingBox({
-        scene,
-        variable,
-        dataUint8,
-      });
-    }
+    await createVolumetricRenderingBox({ scene, variable, dataUint8 });
   }
 }

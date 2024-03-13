@@ -35,7 +35,7 @@ export function updateMaterial({ variable, dataUint8 }) {
   switch (variable) {
     case 'ql':
       volumeTexture = new THREE.Data3DTexture(dataUint8, sizes[0], sizes[1], sizes[2]);
-
+      volumeTexture.format = THREE.RedFormat;
       volumeTexture.minFilter = THREE.LinearFilter; // Better for volume rendering.// TODO: is this the best filter?
       volumeTexture.magFilter = THREE.LinearFilter;
       uniforms.dataScale.value = qlScale;
@@ -51,6 +51,7 @@ export function updateMaterial({ variable, dataUint8 }) {
 
     case 'qr':
       volumeTexture = new THREE.Data3DTexture(dataUint8, sizes[0] / 8, sizes[1] / 8, sizes[2] / 8);
+      volumeTexture.format = THREE.RedFormat;
       volumeTexture.minFilter = THREE.NearestFilter; // TODO: is this the best filter?
       volumeTexture.magFilter = THREE.NearestFilter;
       uniforms.dataScale.value = qrScale;
@@ -60,69 +61,80 @@ export function updateMaterial({ variable, dataUint8 }) {
       break;
 
     case 'thetavmix':
-      // volumeTexture = new THREE.DataTexture(dataUint8, 1000, 1000);
-      volumeTexture = new THREE.DataTexture(dataUint8, sizes[0], sizes[1]);
-      console.log('🎹 volumeTexture', volumeTexture);
-      // const material = new THREE.MeshBasicMaterial({ map: volumeTexture });
-
-      // boxes.thetavmix.material = new THREE.MeshBasicMaterial({ map: volumeTexture });
-      console.log('🎹 ', JSON.stringify(volumeTexture));
-
-      console.log('thetavmix', uniforms.volumeTex);
+      volumeTexture = new THREE.DataTexture(dataUint8, 1024, 1024);
+      // volumeTexture = new THREE.DataTexture(dataUint8, sizes[0] / 2, sizes[1] / 2);
+      volumeTexture.format = THREE.RedFormat;
+      //     // console.log('🎹 volumeTexture', volumeTexture);
+      //     // const material = new THREE.MeshBasicMaterial({ map: volumeTexture });
+      //     // boxes.thetavmix.material = new THREE.MeshBasicMaterial({ map: volumeTexture });
 
 
+      //     // Create the plane geometry
+      //     // eslint-disable-next-line no-case-declarations
+      //     // const geometry = new THREE.PlaneGeometry(1024, 1024);
+
+      //     // Heatmap data
+      //     // eslint-disable-next-line no-case-declarations
+      //     const data = new Uint8Array(1024 * 1024); // Your heatmap data here
+      //     // Fill data with example values between 0 and 250
+      //     for (let i = 0; i < 1024 * 1024; i++) {
+      //       data[i] = Math.floor(Math.random() * 250);
+      //     }
+
+      //     // Create a texture from the data
+      //     // eslint-disable-next-line no-case-declarations
+      //     const texture = new THREE.DataTexture(data, 1024, 1024, THREE.LuminanceFormat, THREE.UnsignedByteType);
+      //     texture.needsUpdate = true;
+
+      //     // Custom shader material
+      //     // eslint-disable-next-line no-case-declarations
+      //     const material = new THREE.ShaderMaterial({
+      //       uniforms: {
+      //         heatmapTexture: { value: texture }
+      //       },
+      //       vertexShader:
+      //         `
+      //           // Vertex Shader
+      //           precision highp float;
+      //         varying vec2 vUv;
+
+      //         void main() {
+      //           vUv = uv; // Assign the UV coordinates provided by Three.js to vUv
+      //           gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      //         }
+      // `, // Your vertex shader code here
+      //       fragmentShader: `
+      //       // Fragment Shader
+      //       precision highp float;
+
+      //       uniform sampler2D heatmapTexture;
+      //       varying vec2 vUv;
+
+      //       vec3 valueToColor(float value) {
+      //         // Linear interpolation between blue and red based on the texture value
+      //         // This assumes the value is normalized between 0 and 1.
+      //         return mix(vec3(0.0, 0.0, 1.0), vec3(1.0, 0.0, 0.0), value);
+      //       }
+
+      //       void main() {
+      //         float value = texture2D(heatmapTexture, vUv).r; // Get the normalized value
+      //         vec3 color = valueToColor(value);
+      //         // Debugging: Output raw value as color
+      //         gl_FragColor = vec4(color, 1.0);
+      //       }
 
 
-      // Create an array with your pixel data
-      // For simplicity, we're creating a texture with 2x2 pixels, each pixel has RGBA values, so we need 16 values
-      const data = new Uint8Array([
-        255,
-        0,
-        0,
-        255, // Red
-        0,
-        255,
-        0,
-        255, // Green
-        0,
-        0,
-        255,
-        255, // Blue
-        255,
-        255,
-        0,
-        255 // Yellow
-      ]);
-
-      // Create the DataTexture
-      volumeTexture = new THREE.DataTexture(data, 2, 2, THREE.RGBAFormat);
-      // const texture = new THREE.DataTexture(data, 2, 2, THREE.RGBAFormat);
-      // texture.needsUpdate = true; // Tell Three.js to update the texture
-      //
-      // Now you can use this texture in a material and apply it to a mesh
-      // const material = new THREE.MeshBasicMaterial({ map: texture });
-      // const geometry = new THREE.PlaneGeometry(1, 1);
-      // const mesh = new THREE.Mesh(geometry, material);
-      //
-      // Add your mesh to the scene, and you're done!
-      // scene.add(mesh);
-
-
-
-
-
-
-
-
-
-
+      //       ` // Your fragment shader code here
+      //     });
+      //     localBox.material = material;
       break;
 
   }
   //
   // Used by all the shaders
   //
-  volumeTexture.format = THREE.RedFormat;
+  // volumeTexture.format = THREE.RedFormat; //TODO NEEDED FOR THE CLOUDS????????????
+
   volumeTexture.type = THREE.UnsignedByteType;
   volumeTexture.generateMipmaps = false; // Saves memory.
   volumeTexture.needsUpdate = true;
