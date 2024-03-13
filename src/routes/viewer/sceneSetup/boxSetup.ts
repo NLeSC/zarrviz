@@ -34,8 +34,8 @@ export const boxes: {
 // They should be all enabled by default
 //
 export const data_layers = [
-  'qr', // rain
-  'ql', // clouds
+  // 'qr', // rain
+  // 'ql', // clouds
   'thetavmix', // temperature
 ];
 
@@ -113,29 +113,11 @@ export function createVolumetricRenderingBox({ scene, variable, dataUint8 }) {
         // TODO calculate here the material with the vertex shader, then fix it in the update material function
         // heatmapExampleMaterial()
         uint8HeatmapExampleMaterial(dataUint8)
-
-
-        // new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, color: 0x00ff00, transparent: true, opacity: get(temperatureLayerSettings).opacity / 100 })
       );
-
-
-      // boxes.thetavmix.material = new THREE.MeshBasicMaterial({ map: dataUint8 })
-      // This works, it creates the matrial, the moment i need the vertex shader it fails.
-      // boxes.thetavmix.material = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, color: 0x00ff00, transparent: true, opacity: get(temperatureLayerSettings).opacity / 100 });
-      // boxes.thetavmix.material = new THREE.PointsMaterial({ side: THREE.DoubleSide, color: 0x00ff00, transparent: true, opacity: get(temperatureLayerSettings).opacity / 100 });
-
-      // boxes.thetavmix.material = initMaterial({ variable });
-
-
-      // updateMaterial({ variable, dataUint8 });
-      // updateMaterial({ variable, dataUint8 });
-
 
       get(temperatureLayerSettings).enabled && scene.add(boxes.thetavmix);
       // renderScene();
       break;
-
-
 
     }
   }
@@ -152,7 +134,6 @@ function uint8HeatmapExampleMaterial(dataUint8 = undefined) {
       // data[i] = (i % 255);
     }
   }
-
 
   // Assuming `data` is your Uint8Array with 1024x1024 data
   const size = 1024; // Texture size
@@ -184,38 +165,39 @@ function uint8HeatmapExampleMaterial(dataUint8 = undefined) {
   `
   const colorFragmentShader = `
   precision highp float;
-    uniform sampler2D heatmapTexture;
-    varying vec2 vUv;
-    uniform float uTransparency;
+  uniform sampler2D heatmapTexture;
+  uniform float uTransparency; // Global transparency
+  uniform float uScaleFactor; // Scaling factor to adjust color sensitivity
+  varying vec2 vUv;
 
-    vec3 getColor(float value) {
-      vec3 blue = vec3(0.0, 0.0, 1.0); // Cooler
-      vec3 yellow = vec3(1.0, 1.0, 0.0);
-      vec3 red = vec3(1.0, 0.0, 0.0); // Hotter
+  void main() {
+    float value = texture2D(heatmapTexture, vUv).r;
+    // Normalize the value to the expected range of your data
+    value = value / 255.0;
+    // Apply the scaling factor
+    value = clamp(value * uScaleFactor, 0.0, 1.0);
 
-      // Adjusting the value to reflect the narrow data range
-      // Map the value from [222/255, 240/255] to [0, 1]
-      value = clamp((value - 222.0/255.0) / (240.0 - 222.0), 0.0, 1.0);
+    // Define the gradient colors
+    vec3 coldColor = vec3(0.0, 0.0, 1.0); // Blue
+    vec3 warmColor = vec3(1.0, 0.5, 0.0); // Dark Orange
 
-      if (value < 0.5) {
-        return mix(blue, yellow, value * 2.0);
-      } else {
-        return mix(yellow, red, (value - 0.5) * 2.0);
-      }
-    }
+    // Calculate the color by interpolating between cold and warm colors based on the value
+    vec3 color = mix(coldColor, warmColor, value);
 
-    void main() {
-      float value = texture2D(heatmapTexture, vUv).r; // Sample the texture
-      vec3 color = getColor(value / 255.0); // Normalize and get color
-      gl_FragColor = vec4(color, uTransparency); // Apply color and transparency
-    }
+    // Calculate the alpha, making red always more transparent than blue
+    float baseAlpha = uTransparency * 0.3; // Red's maximum transparency is half of the global transparency
+    float alpha = mix(uTransparency, baseAlpha, value); // Interpolate alpha between the global transparency and red's max transparency
 
+    gl_FragColor = vec4(color, alpha); // Set the color with the new alpha
+  }
 `
 
   const shaderMaterial = new THREE.ShaderMaterial({
+    transparent: true,
     uniforms: {
       heatmapTexture: { value: dataTexture },
-      uTransparency: { value: get(temperatureLayerSettings).opacity / 100 }
+      uTransparency: { value: get(temperatureLayerSettings).opacity / 100 },
+      uScaleFactor: { value: 200.0 }
     },
     vertexShader: `
       varying vec2 vUv;
@@ -225,36 +207,8 @@ function uint8HeatmapExampleMaterial(dataUint8 = undefined) {
         gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
       }
     `,
-    fragmentShader: grayFragmentShader
+    // fragmentShader: grayFragmentShader
+    fragmentShader: colorFragmentShader
   });
   return shaderMaterial;
-}
-function heatmapExampleMaterial() {
-  return new THREE.ShaderMaterial({
-
-    vertexShader: `
-    // vertexShader.glsl
-      varying float vHeight;
-
-      void main() {
-        vHeight = position.y; // Assuming y is the height
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-      }
-      `,
-    fragmentShader: `
-    // fragmentShader.glsl
-      precision highp float;
-
-      varying float vHeight; // Received from the vertex shader
-
-      void main() {
-        float normalizedHeight = (vHeight + 1.0) / 2.0; // Normalize height to [0, 1]
-        vec3 lowColor = vec3(0.0, 0.0, 1.0); // Blue
-        vec3 highColor = vec3(1.0, 0.0, 0.0); // Red
-        vec3 color = mix(lowColor, highColor, normalizedHeight); // Mix based on height
-        gl_FragColor = vec4(color, 1.0); // Output color
-      }
-    `
-
-  })
 }
