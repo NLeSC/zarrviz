@@ -1,54 +1,26 @@
-uniform sampler2D volumeTex; // Your volume texture
 precision highp float;
+  uniform sampler2D volumeTex;
+  uniform float uTransparency; // Global transparency
+  uniform float uScaleFactor; // Scaling factor to adjust color sensitivity
+  varying vec2 vUv;
 
-uniform vec3 colorLow;
-uniform vec3 colorMid;
-uniform vec3 colorHigh;
-varying float hValue; // Assumed to be set correctly in the vertex shader
-uniform float uTransparency;
+  void main() {
+    float value = texture2D(volumeTex, vUv).r;
+    // Normalize the value to the expected range of your data
+    value = value / 255.0;
+    // Apply the scaling factor
+    value = clamp(value * uScaleFactor, 0.0, 1.0);
 
-vec3 fromRedToGreen( float interpolant )
-{
-    if( interpolant < 0.5 )
-    {
-        return vec3(1.0, 2.0 * interpolant, 0.0);
-    }
-    else
-    {
-        return vec3(2.0 - 2.0 * interpolant, 1.0, 0.0 );
-    }
-}
+    // Define the gradient colors
+    vec3 coldColor = vec3(0.0, 0.0, 1.0); // Blue
+    vec3 warmColor = vec3(1.0, 0.5, 0.0); // Dark Orange
 
-vec3 fromGreenToBlue( float interpolant )
-{
-    if( interpolant < 0.5 )
-    {
-        return vec3(0.0, 1.0, 2.0 * interpolant);
-    }
-    else
-    {
-        return vec3(0.0, 2.0 - 2.0 * interpolant, 1.0 );
-    }
-}
+    // Calculate the color by interpolating between cold and warm colors based on the value
+    vec3 color = mix(coldColor, warmColor, value);
 
-vec3 heat5( float interpolant )
-{
-    float invertedInterpolant = 1.0 - interpolant; // Ensure this inversion is what you want
-    if( invertedInterpolant < 0.5 )
-    {
-        float remappedFirstHalf = 2.0 * invertedInterpolant;
-        return fromGreenToBlue( remappedFirstHalf );
-    }
-    else
-    {
-        float remappedSecondHalf = 2.0 * (invertedInterpolant - 0.5);
-        return fromRedToGreen( remappedSecondHalf );
-    }
-}
+    // Calculate the alpha, making red always more transparent than blue
+    float baseAlpha = uTransparency * 0.3; // Red's maximum transparency is half of the global transparency
+    float alpha = mix(uTransparency, baseAlpha, value); // Interpolate alpha between the global transparency and red's max transparency
 
-void main() {
-    float value = texture2D(volumeTex, vec2(hValue, 0.5)).r; // Assuming hValue is used to sample the texture
-    vec3 col = heat5(value); // Use the value from the texture to determine the color
-    // gl_FragColor = vec4(col, uTransparency); // Use the calculated color and transparency
-    gl_FragColor = vec4(1., 1., 1., uTransparency); // Use the calculated color and transparency
-}
+    gl_FragColor = vec4(color, alpha); // Set the color with the new alpha
+  }

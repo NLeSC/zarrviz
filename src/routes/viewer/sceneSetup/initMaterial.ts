@@ -102,27 +102,16 @@ export function initMaterial({ variable }): THREE.Material {
       });
       break;
     case 'thetavmix':
-      // Create an elevation texture
+
       shaderMaterial = new THREE.ShaderMaterial({
+        transparent: true,
+        uniforms: {
+          volumeTex: { value: null },
+          uTransparency: { value: get(temperatureLayerSettings).opacity / 100 },
+          uScaleFactor: { value: 200.0 }
+        },
         vertexShader: vertexShaderSurface,
         fragmentShader: fragmentShaderSurfaceHeatMap,
-        side: THREE.DoubleSide,
-        transparent: true,
-        clipping: true,
-        uniforms: {
-          uTransparency: { value: get(temperatureLayerSettings).opacity / 100 },
-          volumeTex: new THREE.Uniform(null),
-
-          //
-          // Not being used at the moment:
-          //
-          heightRatio: new THREE.Uniform(0),
-          heightBias: new THREE.Uniform(0),
-          colorLow: new THREE.Uniform(new THREE.Vector3(0, 0, 1)),
-          colorMid: new THREE.Uniform(new THREE.Vector3(0, 1, 0)),
-          colorHigh: new THREE.Uniform(new THREE.Vector3(1, 0, 0)),
-          //gradientTexture: {value: gradientMap}
-        }
       });
       break;
   }
