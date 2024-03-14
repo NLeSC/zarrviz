@@ -17,7 +17,6 @@ export function disableSpinnerRepeat(event, previous) {
 
 export function fixVolumeSize(volumeSize, data) {
 	const volumeSizeFixed = volumeSize;
-	// TODO: Is it really right that in practice, `image_size[2]` on the original file can be wrong?
 	const realFrameCount = data.byteLength / (volumeSize[0] * volumeSize[1]);
 	if (realFrameCount !== volumeSize[2]) {
 		console.log(`Frame count (z) seems to be ${realFrameCount} rather than ${volumeSize[2]}`);

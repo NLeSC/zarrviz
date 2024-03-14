@@ -14,4 +14,5 @@ export const temperatureLayerSettings = persisted('temperatureLayer', { enabled:
 
 // 1 unit in the scene = 1000 meters (1 kilometer) in real life
 // Meters of the bounding box of the data
-export const scaleFactor = persisted('scaleFactor', 33800); // TODO: calculate this value from the data
+// NOTE: Calculate the bounding box of the data and set it here if possible.
+export const scaleFactor = persisted('scaleFactor', 33800);

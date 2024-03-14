@@ -13,11 +13,6 @@ import { makeRainTransferTex } from '$lib/utils/makeRainTransferTex';
 import { cameraFar, cameraNear } from './create3DScene';
 import { cloudLayerSettings, rainLayerSettings, temperatureLayerSettings } from '../stores/viewer.store';
 
-// TODO:
-// TODO:
-// TODO: MAKE THIS WORK
-// TODO:
-
 // Run only once at mount
 const transferTexture = makeRainTransferTex();
 

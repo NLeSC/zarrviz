@@ -15,8 +15,6 @@
 
 	function play() {
 		playAnimation = !playAnimation;
-		// TODO This invertal emulates the playback of the data, make it a real playback
-
 		if (playAnimation) {
 			interval = setInterval(() => {
 				if (get(dataSlices)[get(currentTimeIndex)]) {
@@ -29,13 +27,6 @@
 		}
 	}
 
-	// TODO
-	// TODO
-	// TODO
-	// TODO  update the material when the currentTimeIndex changes
-	// TODO
-	// TODO
-	// TODO
 	onMount(() => {
 		// Update the material when the currentTimeIndex changes
 		currentTimeIndex.subscribe((index: number) => {
