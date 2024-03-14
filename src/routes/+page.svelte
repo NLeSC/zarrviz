@@ -16,10 +16,16 @@
 		// 	url: 'https://s3.ctwhome.com/ruisdael/data/animated-data/ql.zarr'
 		// },
 		{
-			title: 'Dataset with Rain 3 (600MB)',
+			title: 'Localhost (Dev) Dataset with Rain 3 (600MB)',
 			description: 'Rain and clouds',
 			image: `${base}/images/cover.webp`,
 			url: 'http://localhost:5173/data/movie.zarr'
+		},
+		{
+			title: 'Dataset with Rain 3 (600MB)',
+			description: 'Rain and clouds',
+			image: `${base}/images/cover.webp`,
+			url: 'https://storage.googleapis.com/ruisdael/movie.zarr'
 		}
 	];
 </script>
