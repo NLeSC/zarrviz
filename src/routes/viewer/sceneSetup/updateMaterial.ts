@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { get } from 'svelte/store';
 import { volumeSizes } from '../stores/allSlices.store';
 import { boxes } from './boxSetup';
+import { coarseData } from '../fetchAndPrepareData/coarseData';
 
 
 // Be caruful with these valies, they can clip the data in the 3D scene
@@ -49,7 +50,9 @@ export function updateMaterial({ variable, dataUint8 }) {
       break;
 
     case 'qr':
-      volumeTexture = new THREE.Data3DTexture(dataUint8, sizes[0] / 8, sizes[1] / 8, sizes[2] / 8);
+      // uniforms?.coarseVolumeTex?.value?.dispose();
+
+      volumeTexture = new THREE.Data3DTexture(dataUint8, sizes[0], sizes[1], sizes[2]);
       volumeTexture.format = THREE.RedFormat;
       volumeTexture.minFilter = THREE.NearestFilter; // TODO: is this the best filter?
       volumeTexture.magFilter = THREE.NearestFilter;
@@ -57,6 +60,8 @@ export function updateMaterial({ variable, dataUint8 }) {
       uniforms.dtScale.value = dtScale;
       uniforms.alphaNorm.value = 2.0;
       uniforms.finalGamma.value = finalGamma;
+
+      uniforms.coarseVolumeTex.value = new THREE.Data3DTexture(coarseData(sizes, dataUint8), sizes[0] / 8, sizes[1] / 8, sizes[2] / 8);;
       break;
 
     case 'thetavmix':
@@ -75,8 +80,5 @@ export function updateMaterial({ variable, dataUint8 }) {
   // Apply the updated material uniforms with new texture and parameters.
   //
   uniforms.volumeTex.value = volumeTexture;
-
-
-
 
 }
