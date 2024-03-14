@@ -1,12 +1,13 @@
 import * as THREE from 'three';
 import { get } from 'svelte/store'
 import { scaleFactor } from '../stores/viewer.store';
+import { base } from '$app/paths';
 //
 // Create and add  plane mesh to the scene to hold the Map texture
 //
 export function createPlaneMesh(): THREE.Mesh {
   const textureLoader = new THREE.TextureLoader();
-  const texture = textureLoader.load('/maps/nl_map 50m per pixel.webp');
+  const texture = textureLoader.load(`${base}/maps/nl_map 50m per pixel.webp`);
   texture.colorSpace = THREE.SRGBColorSpace;
 
   // Scale factor: 50 meters per pixel
