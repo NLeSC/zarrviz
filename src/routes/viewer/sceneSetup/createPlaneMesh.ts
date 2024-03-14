@@ -28,7 +28,8 @@ export function createPlaneMesh(): THREE.Mesh {
   // mesh.rotation.x = -Math.PI / 2;
 
   // Position the plane 1 meter below the scene origin
-  mesh.position.set(0, 0, -0.02);
+  mesh.position.set(0, 0, 0);
+  // mesh.position.set(0, 0, -0.04);
 
   return mesh;
 }

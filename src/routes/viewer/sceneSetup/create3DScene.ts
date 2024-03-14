@@ -1,7 +1,5 @@
 import * as THREE from 'three';
 import CameraControls from 'camera-controls';
-import { cloudLayerSettings } from '../stores/viewer.store';
-import { get } from 'svelte/store';
 import { createPlaneMesh } from './createPlaneMesh';
 CameraControls.install({ THREE: THREE });
 
@@ -9,12 +7,12 @@ export let cameraControls: CameraControls | null = null;
 export let renderer: THREE.WebGLRenderer;
 
 
-export const cameraFovDegrees = 5.0;
+export const cameraFovDegrees = 1.0; // it was 5  - 1.0 has no artifacts almost, but less performant
 export const cameraNear = 0.01;
 export const cameraFar = 1000.0;
 
 // Render the scene. This function can be reused in other effects or callbacks.
-function renderScene(scene, camera): void {
+export function renderScene(scene, camera): void {
   renderer.render(scene, camera);
   console.log('🔥 rendered');
 }

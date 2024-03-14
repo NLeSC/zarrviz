@@ -25,8 +25,8 @@ export const boxes: {
 // They should be all enabled by default
 //
 export const data_layers = [
-  'ql', // clouds
   'qr', // rain
+  'ql', // clouds
   'thetavmix', // temperature
 ];
 
@@ -45,12 +45,11 @@ export function createVolumetricRenderingBox({ scene, variable, dataUint8 }) {
   // const boxScale = 33800 / scaleFactor; //  33.8 km in meters in scene units
   const boxGeometry = new THREE.BoxGeometry(1, 1, boxZ);
   const planeGeometry = new THREE.PlaneGeometry(1, 1);
-
   switch (variable) {
     // Clouds Layer
     case 'ql': {
       boxes.ql = new THREE.Mesh(boxGeometry);
-      boxes.ql.position.z = 0.25 + 2000 / get(scaleFactor); // 570 meters above the map TODO: calculate this value from the data
+      boxes.ql.position.z = 0.01 + 2000 / get(scaleFactor); // was 0.25 // 570 meters above the map TODO: calculate this value from the data
       boxes.ql.renderOrder = 0;
       boxes.ql.material = initMaterial({ variable });
       get(cloudLayerSettings).enabled && scene.add(boxes.ql);
@@ -60,7 +59,7 @@ export function createVolumetricRenderingBox({ scene, variable, dataUint8 }) {
     // Rain Layer
     case 'qr': {
       boxes.qr = new THREE.Mesh(boxGeometry);
-      boxes.qr.position.z = 0.25 + 2000 / get(scaleFactor); // 570 meters above the map TODO: calculate this value from the data
+      boxes.qr.position.z = 2000 / get(scaleFactor); // it was 0.25 + 570 meters above the map TODO: calculate this value from the data
       boxes.qr.renderOrder = 0;
       boxes.qr.material = initMaterial({ variable });
       get(rainLayerSettings).enabled && scene.add(boxes.qr);
@@ -70,6 +69,7 @@ export function createVolumetricRenderingBox({ scene, variable, dataUint8 }) {
     case 'thetavmix': {
       boxes.thetavmix = new THREE.Mesh(planeGeometry);
       boxes.thetavmix.material = initMaterial({ variable });
+      boxes.thetavmix.position.z = 0.03 // it was -
       get(temperatureLayerSettings).enabled && scene.add(boxes.thetavmix);
       break;
 
