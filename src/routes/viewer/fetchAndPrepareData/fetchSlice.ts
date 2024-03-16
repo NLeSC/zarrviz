@@ -17,7 +17,7 @@ export async function fetchSlice({
   const datasetUrl = urlSearchParams.get("dataset") || 'http://localhost:5173/data/movie.zarr';
 
   // Create an HTTPStore pointing to the base of your Zarr hierarchy
-  const store = new HTTPStore(datasetUrl, { fetchOptions: { redirect: 'follow', mode: 'cors', credentials: 'include' } });
+  const store = new HTTPStore(datasetUrl, { fetchOptions: { redirect: 'follow', mode: 'no-cors', credentials: 'include' } });
   const zarrdata = await openArray({ store, path, mode });
   const { data, shape } = dimensions === 4
     ? await zarrdata.getRaw([currentTimeIndex, null, null, null])

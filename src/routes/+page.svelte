@@ -1,25 +1,31 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
+	import { base } from '$app/paths';
 	import logos from '$lib/assets/images/logos.webp';
 
 	const datasets = [
 		// {
 		// 	title: 'Dataset 1 (80MB)',
 		// 	description: 'If a dog chews shoes whose shoes does he choose?',
-		// 	image: '/images/cover.webp',
+		//  image: `${base}/images/cover.webp`,
 		// 	url: 'https://s3.ctwhome.com/ruisdael/data/ql.zarr'
 		// },
 		// {
 		// 	title: 'Dataset 2 (300MB)',
 		// 	description: 'If a dog chews shoes whose shoes does he choose?',
-		// 	image: '/images/cover.webp',
+		//  image: `${base}/images/cover.webp`,
 		// 	url: 'https://s3.ctwhome.com/ruisdael/data/animated-data/ql.zarr'
 		// },
 		{
+			title: 'Localhost (Dev) Dataset with Rain 3 (600MB)',
+			description: 'Rain and clouds',
+			image: `${base}/images/cover.webp`,
+			url: 'http://localhost:5173/data/movie.zarr'
+		},
+		{
 			title: 'Dataset with Rain 3 (600MB)',
 			description: 'Rain and clouds',
-			image: '/images/cover.webp',
-			url: 'http://localhost:5173/data/movie.zarr'
+			image: `${base}/images/cover.webp`,
+			url: 'https://storage.googleapis.com/ruisdael/movie.zarr'
 		}
 	];
 </script>

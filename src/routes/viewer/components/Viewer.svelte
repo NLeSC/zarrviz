@@ -26,15 +26,8 @@
 			// Change transparency of the materials
 			boxes.ql && (boxes.ql.material.uniforms.uTransparency.value = $cloudLayerSettings.opacity / 100);
 			boxes.qr && (boxes.qr.material.uniforms.uTransparency.value = $rainLayerSettings.opacity / 100);
-
-			// TODO WORK IN PROGRSS< ADDING THE TEMPERATURE LAYER
 			boxes.thetavmix &&
 				(boxes.thetavmix.material.uniforms.uTransparency.value = $temperatureLayerSettings.opacity / 100);
-
-			// TODO: TESTING
-			// boxes.ql && (boxes.ql.material.opacity = $cloudLayerSettings.opacity / 100);
-			// boxes.qrBox && (boxes.qrBox.material.opacity = $rainLayerSettings.opacity / 100);
-			// boxes.thetavmix && (boxes.thetavmix.material.opacity = $temperatureLayerSettings.opacity / 100);
 
 			// Enable and disable the layers
 			$rainLayerSettings.enabled && !!boxes.qr ? scene.add(boxes.qr) : scene.remove(boxes.qr);
@@ -65,11 +58,6 @@
 		// calculate the voxel and volume size.
 		// It runs only once.
 		dataSetup(data_layers, scene);
-
-		// TODO:
-		// TODO: FETCH THE REST OF THE DATA
-		// TODO:
-		// TODO:
 
 		// Add the example points to the scene
 		// scene.add(examplePoints());

@@ -36,7 +36,7 @@ export function updateMaterial({ variable, dataUint8 }) {
     case 'ql':
       volumeTexture = new THREE.Data3DTexture(dataUint8, sizes[0], sizes[1], sizes[2]);
       volumeTexture.format = THREE.RedFormat;
-      volumeTexture.minFilter = THREE.LinearFilter; // Better for volume rendering.// TODO: is this the best filter?
+      volumeTexture.minFilter = THREE.LinearFilter; // Better for volume rendering.
       volumeTexture.magFilter = THREE.LinearFilter;
       uniforms.dataScale.value = qlScale;
       uniforms.dtScale.value = dtScale;
@@ -54,7 +54,7 @@ export function updateMaterial({ variable, dataUint8 }) {
 
       volumeTexture = new THREE.Data3DTexture(dataUint8, sizes[0], sizes[1], sizes[2]);
       volumeTexture.format = THREE.RedFormat;
-      volumeTexture.minFilter = THREE.NearestFilter; // TODO: is this the best filter?
+      volumeTexture.minFilter = THREE.NearestFilter;
       volumeTexture.magFilter = THREE.NearestFilter;
       uniforms.dataScale.value = qrScale;
       uniforms.dtScale.value = dtScale;
