@@ -1,53 +1,53 @@
 <script>
 	import * as THREE from 'three';
-	import { cameraControls } from '../sceneSetup/create3DScene';
+	import { camera, cameraControls } from '../sceneSetup/create3DScene';
+	const distance = 50; // Adjust the distance based on your scene scale
 
-	export let camera;
+	// More examples here
+
+	// Function to update camera position and look at the center of the cube
+	function setCameraView(x, y, z, u = 0, v = -1, w = 0, animate = true) {
+		camera.up.set(u, v, w); // This keeps the camera oriented with the world's up direction
+		cameraControls.setPosition(x, y, z, animate);
+		camera.lookAt(0, 0, 0); // Assuming the cube is at the origin
+	}
 </script>
 
-<div class="info p-6">
-	<button class="btn btn-sm" on:click={() => cameraControls.rotate(45 * THREE.MathUtils.DEG2RAD, 0, true)}
-		>rotate theta 45deg</button
-	>
-	<button class="btn btn-sm" on:click={() => cameraControls.rotate(-90 * THREE.MathUtils.DEG2RAD, 0, true)}
-		>rotate theta -90deg</button
-	>
-	<button class="btn btn-sm" on:click={() => cameraControls.rotate(360 * THREE.MathUtils.DEG2RAD, 0, true)}
-		>rotate theta 360deg</button
-	>
-	<button class="btn btn-sm" on:click={() => cameraControls.rotate(0, 20 * THREE.MathUtils.DEG2RAD, true)}
-		>rotate phi 20deg</button
-	>
+<button class="btn btn-sm" onclick="camera_modal.showModal()">Camera Controls</button>
+<button class="btn btn-sm" on:click={() => setCameraView(0, 0, distance, 0, 1, 0)}>Up</button>
 
-	<button class="btn btn-sm" on:click={() => cameraControls.truck(1, 0, true)}> truck( 1, 0 ) </button>
-	<button class="btn btn-sm" on:click={() => cameraControls.truck(0, 1, true)}> truck( 0, 1 ) </button>
-	<button class="btn btn-sm" on:click={() => cameraControls.truck(-1, -1, true)}> truck( -1, -1 ) </button>
+<button class="btn btn-sm" on:click={() => setCameraView(0, -distance, 0, 0, 1, 0, true)}>Front</button>
+<button class="btn btn-sm" on:click={() => setCameraView(0, distance, 0, 0, -1, 0, true)}>Back</button>
 
-	<button class="btn btn-sm" on:click={() => cameraControls.dolly(1, true)}>dolly 1</button>
-	<button class="btn btn-sm" on:click={() => cameraControls.dolly(-1, true)}>dolly -1</button>
+<button class="btn btn-sm" on:click={() => setCameraView(distance, 0, 0, 0, 0, 1, true)}>Left</button>
+<button class="btn btn-sm" on:click={() => setCameraView(-distance, 0, 0, 0, 0, 1, true)}>Right</button>
+<dialog id="camera_modal" class="modal">
+	<div class="modal-box">
+		<h3 class="font-bold text-lg">Camera Controls!</h3>
+		<div class="info p-6">
+			<button class="btn btn-sm" on:click={() => cameraControls.zoom(camera.zoom / 2, true)}>Zoom in</button>
+			<button class="btn btn-sm" on:click={() => cameraControls.zoom(-camera.zoom / 2, true)}>Zoom out</button>
 
-	<button class="btn btn-sm" on:click={() => cameraControls.zoom(camera.zoom / 2, true)}>zoom `camera.zoom / 2`</button>
-	<button class="btn btn-sm" on:click={() => cameraControls.zoom(-camera.zoom / 2, true)}
-		>zoom `- camera.zoom / 2`</button
-	>
+			<br />
+			<button class="btn btn-sm" on:click={() => cameraControls.reset(true)}>reset</button>
+			<button class="btn btn-sm" on:click={() => cameraControls.saveState()}>saveState</button>
+			<button class="btn btn-sm" on:click={() => console.log(camera?.position)}>Log camera in console</button>
+		</div>
 
-	<button class="btn btn-sm" on:click={() => cameraControls.moveTo(3, 5, 2, true)}> move to( 3, 5, 2 )</button>
-	<!-- <button class="btn btn-sm" on:click={()=> cameraControls.fitToBox(mesh, true)}>fit to the bounding box of the mesh</button -->
+		<br />
+		<button class="btn btn-sm" on:click={() => cameraControls.rotate(90 * THREE.MathUtils.DEG2RAD, 0, true)}>
+			rotate theta 90
+		</button>
+		<button class="btn btn-sm" on:click={() => cameraControls.rotate(0, 90 * THREE.MathUtils.DEG2RAD, true)}>
+			rotate phi 90
+		</button>
 
-	<button class="btn btn-sm" on:click={() => cameraControls.setPosition(-5, 2, 1, true)}>move to ( -5, 2, 1 )</button>
-	<button class="btn btn-sm" on:click={() => cameraControls.setTarget(3, 0, -3, true)}>look at ( 3, 0, -3 )</button>
-	<button class="btn btn-sm" on:click={() => cameraControls.setLookAt(1, 2, 3, 1, 1, 0, true)}
-		>move to ( 1, 2, 3 ), look at ( 1, 1, 0 )</button
-	>
-
-	<button on:click={() => cameraControls.lerpLookAt(-2, 0, 0, 1, 1, 0, 0, 2, 5, -1, 0, 0, Math.random(), true)}
-		>move to somewhere between ( -2, 0, 0 ) -> ( 1, 1, 0 ) and ( 0, 2, 5 ) -> ( -1, 0, 0 )</button
-	>
-
-	<button class="btn btn-sm" on:click={() => cameraControls.reset(true)}>reset</button>
-	<button class="btn btn-sm" on:click={() => cameraControls.saveState()}>saveState</button>
-	<br />
-	<button class="btn btn-sm" on:click={() => (cameraControls.enabled = false)}>disable mouse/touch controls</button>
-	<button class="btn btn-sm" on:click={() => (cameraControls.enabled = true)}>enable mouse/touch controls</button>
-	<button on:click={() => console.log(camera?.position)}>Log camera in console</button>
-</div>
+		<!-- rotate alpha 90 -->
+		<button class="btn btn-sm" on:click={() => cameraControls.rotate(0, 90 * THREE.MathUtils.DEG2RAD, true)}>
+			rotate alpha 90
+		</button>
+	</div>
+	<form method="dialog" class="modal-backdrop">
+		<button>close</button>
+	</form>
+</dialog>

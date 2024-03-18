@@ -16,7 +16,7 @@
 		// 	url: 'https://s3.ctwhome.com/ruisdael/data/animated-data/ql.zarr'
 		// },
 		{
-			title: 'Localhost (Dev) Dataset with Rain 3 (600MB)',
+			title: 'Localhost (Dev) Dataset (600MB)',
 			description: 'Rain and clouds',
 			image: `${base}/images/cover.webp`,
 			url: 'http://localhost:5173/data/movie.zarr'
@@ -25,7 +25,7 @@
 			title: 'Dataset with Rain 3 (600MB)',
 			description: 'Rain and clouds',
 			image: `${base}/images/cover.webp`,
-			url: 'https://storage.googleapis.com/ruisdael/movie.zarr'
+			url: 'https://s3.ctwhome.com/ruisdael/data/movie.zarr'
 		}
 	];
 </script>
@@ -58,7 +58,7 @@
 						<img src={data.image} class="flex-none rounded-t-2xl" alt="Shoes" />
 						<div class="card-body">
 							<h2 class="card-title">{data.title}</h2>
-							<p>If a dog chews shoes whose shoes does he choose?</p>
+							<!-- <p>If a dog chews shoes whose shoes does he choose?</p> -->
 							<div class="card-actions justify-end">
 								<button class="btn btn-primary btn-sm">Load 3D data</button>
 							</div>

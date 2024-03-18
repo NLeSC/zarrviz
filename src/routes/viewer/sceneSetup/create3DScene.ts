@@ -3,6 +3,9 @@ import CameraControls from 'camera-controls';
 import { createPlaneMesh } from './createPlaneMesh';
 CameraControls.install({ THREE: THREE });
 
+export let scene: THREE.Scene;
+export let camera: THREE.PerspectiveCamera;
+
 export let cameraControls: CameraControls | null = null;
 export let renderer: THREE.WebGLRenderer;
 
@@ -29,9 +32,9 @@ function resize(canvas, camera) {
   camera.updateProjectionMatrix();
 }
 
-export function create3DScene({ canvas, camera }): Promise<THREE.Scene> {
+export function create3DScene({ canvas }): void {
   // Set up the Three.js scene and renderer
-  const scene = new THREE.Scene();
+  scene = new THREE.Scene();
   renderer = new THREE.WebGLRenderer({ antialias: true, canvas: canvas }); // Create a WebGLRenderer and specify the canvas to use
 
   camera = new THREE.PerspectiveCamera(
@@ -41,7 +44,7 @@ export function create3DScene({ canvas, camera }): Promise<THREE.Scene> {
     cameraFar
   );
 
-  camera.position.set(0, -10, 10); // Adjusted for scaled scene
+  camera.position.set(0, -30, 50); // Adjusted for scaled scene
   camera.lookAt(new THREE.Vector3(0, 0, 0));
 
   cameraControls = new CameraControls(camera, canvas);
@@ -50,6 +53,8 @@ export function create3DScene({ canvas, camera }): Promise<THREE.Scene> {
   scene.add(createPlaneMesh());
 
 
+  // Add controls to the scene
+  // scene.add(viewHelper);
   //
   // Lights, to be used both during rendering the volume, and rendering the optional surface.
   //
@@ -72,6 +77,6 @@ export function create3DScene({ canvas, camera }): Promise<THREE.Scene> {
   resize(canvas, camera);
   animate();
 
-  return Promise.resolve(scene); // Fix: Wrap the scene variable in a Promise.resolve() function
+  // return Promise.resolve(scene); // Fix: Wrap the scene variable in a Promise.resolve() function
   // console.log('🔋 3d scene created');
 }
