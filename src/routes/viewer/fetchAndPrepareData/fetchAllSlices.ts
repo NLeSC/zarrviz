@@ -17,6 +17,7 @@ export async function fetchAllSlices({ path = 'ql', dimensions = 4 }) {
   const promises = [];
 
   console.log('📕 Downloading all slices');
+  // Start loop at 1 because the first slice was already fetched at mounted
   for (let i = 1; i < get(slicesToRender); ++i) { // start with 1 because 0 was already fetched at mounted
     // const me = Symbol();
     // await q.wait(me, 10 - i);

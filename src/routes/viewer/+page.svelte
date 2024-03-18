@@ -32,7 +32,7 @@
 		/>
 	</div>
 	<div class="px-4 py-4">
-		<h2 class="text-2xl mb-3">Scene Title</h2>
+		<h2 class="text-2xl mb-3">Dataset</h2>
 		<Stats />
 
 		<div class="text-sm">
@@ -47,7 +47,7 @@
 				}}
 				class="input input-xs w-14"
 			/>
-			of {totalSlices}<br />
+			of {$totalSlices}<br />
 			dataUint8 (slice) {$dataSlices[0]?.length} - {($dataSlices[0]?.byteLength / 1073741824).toFixed(3)} GB
 			<!-- <pre>dataCellSize: {$dataCellSize.length} |</pre> -->
 			Slices downloaded: {JSON.stringify($dataSlices.length, null, 2)}

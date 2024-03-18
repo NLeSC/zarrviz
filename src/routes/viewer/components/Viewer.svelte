@@ -5,7 +5,7 @@
 
 	import { dataSlices, currentTimeIndex, downloadedTime } from '../stores/allSlices.store';
 	import { cloudLayerSettings, rainLayerSettings, temperatureLayerSettings, showGrid } from '../stores/viewer.store';
-	import { create3DScene, scene, camera } from '../sceneSetup/create3DScene';
+	import { create3DScene, scene } from '../sceneSetup/create3DScene';
 
 	import { dataSetup } from '../fetchAndPrepareData/dataSetup';
 	import { createGridHelper } from '../sceneSetup/createGridHelper';
