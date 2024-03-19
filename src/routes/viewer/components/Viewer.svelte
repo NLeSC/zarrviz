@@ -10,6 +10,7 @@
 	import { dataSetup } from '../fetchAndPrepareData/dataSetup';
 	import { createGridHelper } from '../sceneSetup/createGridHelper';
 	import { boxes, data_layers } from '../sceneSetup/boxSetup';
+	import { base } from '$app/paths';
 	// import examplePoints from '../fetchAndPrepareData/examplePoints';
 
 	let canvas: HTMLElement;
@@ -81,7 +82,7 @@
 
 <div>
 	<div class="fixed top-0 left-0">
-		<a href="/"><button class="btn">← Select dataset</button></a>
+		<a href="{base}/"><button class="btn">← Select dataset</button></a>
 
 		<button class="btn" on:click={() => toggleGrid()}>
 			<input type="checkbox" bind:checked={$showGrid} id="gridCheckbox" />
