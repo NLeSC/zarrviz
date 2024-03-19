@@ -36,7 +36,7 @@
 			url: 'https://s3.ctwhome.com/ruisdael/data/movie.zarr'
 		}
 	].filter((dataset) => {
-		if (import.meta.env) {
+		if (import.meta.env.DEV) {
 			return dataset;
 		} else {
 			return !dataset.dev;
