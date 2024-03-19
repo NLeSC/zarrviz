@@ -6,8 +6,8 @@
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 	<title>Data Browser - CMTRACE</title>
-	<link rel="stylesheet" href="instrument/Data Browser - CMTRACE_files/jquery.ui.all.css">
-	<link rel="stylesheet" href="instrument/Data Browser - CMTRACE_files/dataBrowser.css">
+	<link rel="stylesheet" href="Data Browser - CMTRACE_files/jquery.ui.all.css">
+	<link rel="stylesheet" href="Data Browser - CMTRACE_files/dataBrowser.css">
 	<!--	<link rel="stylesheet" href="zoombox-plugin/css/jquery.zoombox-0.5.css">-->
 
 	<!-- Universitaet zu Koeln, Institut fuer Meteorologie und Geophysik -->
@@ -21,16 +21,15 @@
 	<script>
 		var noPanels = 4
 	</script>
-	<script type="application/javascript" src="instrument/Data Browser - CMTRACE_files/getIp.php"></script>
-	<script type="application/javascript" src="instrument/Data Browser - CMTRACE_files/jquery-1.7.2.min.js"></script>
-	<script type="application/javascript"
-		src="instrument/Data Browser - CMTRACE_files/jquery-ui-1.8.23.custom.min.js"></script>
-	<script type="application/javascript" src="instrument/Data Browser - CMTRACE_files/jsuri-1.1.1.min.js"></script>
+	<script type="application/javascript" src="Data Browser - CMTRACE_files/getIp.php"></script>
+	<script type="application/javascript" src="Data Browser - CMTRACE_files/jquery-1.7.2.min.js"></script>
+	<script type="application/javascript" src="Data Browser - CMTRACE_files/jquery-ui-1.8.23.custom.min.js"></script>
+	<script type="application/javascript" src="Data Browser - CMTRACE_files/jsuri-1.1.1.min.js"></script>
 	<!--	<script type="application/javascript" src="zoom/jquery.zoom-min.js"></script>-->
 	<!--<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.1/jquery-ui.min.js"></script>-->
 	<!--	<script type="application/javascript" src="jdbartlett-loupe/jquery.loupe.min.js"></script>-->
 
-	<script type="application/javascript" src="instrument/Data Browser - CMTRACE_files/dataBrowser.js"></script>
+	<script type="application/javascript" src="Data Browser - CMTRACE_files/dataBrowser.js"></script>
 	<style>
 		div.dataLargeBox {
 			height: 46%;
@@ -44,9 +43,9 @@
 	<div id="upperBox" class="dataLargeBox">
 		<div id="UpperLeftBox" class="dataSmallBox">
 			<!--<a href="http://gop.meteo.uni-koeln.de/ag_crewell/doku.php?id=home" class="logo" id="logoLeft"><img src="logo_inferno.png" alt="Integrated Remote Sensing"/></a>//-->
-			<a href="instrument/Data Browser - CMTRACE_files/20230627_KNMI_Windcube_vertical_stare.png" id="UpperLeftLink"
+			<a href="Data Browser - CMTRACE_files/20230627_KNMI_Windcube_vertical_stare.png" id="UpperLeftLink"
 				class="zoombox"><img id="UpperLeftData" class="dataPic"
-					src="instrument/Data Browser - CMTRACE_files/20230627_KNMI_Windcube_vertical_stare.png" alt=" "
+					src="Data Browser - CMTRACE_files/20230627_KNMI_Windcube_vertical_stare.png" alt=" "
 					title="cmtrace/knmi_windcube/2023/06/20230627_KNMI_Windcube_vertical_stare.png">
 				<div id="UpperLeftError" class="Error"> </div>
 			</a>
@@ -54,9 +53,9 @@
 		</div>
 		<div id="UpperRightBox" class="dataSmallBox">
 			<a href="http://www.louisenuijens.com/cmtrace.html" id="logoRight"><img
-					src="instrument/Data Browser - CMTRACE_files/tu_logo.png" alt="University of Delft"></a>
-			<a href="instrument/Data Browser - CMTRACE_files/20230627.png" id="UpperRightLink" class="zoombox"><img
-					id="UpperRightData" class="dataPic" src="instrument/Data Browser - CMTRACE_files/20230627.png" alt=" "
+					src="Data Browser - CMTRACE_files/tu_logo.png" alt="University of Delft"></a>
+			<a href="Data Browser - CMTRACE_files/20230627.png" id="UpperRightLink" class="zoombox"><img id="UpperRightData"
+					class="dataPic" src="Data Browser - CMTRACE_files/20230627.png" alt=" "
 					title="cmtrace/skiron/winddirection/20230627.png">
 				<div id="UpperRightError" class="Error"> </div>
 			</a>
@@ -156,16 +155,15 @@
 	</div>
 	<div id="lowerBox" class="dataLargeBox">
 		<div id="LowerLeftBox" class="dataSmallBox">
-			<a href="instrument/Data Browser - CMTRACE_files/20230627_ceilometer.png" id="LowerLeftLink" class="zoombox"><img
-					id="LowerLeftData" class="dataPic" src="instrument/Data Browser - CMTRACE_files/20230627_ceilometer.png"
-					alt=" " title="cmtrace/ceilometer/20230627_ceilometer.png">
+			<a href="Data Browser - CMTRACE_files/20230627_ceilometer.png" id="LowerLeftLink" class="zoombox"><img
+					id="LowerLeftData" class="dataPic" src="Data Browser - CMTRACE_files/20230627_ceilometer.png" alt=" "
+					title="cmtrace/ceilometer/20230627_ceilometer.png">
 				<div id="LowerLeftError" class="Error"> </div>
 			</a>
 		</div>
 		<div id="LowerRightBox" class="dataSmallBox">
-			<a href="instrument/Data Browser - CMTRACE_files/20230627_hor_wind_speed.png" id="LowerRightLink"
-				class="zoombox"><img id="LowerRightData" class="dataPic"
-					src="instrument/Data Browser - CMTRACE_files/20230627_hor_wind_speed.png" alt=" "
+			<a href="Data Browser - CMTRACE_files/20230627_hor_wind_speed.png" id="LowerRightLink" class="zoombox"><img
+					id="LowerRightData" class="dataPic" src="Data Browser - CMTRACE_files/20230627_hor_wind_speed.png" alt=" "
 					title="cmtrace/tud_windcube/20230627_hor_wind_speed.png">
 				<div id="LowerRightError" class="Error"> </div>
 			</a>
@@ -226,117 +224,7 @@
 					<option value="2024">2024</option>
 				</select></div>
 		</div>
-		<table class="ui-datepicker-calendar">
-			<thead>
-				<tr>
-					<th><span title="Monday">Mo</span></th>
-					<th><span title="Tuesday">Tu</span></th>
-					<th><span title="Wednesday">We</span></th>
-					<th><span title="Thursday">Th</span></th>
-					<th><span title="Friday">Fr</span></th>
-					<th class="ui-datepicker-week-end"><span title="Saturday">Sa</span></th>
-					<th class="ui-datepicker-week-end"><span title="Sunday">Su</span></th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr>
-					<td class=" ui-datepicker-other-month ui-datepicker-unselectable ui-state-disabled">&nbsp;</td>
-					<td class=" ui-datepicker-other-month ui-datepicker-unselectable ui-state-disabled">&nbsp;</td>
-					<td class=" ui-datepicker-other-month ui-datepicker-unselectable ui-state-disabled">&nbsp;</td>
-					<td class=" ui-datepicker-unselectable ui-state-disabled "><span class="ui-state-default">1</span></td>
-					<td class=" ui-datepicker-unselectable ui-state-disabled "><span class="ui-state-default">2</span></td>
-					<td class=" ui-datepicker-week-end ui-datepicker-unselectable ui-state-disabled "><span
-							class="ui-state-default">3</span></td>
-					<td class=" ui-datepicker-week-end ui-datepicker-unselectable ui-state-disabled "><span
-							class="ui-state-default">4</span></td>
-				</tr>
-				<tr>
-					<td class=" ui-datepicker-unselectable ui-state-disabled "><span class="ui-state-default">5</span></td>
-					<td class=" ui-datepicker-unselectable ui-state-disabled "><span class="ui-state-default">6</span></td>
-					<td class=" ui-datepicker-unselectable ui-state-disabled "><span class="ui-state-default">7</span></td>
-					<td class=" ui-datepicker-unselectable ui-state-disabled "><span class="ui-state-default">8</span></td>
-					<td class=" ui-datepicker-unselectable ui-state-disabled "><span class="ui-state-default">9</span></td>
-					<td class=" ui-datepicker-week-end ui-datepicker-unselectable ui-state-disabled "><span
-							class="ui-state-default">10</span></td>
-					<td class=" ui-datepicker-week-end ui-datepicker-unselectable ui-state-disabled "><span
-							class="ui-state-default">11</span></td>
-				</tr>
-				<tr>
-					<td class=" ui-datepicker-unselectable ui-state-disabled "><span class="ui-state-default">12</span></td>
-					<td class=" ui-datepicker-unselectable ui-state-disabled "><span class="ui-state-default">13</span></td>
-					<td class=" ui-datepicker-unselectable ui-state-disabled "><span class="ui-state-default">14</span></td>
-					<td class=" ui-datepicker-unselectable ui-state-disabled "><span class="ui-state-default">15</span></td>
-					<td class=" " data-handler="selectDay" data-event="click" data-month="5" data-year="2023"><a
-							class="ui-state-default"
-							href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&amp;date=2023-06-27&amp;UpperLeft=WC_KNMI_overview&amp;UpperRight=skiron_wind_direction&amp;LowerRight=WC_TUD_wind_speed&amp;LowerLeft=ceilometer#">16</a>
-					</td>
-					<td class=" ui-datepicker-week-end " data-handler="selectDay" data-event="click" data-month="5"
-						data-year="2023"><a class="ui-state-default"
-							href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&amp;date=2023-06-27&amp;UpperLeft=WC_KNMI_overview&amp;UpperRight=skiron_wind_direction&amp;LowerRight=WC_TUD_wind_speed&amp;LowerLeft=ceilometer#">17</a>
-					</td>
-					<td class=" ui-datepicker-week-end " data-handler="selectDay" data-event="click" data-month="5"
-						data-year="2023"><a class="ui-state-default"
-							href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&amp;date=2023-06-27&amp;UpperLeft=WC_KNMI_overview&amp;UpperRight=skiron_wind_direction&amp;LowerRight=WC_TUD_wind_speed&amp;LowerLeft=ceilometer#">18</a>
-					</td>
-				</tr>
-				<tr>
-					<td class=" " data-handler="selectDay" data-event="click" data-month="5" data-year="2023"><a
-							class="ui-state-default"
-							href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&amp;date=2023-06-27&amp;UpperLeft=WC_KNMI_overview&amp;UpperRight=skiron_wind_direction&amp;LowerRight=WC_TUD_wind_speed&amp;LowerLeft=ceilometer#">19</a>
-					</td>
-					<td class=" " data-handler="selectDay" data-event="click" data-month="5" data-year="2023"><a
-							class="ui-state-default"
-							href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&amp;date=2023-06-27&amp;UpperLeft=WC_KNMI_overview&amp;UpperRight=skiron_wind_direction&amp;LowerRight=WC_TUD_wind_speed&amp;LowerLeft=ceilometer#">20</a>
-					</td>
-					<td class=" " data-handler="selectDay" data-event="click" data-month="5" data-year="2023"><a
-							class="ui-state-default"
-							href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&amp;date=2023-06-27&amp;UpperLeft=WC_KNMI_overview&amp;UpperRight=skiron_wind_direction&amp;LowerRight=WC_TUD_wind_speed&amp;LowerLeft=ceilometer#">21</a>
-					</td>
-					<td class=" " data-handler="selectDay" data-event="click" data-month="5" data-year="2023"><a
-							class="ui-state-default"
-							href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&amp;date=2023-06-27&amp;UpperLeft=WC_KNMI_overview&amp;UpperRight=skiron_wind_direction&amp;LowerRight=WC_TUD_wind_speed&amp;LowerLeft=ceilometer#">22</a>
-					</td>
-					<td class=" " data-handler="selectDay" data-event="click" data-month="5" data-year="2023"><a
-							class="ui-state-default"
-							href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&amp;date=2023-06-27&amp;UpperLeft=WC_KNMI_overview&amp;UpperRight=skiron_wind_direction&amp;LowerRight=WC_TUD_wind_speed&amp;LowerLeft=ceilometer#">23</a>
-					</td>
-					<td class=" ui-datepicker-week-end " data-handler="selectDay" data-event="click" data-month="5"
-						data-year="2023"><a class="ui-state-default"
-							href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&amp;date=2023-06-27&amp;UpperLeft=WC_KNMI_overview&amp;UpperRight=skiron_wind_direction&amp;LowerRight=WC_TUD_wind_speed&amp;LowerLeft=ceilometer#">24</a>
-					</td>
-					<td class=" ui-datepicker-week-end " data-handler="selectDay" data-event="click" data-month="5"
-						data-year="2023"><a class="ui-state-default"
-							href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&amp;date=2023-06-27&amp;UpperLeft=WC_KNMI_overview&amp;UpperRight=skiron_wind_direction&amp;LowerRight=WC_TUD_wind_speed&amp;LowerLeft=ceilometer#">25</a>
-					</td>
-				</tr>
-				<tr>
-					<td class=" " data-handler="selectDay" data-event="click" data-month="5" data-year="2023"><a
-							class="ui-state-default"
-							href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&amp;date=2023-06-27&amp;UpperLeft=WC_KNMI_overview&amp;UpperRight=skiron_wind_direction&amp;LowerRight=WC_TUD_wind_speed&amp;LowerLeft=ceilometer#">26</a>
-					</td>
-					<td class="  ui-datepicker-current-day" data-handler="selectDay" data-event="click" data-month="5"
-						data-year="2023"><a class="ui-state-default ui-state-active"
-							href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&amp;date=2023-06-27&amp;UpperLeft=WC_KNMI_overview&amp;UpperRight=skiron_wind_direction&amp;LowerRight=WC_TUD_wind_speed&amp;LowerLeft=ceilometer#">27</a>
-					</td>
-					<td class=" " data-handler="selectDay" data-event="click" data-month="5" data-year="2023"><a
-							class="ui-state-default"
-							href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&amp;date=2023-06-27&amp;UpperLeft=WC_KNMI_overview&amp;UpperRight=skiron_wind_direction&amp;LowerRight=WC_TUD_wind_speed&amp;LowerLeft=ceilometer#">28</a>
-					</td>
-					<td class=" " data-handler="selectDay" data-event="click" data-month="5" data-year="2023"><a
-							class="ui-state-default"
-							href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&amp;date=2023-06-27&amp;UpperLeft=WC_KNMI_overview&amp;UpperRight=skiron_wind_direction&amp;LowerRight=WC_TUD_wind_speed&amp;LowerLeft=ceilometer#">29</a>
-					</td>
-					<td class=" " data-handler="selectDay" data-event="click" data-month="5" data-year="2023"><a
-							class="ui-state-default"
-							href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&amp;date=2023-06-27&amp;UpperLeft=WC_KNMI_overview&amp;UpperRight=skiron_wind_direction&amp;LowerRight=WC_TUD_wind_speed&amp;LowerLeft=ceilometer#">30</a>
-					</td>
-					<td class=" ui-datepicker-week-end ui-datepicker-other-month ui-datepicker-unselectable ui-state-disabled">
-						&nbsp;</td>
-					<td class=" ui-datepicker-week-end ui-datepicker-other-month ui-datepicker-unselectable ui-state-disabled">
-						&nbsp;</td>
-				</tr>
-			</tbody>
-		</table>
+
 	</div>
 	<div class="ui-dialog ui-widget ui-widget-content ui-corner-all" tabindex="-1" role="dialog"
 		aria-labelledby="ui-dialog-title-dialog-modal" style="display: none; z-index: 1000; outline: 0px;">
