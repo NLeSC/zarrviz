@@ -16,10 +16,18 @@
 		// 	url: 'https://s3.ctwhome.com/ruisdael/data/animated-data/ql.zarr'
 		// },
 		{
-			title: 'Localhost (Dev) Dataset (600MB)',
+			title: 'Google Cloud (Dev) Dataset (600MB)',
 			description: 'Rain and clouds',
 			image: `${base}/images/cover.webp`,
-			url: 'http://localhost:5173/data/movie.zarr'
+			url: 'https://storage.googleapis.com/ruisdael/movie.zarr',
+			dev: true
+		},
+		{
+			title: 'Google cloud Dataset (600MB)',
+			description: 'Rain and clouds',
+			image: `${base}/images/cover.webp`,
+			url: 'http://localhost:5173/data/movie.zarr',
+			dev: true
 		},
 		{
 			title: 'Dataset with Rain 3 (600MB)',
@@ -27,7 +35,13 @@
 			image: `${base}/images/cover.webp`,
 			url: 'https://s3.ctwhome.com/ruisdael/data/movie.zarr'
 		}
-	];
+	].filter((dataset) => {
+		if (import.meta.env) {
+			return dataset;
+		} else {
+			return !dataset.dev;
+		}
+	});
 </script>
 
 <div class="container mx-auto px-4">

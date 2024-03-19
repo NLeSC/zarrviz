@@ -1,6 +1,11 @@
 [
   {
-      "origin": ["https://nlesc.github.io/","http://localhost", "http://localhost:5173","https://ruisdael.ctwhome.com"],
+      "origin": [
+        "https://nlesc.github.io",
+        "http://localhost",
+        "http://localhost:5173",
+        "https://ruisdael.ctwhome.com"
+      ],
       "method": ["GET"],
       "responseHeader": ["Content-Type"],
       "maxAgeSeconds": 3600
