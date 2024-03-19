@@ -22,7 +22,7 @@ export async function dataSetup(visible_data, scene) {
 
   // open array, no need to opening it again for each variable
 
-  const store = new HTTPStore(datasetUrl, { fetchOptions: { redirect: 'follow', mode: 'no-cors', credentials: 'include' } });
+  const store = new HTTPStore(datasetUrl, { fetchOptions: { redirect: 'follow', mode: 'cors', credentials: 'include' } });
   for (const variable of visible_data) {
     zarrdata[variable] = await openArray({ store, path: variable, mode: 'r' });
     const dimensions = variable === 'thetavmix' ? 3 : 4;

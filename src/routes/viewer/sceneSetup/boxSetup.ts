@@ -25,8 +25,8 @@ export const boxes: {
 // They should be all enabled by default
 //
 export const data_layers = [
-  // 'qr', // rain
-  // 'ql', // clouds
+  'qr', // rain
+  'ql', // clouds
   'thetavmix', // temperature
 ];
 
