@@ -1,129 +1,365 @@
 <!DOCTYPE html>
 <!-- saved from url=(0211)http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&date=2023-06-27&UpperLeft=WC_KNMI_overview&UpperRight=skiron_wind_direction&LowerRight=WC_TUD_wind_speed&LowerLeft=ceilometer -->
-<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-	
+<html lang="en">
+
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
 	<title>Data Browser - CMTRACE</title>
-	<link rel="stylesheet" href="./Data Browser - CMTRACE_files/jquery.ui.all.css">
-	<link rel="stylesheet" href="./Data Browser - CMTRACE_files/dataBrowser.css">
-<!--	<link rel="stylesheet" href="zoombox-plugin/css/jquery.zoombox-0.5.css">-->
+	<link rel="stylesheet" href="instrument/Data Browser - CMTRACE_files/jquery.ui.all.css">
+	<link rel="stylesheet" href="instrument/Data Browser - CMTRACE_files/dataBrowser.css">
+	<!--	<link rel="stylesheet" href="zoombox-plugin/css/jquery.zoombox-0.5.css">-->
 
-<!-- Universitaet zu Koeln, Institut fuer Meteorologie und Geophysik -->
-<!-- DataBrowser -->
-<!-- (c) M. Maahn, 2012 -->
+	<!-- Universitaet zu Koeln, Institut fuer Meteorologie und Geophysik -->
+	<!-- DataBrowser -->
+	<!-- (c) M. Maahn, 2012 -->
 
-<!-- TUD -->
-<!-- DataBrowser -->
-<!-- adapted by J. Dias Neto, 2021 -->
-    
-<script>
-var noPanels = 4
-</script>
-	<script type="application/javascript" src="./Data Browser - CMTRACE_files/getIp.php"></script>
-	<script type="application/javascript" src="./Data Browser - CMTRACE_files/jquery-1.7.2.min.js"></script>
-	<script type="application/javascript" src="./Data Browser - CMTRACE_files/jquery-ui-1.8.23.custom.min.js"></script>
-	<script type="application/javascript" src="./Data Browser - CMTRACE_files/jsuri-1.1.1.min.js"></script>
-<!--	<script type="application/javascript" src="zoom/jquery.zoom-min.js"></script>-->
-<!--<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.1/jquery-ui.min.js"></script>-->
-<!--	<script type="application/javascript" src="jdbartlett-loupe/jquery.loupe.min.js"></script>-->
+	<!-- TUD -->
+	<!-- DataBrowser -->
+	<!-- adapted by J. Dias Neto, 2021 -->
 
-	<script type="application/javascript" src="./Data Browser - CMTRACE_files/dataBrowser.js"></script>
+	<script>
+		var noPanels = 4
+	</script>
+	<script type="application/javascript" src="instrument/Data Browser - CMTRACE_files/getIp.php"></script>
+	<script type="application/javascript" src="instrument/Data Browser - CMTRACE_files/jquery-1.7.2.min.js"></script>
+	<script type="application/javascript"
+		src="instrument/Data Browser - CMTRACE_files/jquery-ui-1.8.23.custom.min.js"></script>
+	<script type="application/javascript" src="instrument/Data Browser - CMTRACE_files/jsuri-1.1.1.min.js"></script>
+	<!--	<script type="application/javascript" src="zoom/jquery.zoom-min.js"></script>-->
+	<!--<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.1/jquery-ui.min.js"></script>-->
+	<!--	<script type="application/javascript" src="jdbartlett-loupe/jquery.loupe.min.js"></script>-->
+
+	<script type="application/javascript" src="instrument/Data Browser - CMTRACE_files/dataBrowser.js"></script>
 	<style>
-	div.dataLargeBox {
-		height:46%;
-	}
+		div.dataLargeBox {
+			height: 46%;
+		}
 	</style>
 </head>
+
 <body style="">
 
 
-<div id="upperBox" class="dataLargeBox">
-	<div id="UpperLeftBox" class="dataSmallBox">
-		<!--<a href="http://gop.meteo.uni-koeln.de/ag_crewell/doku.php?id=home" class="logo" id="logoLeft"><img src="logo_inferno.png" alt="Integrated Remote Sensing"/></a>//-->
-		<a href="./Data Browser - CMTRACE_files/20230627_KNMI_Windcube_vertical_stare.png" id="UpperLeftLink" class="zoombox"><img id="UpperLeftData" class="dataPic" src="./Data Browser - CMTRACE_files/20230627_KNMI_Windcube_vertical_stare.png" alt=" " title="cmtrace/knmi_windcube/2023/06/20230627_KNMI_Windcube_vertical_stare.png">
-		<div id="UpperLeftError" class="Error"> </div></a>
-		
+	<div id="upperBox" class="dataLargeBox">
+		<div id="UpperLeftBox" class="dataSmallBox">
+			<!--<a href="http://gop.meteo.uni-koeln.de/ag_crewell/doku.php?id=home" class="logo" id="logoLeft"><img src="logo_inferno.png" alt="Integrated Remote Sensing"/></a>//-->
+			<a href="instrument/Data Browser - CMTRACE_files/20230627_KNMI_Windcube_vertical_stare.png" id="UpperLeftLink"
+				class="zoombox"><img id="UpperLeftData" class="dataPic"
+					src="instrument/Data Browser - CMTRACE_files/20230627_KNMI_Windcube_vertical_stare.png" alt=" "
+					title="cmtrace/knmi_windcube/2023/06/20230627_KNMI_Windcube_vertical_stare.png">
+				<div id="UpperLeftError" class="Error"> </div>
+			</a>
+
+		</div>
+		<div id="UpperRightBox" class="dataSmallBox">
+			<a href="http://www.louisenuijens.com/cmtrace.html" id="logoRight"><img
+					src="instrument/Data Browser - CMTRACE_files/tu_logo.png" alt="University of Delft"></a>
+			<a href="instrument/Data Browser - CMTRACE_files/20230627.png" id="UpperRightLink" class="zoombox"><img
+					id="UpperRightData" class="dataPic" src="instrument/Data Browser - CMTRACE_files/20230627.png" alt=" "
+					title="cmtrace/skiron/winddirection/20230627.png">
+				<div id="UpperRightError" class="Error"> </div>
+			</a>
+
+
+		</div>
 	</div>
-	<div id="UpperRightBox" class="dataSmallBox">
-					<a href="http://www.louisenuijens.com/cmtrace.html" id="logoRight"><img src="./Data Browser - CMTRACE_files/tu_logo.png" alt="University of Delft"></a>
-		<a href="./Data Browser - CMTRACE_files/20230627.png" id="UpperRightLink" class="zoombox"><img id="UpperRightData" class="dataPic" src="./Data Browser - CMTRACE_files/20230627.png" alt=" " title="cmtrace/skiron/winddirection/20230627.png">
-		<div id="UpperRightError" class="Error"> </div></a>
-	
 
+	<div id="controls">
+
+		<!--<span><input type="button" value="2 Panels" id="2panels"></span>//-->
+		<span><select id="noOfPanels">
+				<option value="1">1 Panel</option>
+				<option value="2">2 Panels</option>
+				<option value="3">3 Panels</option>
+				<option value="4" selected="selected">4 Panels</option>
+			</select>
+		</span>
+
+		<span>Site: <select id="selectSite">
+				<option value="CMTRACE-2023" selected="selected">cmtrace-2023</option>
+				<option value="CMTRACE-2022">cmtrace-2022</option>
+				<option value="CMTRACE-2021">cmtrace-2021</option>
+				<option value="KNMI">KNMI</option>
+			</select></span>
+
+		<span>↑<select name="selectUpperLeft" id="selectUpperLeft" class="select">
+				<option value="default">Select:</option>
+				<option value="WC_TUD_vertical_wind">WC_TUD_vertical_wind</option>
+				<option value="WC_TUD_wind_direction">WC_TUD_wind_direction</option>
+				<option value="WC_TUD_wind_speed">WC_TUD_wind_speed</option>
+				<option value="skiron_vertical_wind">skiron_vertical_wind</option>
+				<option value="skiron_wind_direction">skiron_wind_direction</option>
+				<option value="skiron_wind_speed">skiron_wind_speed</option>
+				<option value="WC_KNMI_vertical_wind">WC_KNMI_vertical_wind</option>
+				<option value="WC_KNMI_wind_direction">WC_KNMI_wind_direction</option>
+				<option value="WC_KNMI_wind_speed">WC_KNMI_wind_speed</option>
+				<option value="WC_KNMI_overview" selected="selected">WC_KNMI_overview</option>
+				<option value="ceilometer">ceilometer</option>
+				<option value="ze_MR">ze_MR</option>
+				<option value="mdv_MR">mdv_MR</option>
+			</select>↑</span>
+		<span>↓<select name="selectLowerLeft" id="selectLowerLeft" class="select">
+				<option value="default">Select:</option>
+				<option value="WC_TUD_vertical_wind">WC_TUD_vertical_wind</option>
+				<option value="WC_TUD_wind_direction">WC_TUD_wind_direction</option>
+				<option value="WC_TUD_wind_speed">WC_TUD_wind_speed</option>
+				<option value="skiron_vertical_wind">skiron_vertical_wind</option>
+				<option value="skiron_wind_direction">skiron_wind_direction</option>
+				<option value="skiron_wind_speed">skiron_wind_speed</option>
+				<option value="WC_KNMI_vertical_wind">WC_KNMI_vertical_wind</option>
+				<option value="WC_KNMI_wind_direction">WC_KNMI_wind_direction</option>
+				<option value="WC_KNMI_wind_speed">WC_KNMI_wind_speed</option>
+				<option value="WC_KNMI_overview">WC_KNMI_overview</option>
+				<option value="ceilometer" selected="selected">ceilometer</option>
+				<option value="ze_MR">ze_MR</option>
+				<option value="mdv_MR">mdv_MR</option>
+			</select>↓</span>
+
+		<span><input type="button" id="datepicker_prev" value="«"><input type="text" id="datepicker_date" size="10"
+				class="hasDatepicker"><input type="button" id="datepicker_next" value="»"></span>
+
+		<span>↑<select name="selectUpperRight" id="selectUpperRight" class="select">
+				<option value="default">Select:</option>
+				<option value="WC_TUD_vertical_wind">WC_TUD_vertical_wind</option>
+				<option value="WC_TUD_wind_direction">WC_TUD_wind_direction</option>
+				<option value="WC_TUD_wind_speed">WC_TUD_wind_speed</option>
+				<option value="skiron_vertical_wind">skiron_vertical_wind</option>
+				<option value="skiron_wind_direction" selected="selected">skiron_wind_direction</option>
+				<option value="skiron_wind_speed">skiron_wind_speed</option>
+				<option value="WC_KNMI_vertical_wind">WC_KNMI_vertical_wind</option>
+				<option value="WC_KNMI_wind_direction">WC_KNMI_wind_direction</option>
+				<option value="WC_KNMI_wind_speed">WC_KNMI_wind_speed</option>
+				<option value="WC_KNMI_overview">WC_KNMI_overview</option>
+				<option value="ceilometer">ceilometer</option>
+				<option value="ze_MR">ze_MR</option>
+				<option value="mdv_MR">mdv_MR</option>
+			</select>↑</span>
+		<span>↓<select name="selectLowerRight" id="selectLowerRight" class="select">
+				<option value="default">Select:</option>
+				<option value="WC_TUD_vertical_wind">WC_TUD_vertical_wind</option>
+				<option value="WC_TUD_wind_direction">WC_TUD_wind_direction</option>
+				<option value="WC_TUD_wind_speed" selected="selected">WC_TUD_wind_speed</option>
+				<option value="skiron_vertical_wind">skiron_vertical_wind</option>
+				<option value="skiron_wind_direction">skiron_wind_direction</option>
+				<option value="skiron_wind_speed">skiron_wind_speed</option>
+				<option value="WC_KNMI_vertical_wind">WC_KNMI_vertical_wind</option>
+				<option value="WC_KNMI_wind_direction">WC_KNMI_wind_direction</option>
+				<option value="WC_KNMI_wind_speed">WC_KNMI_wind_speed</option>
+				<option value="WC_KNMI_overview">WC_KNMI_overview</option>
+				<option value="ceilometer">ceilometer</option>
+				<option value="ze_MR">ze_MR</option>
+				<option value="mdv_MR">mdv_MR</option>
+			</select>↓</span>
+		<span><input type="button" id="permalink" value="permalink">&nbsp;&nbsp;</span>
+		<span id="comment">Press 'a'/'s' for +/- 1 day</span>
 	</div>
-</div>
-
-<div id="controls">
-
-	<!--<span><input type="button" value="2 Panels" id="2panels"></span>//-->
-	<span><select id="noOfPanels">
-		<option value="1">1 Panel</option>
-		<option value="2">2 Panels</option>
-		<option value="3">3 Panels</option>
-		<option value="4" selected="selected">4 Panels</option>
-		</select>
-	</span>
-
-	<span>Site: <select id="selectSite"><option value="CMTRACE-2023" selected="selected">cmtrace-2023</option><option value="CMTRACE-2022">cmtrace-2022</option><option value="CMTRACE-2021">cmtrace-2021</option><option value="KNMI">KNMI</option></select></span>
-
-	<span>↑<select name="selectUpperLeft" id="selectUpperLeft" class="select"><option value="default">Select:</option><option value="WC_TUD_vertical_wind">WC_TUD_vertical_wind</option><option value="WC_TUD_wind_direction">WC_TUD_wind_direction</option><option value="WC_TUD_wind_speed">WC_TUD_wind_speed</option><option value="skiron_vertical_wind">skiron_vertical_wind</option><option value="skiron_wind_direction">skiron_wind_direction</option><option value="skiron_wind_speed">skiron_wind_speed</option><option value="WC_KNMI_vertical_wind">WC_KNMI_vertical_wind</option><option value="WC_KNMI_wind_direction">WC_KNMI_wind_direction</option><option value="WC_KNMI_wind_speed">WC_KNMI_wind_speed</option><option value="WC_KNMI_overview" selected="selected">WC_KNMI_overview</option><option value="ceilometer">ceilometer</option><option value="ze_MR">ze_MR</option><option value="mdv_MR">mdv_MR</option></select>↑</span>
-	<span>↓<select name="selectLowerLeft" id="selectLowerLeft" class="select"><option value="default">Select:</option><option value="WC_TUD_vertical_wind">WC_TUD_vertical_wind</option><option value="WC_TUD_wind_direction">WC_TUD_wind_direction</option><option value="WC_TUD_wind_speed">WC_TUD_wind_speed</option><option value="skiron_vertical_wind">skiron_vertical_wind</option><option value="skiron_wind_direction">skiron_wind_direction</option><option value="skiron_wind_speed">skiron_wind_speed</option><option value="WC_KNMI_vertical_wind">WC_KNMI_vertical_wind</option><option value="WC_KNMI_wind_direction">WC_KNMI_wind_direction</option><option value="WC_KNMI_wind_speed">WC_KNMI_wind_speed</option><option value="WC_KNMI_overview">WC_KNMI_overview</option><option value="ceilometer" selected="selected">ceilometer</option><option value="ze_MR">ze_MR</option><option value="mdv_MR">mdv_MR</option></select>↓</span>
-
-	<span><input type="button" id="datepicker_prev" value="«"><input type="text" id="datepicker_date" size="10" class="hasDatepicker"><input type="button" id="datepicker_next" value="»"></span>
-	
-	<span>↑<select name="selectUpperRight" id="selectUpperRight" class="select"><option value="default">Select:</option><option value="WC_TUD_vertical_wind">WC_TUD_vertical_wind</option><option value="WC_TUD_wind_direction">WC_TUD_wind_direction</option><option value="WC_TUD_wind_speed">WC_TUD_wind_speed</option><option value="skiron_vertical_wind">skiron_vertical_wind</option><option value="skiron_wind_direction" selected="selected">skiron_wind_direction</option><option value="skiron_wind_speed">skiron_wind_speed</option><option value="WC_KNMI_vertical_wind">WC_KNMI_vertical_wind</option><option value="WC_KNMI_wind_direction">WC_KNMI_wind_direction</option><option value="WC_KNMI_wind_speed">WC_KNMI_wind_speed</option><option value="WC_KNMI_overview">WC_KNMI_overview</option><option value="ceilometer">ceilometer</option><option value="ze_MR">ze_MR</option><option value="mdv_MR">mdv_MR</option></select>↑</span>
-	<span>↓<select name="selectLowerRight" id="selectLowerRight" class="select"><option value="default">Select:</option><option value="WC_TUD_vertical_wind">WC_TUD_vertical_wind</option><option value="WC_TUD_wind_direction">WC_TUD_wind_direction</option><option value="WC_TUD_wind_speed" selected="selected">WC_TUD_wind_speed</option><option value="skiron_vertical_wind">skiron_vertical_wind</option><option value="skiron_wind_direction">skiron_wind_direction</option><option value="skiron_wind_speed">skiron_wind_speed</option><option value="WC_KNMI_vertical_wind">WC_KNMI_vertical_wind</option><option value="WC_KNMI_wind_direction">WC_KNMI_wind_direction</option><option value="WC_KNMI_wind_speed">WC_KNMI_wind_speed</option><option value="WC_KNMI_overview">WC_KNMI_overview</option><option value="ceilometer">ceilometer</option><option value="ze_MR">ze_MR</option><option value="mdv_MR">mdv_MR</option></select>↓</span>
-	<span><input type="button" id="permalink" value="permalink">&nbsp;&nbsp;</span>
-	<span id="comment">Press 'a'/'s' for +/- 1 day</span>
-</div>
-<div id="lowerBox" class="dataLargeBox">
-	<div id="LowerLeftBox" class="dataSmallBox">
-		<a href="./Data Browser - CMTRACE_files/20230627_ceilometer.png" id="LowerLeftLink" class="zoombox"><img id="LowerLeftData" class="dataPic" src="./Data Browser - CMTRACE_files/20230627_ceilometer.png" alt=" " title="cmtrace/ceilometer/20230627_ceilometer.png">
-		<div id="LowerLeftError" class="Error"> </div></a>
+	<div id="lowerBox" class="dataLargeBox">
+		<div id="LowerLeftBox" class="dataSmallBox">
+			<a href="instrument/Data Browser - CMTRACE_files/20230627_ceilometer.png" id="LowerLeftLink" class="zoombox"><img
+					id="LowerLeftData" class="dataPic" src="instrument/Data Browser - CMTRACE_files/20230627_ceilometer.png"
+					alt=" " title="cmtrace/ceilometer/20230627_ceilometer.png">
+				<div id="LowerLeftError" class="Error"> </div>
+			</a>
+		</div>
+		<div id="LowerRightBox" class="dataSmallBox">
+			<a href="instrument/Data Browser - CMTRACE_files/20230627_hor_wind_speed.png" id="LowerRightLink"
+				class="zoombox"><img id="LowerRightData" class="dataPic"
+					src="instrument/Data Browser - CMTRACE_files/20230627_hor_wind_speed.png" alt=" "
+					title="cmtrace/tud_windcube/20230627_hor_wind_speed.png">
+				<div id="LowerRightError" class="Error"> </div>
+			</a>
+		</div>
 	</div>
-	<div id="LowerRightBox" class="dataSmallBox">
-		<a href="./Data Browser - CMTRACE_files/20230627_hor_wind_speed.png" id="LowerRightLink" class="zoombox"><img id="LowerRightData" class="dataPic" src="./Data Browser - CMTRACE_files/20230627_hor_wind_speed.png" alt=" " title="cmtrace/tud_windcube/20230627_hor_wind_speed.png">
-		<div id="LowerRightError" class="Error"> </div></a>
+
+
+
+
+
+
+	<div><template shadowrootmode="open">
+			<style>
+				#gpt-text-summarize-button {
+					display: none;
+					background-color: #10a37f;
+					border: 0;
+					color: white;
+					text-align: center;
+					align-items: center;
+					justify-content: center;
+					cursor: pointer;
+					padding: 0.3em;
+					border-radius: 50%;
+					z-index: 9999;
+					position: absolute;
+					box-shadow: rgba(0, 0, 0, 0.4) 3px 0 5px 0;
+				}
+
+				#gpt-text-summarize-button:hover {
+					background-color: #14b384;
+				}
+
+				#gpt-text-summarize-button>img {
+					width: 2em;
+					height: 2em;
+				}
+			</style><button id="gpt-text-summarize-button" style="display: none;"><img
+					src="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%3E%0A%20%20%20%20%3Cg%20fill%3D%22none%22%20fill-rule%3D%22nonzero%22%20transform%3D%22translate(5%205)%22%3E%0A%20%20%20%20%20%20%20%20%3Ccircle%20cx%3D%2259%22%20cy%3D%2259%22%20r%3D%2259%22%20fill%3D%22%2310A37F%22%20stroke%3D%22%2310A37F%22%20stroke-width%3D%229%22%20%2F%3E%0A%20%20%20%20%20%20%20%20%3Cpath%20fill%3D%22%23E5E7EB%22%0A%20%20%20%20%20%20%20%20%20%20%20%20d%3D%22M76.397%2067.004c-1.545%205.815-5.642%208.127-10.356%209.47-.464.148-.386.595-.386.595l.695%204.623s.077.373.696.298C83.66%2080.2%2094.714%2068.047%2092.78%2053.285c-2.01-10.215-10.356-14.167-17.93-13.123-7.652%201.193-12.908%208.053-11.67%2015.434%201.004%206.561%206.646%2011.184%2013.215%2011.408Z%22%20%2F%3E%0A%20%20%20%20%20%20%20%20%3Cpath%20fill%3D%22%23FFF%22%0A%20%20%20%20%20%20%20%20%20%20%20%20d%3D%22M26.16%2055.596c1.005%206.487%206.722%2011.11%2013.211%2011.408-1.622%205.815-5.562%208.127-10.352%209.47-.464.148-.387.595-.387.595l.773%204.623s.077.373.695.298c16.534-1.79%2027.736-13.943%2025.65-28.705-1.93-10.215-10.198-14.167-17.846-13.123C30.254%2041.355%2025%2048.215%2026.16%2055.596Z%22%20%2F%3E%0A%20%20%20%20%3C%2Fg%3E%0A%3C%2Fsvg%3E"></button>
+		</template></div>
+	<div id="ui-datepicker-div" class="ui-datepicker ui-widget ui-widget-content ui-helper-clearfix ui-corner-all">
+		<div class="ui-datepicker-header ui-widget-header ui-helper-clearfix ui-corner-all"><a
+				class="ui-datepicker-prev ui-corner-all ui-state-disabled" title="Prev"><span
+					class="ui-icon ui-icon-circle-triangle-w">Prev</span></a><a class="ui-datepicker-next ui-corner-all"
+				data-handler="next" data-event="click" title="Next"><span
+					class="ui-icon ui-icon-circle-triangle-e">Next</span></a>
+			<div class="ui-datepicker-title"><select class="ui-datepicker-month" data-handler="selectMonth"
+					data-event="change">
+					<option value="5" selected="selected">Jun</option>
+					<option value="6">Jul</option>
+					<option value="7">Aug</option>
+					<option value="8">Sep</option>
+					<option value="9">Oct</option>
+					<option value="10">Nov</option>
+					<option value="11">Dec</option>
+				</select><select class="ui-datepicker-year" data-handler="selectYear" data-event="change">
+					<option value="2023" selected="selected">2023</option>
+					<option value="2024">2024</option>
+				</select></div>
+		</div>
+		<table class="ui-datepicker-calendar">
+			<thead>
+				<tr>
+					<th><span title="Monday">Mo</span></th>
+					<th><span title="Tuesday">Tu</span></th>
+					<th><span title="Wednesday">We</span></th>
+					<th><span title="Thursday">Th</span></th>
+					<th><span title="Friday">Fr</span></th>
+					<th class="ui-datepicker-week-end"><span title="Saturday">Sa</span></th>
+					<th class="ui-datepicker-week-end"><span title="Sunday">Su</span></th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td class=" ui-datepicker-other-month ui-datepicker-unselectable ui-state-disabled">&nbsp;</td>
+					<td class=" ui-datepicker-other-month ui-datepicker-unselectable ui-state-disabled">&nbsp;</td>
+					<td class=" ui-datepicker-other-month ui-datepicker-unselectable ui-state-disabled">&nbsp;</td>
+					<td class=" ui-datepicker-unselectable ui-state-disabled "><span class="ui-state-default">1</span></td>
+					<td class=" ui-datepicker-unselectable ui-state-disabled "><span class="ui-state-default">2</span></td>
+					<td class=" ui-datepicker-week-end ui-datepicker-unselectable ui-state-disabled "><span
+							class="ui-state-default">3</span></td>
+					<td class=" ui-datepicker-week-end ui-datepicker-unselectable ui-state-disabled "><span
+							class="ui-state-default">4</span></td>
+				</tr>
+				<tr>
+					<td class=" ui-datepicker-unselectable ui-state-disabled "><span class="ui-state-default">5</span></td>
+					<td class=" ui-datepicker-unselectable ui-state-disabled "><span class="ui-state-default">6</span></td>
+					<td class=" ui-datepicker-unselectable ui-state-disabled "><span class="ui-state-default">7</span></td>
+					<td class=" ui-datepicker-unselectable ui-state-disabled "><span class="ui-state-default">8</span></td>
+					<td class=" ui-datepicker-unselectable ui-state-disabled "><span class="ui-state-default">9</span></td>
+					<td class=" ui-datepicker-week-end ui-datepicker-unselectable ui-state-disabled "><span
+							class="ui-state-default">10</span></td>
+					<td class=" ui-datepicker-week-end ui-datepicker-unselectable ui-state-disabled "><span
+							class="ui-state-default">11</span></td>
+				</tr>
+				<tr>
+					<td class=" ui-datepicker-unselectable ui-state-disabled "><span class="ui-state-default">12</span></td>
+					<td class=" ui-datepicker-unselectable ui-state-disabled "><span class="ui-state-default">13</span></td>
+					<td class=" ui-datepicker-unselectable ui-state-disabled "><span class="ui-state-default">14</span></td>
+					<td class=" ui-datepicker-unselectable ui-state-disabled "><span class="ui-state-default">15</span></td>
+					<td class=" " data-handler="selectDay" data-event="click" data-month="5" data-year="2023"><a
+							class="ui-state-default"
+							href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&amp;date=2023-06-27&amp;UpperLeft=WC_KNMI_overview&amp;UpperRight=skiron_wind_direction&amp;LowerRight=WC_TUD_wind_speed&amp;LowerLeft=ceilometer#">16</a>
+					</td>
+					<td class=" ui-datepicker-week-end " data-handler="selectDay" data-event="click" data-month="5"
+						data-year="2023"><a class="ui-state-default"
+							href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&amp;date=2023-06-27&amp;UpperLeft=WC_KNMI_overview&amp;UpperRight=skiron_wind_direction&amp;LowerRight=WC_TUD_wind_speed&amp;LowerLeft=ceilometer#">17</a>
+					</td>
+					<td class=" ui-datepicker-week-end " data-handler="selectDay" data-event="click" data-month="5"
+						data-year="2023"><a class="ui-state-default"
+							href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&amp;date=2023-06-27&amp;UpperLeft=WC_KNMI_overview&amp;UpperRight=skiron_wind_direction&amp;LowerRight=WC_TUD_wind_speed&amp;LowerLeft=ceilometer#">18</a>
+					</td>
+				</tr>
+				<tr>
+					<td class=" " data-handler="selectDay" data-event="click" data-month="5" data-year="2023"><a
+							class="ui-state-default"
+							href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&amp;date=2023-06-27&amp;UpperLeft=WC_KNMI_overview&amp;UpperRight=skiron_wind_direction&amp;LowerRight=WC_TUD_wind_speed&amp;LowerLeft=ceilometer#">19</a>
+					</td>
+					<td class=" " data-handler="selectDay" data-event="click" data-month="5" data-year="2023"><a
+							class="ui-state-default"
+							href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&amp;date=2023-06-27&amp;UpperLeft=WC_KNMI_overview&amp;UpperRight=skiron_wind_direction&amp;LowerRight=WC_TUD_wind_speed&amp;LowerLeft=ceilometer#">20</a>
+					</td>
+					<td class=" " data-handler="selectDay" data-event="click" data-month="5" data-year="2023"><a
+							class="ui-state-default"
+							href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&amp;date=2023-06-27&amp;UpperLeft=WC_KNMI_overview&amp;UpperRight=skiron_wind_direction&amp;LowerRight=WC_TUD_wind_speed&amp;LowerLeft=ceilometer#">21</a>
+					</td>
+					<td class=" " data-handler="selectDay" data-event="click" data-month="5" data-year="2023"><a
+							class="ui-state-default"
+							href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&amp;date=2023-06-27&amp;UpperLeft=WC_KNMI_overview&amp;UpperRight=skiron_wind_direction&amp;LowerRight=WC_TUD_wind_speed&amp;LowerLeft=ceilometer#">22</a>
+					</td>
+					<td class=" " data-handler="selectDay" data-event="click" data-month="5" data-year="2023"><a
+							class="ui-state-default"
+							href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&amp;date=2023-06-27&amp;UpperLeft=WC_KNMI_overview&amp;UpperRight=skiron_wind_direction&amp;LowerRight=WC_TUD_wind_speed&amp;LowerLeft=ceilometer#">23</a>
+					</td>
+					<td class=" ui-datepicker-week-end " data-handler="selectDay" data-event="click" data-month="5"
+						data-year="2023"><a class="ui-state-default"
+							href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&amp;date=2023-06-27&amp;UpperLeft=WC_KNMI_overview&amp;UpperRight=skiron_wind_direction&amp;LowerRight=WC_TUD_wind_speed&amp;LowerLeft=ceilometer#">24</a>
+					</td>
+					<td class=" ui-datepicker-week-end " data-handler="selectDay" data-event="click" data-month="5"
+						data-year="2023"><a class="ui-state-default"
+							href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&amp;date=2023-06-27&amp;UpperLeft=WC_KNMI_overview&amp;UpperRight=skiron_wind_direction&amp;LowerRight=WC_TUD_wind_speed&amp;LowerLeft=ceilometer#">25</a>
+					</td>
+				</tr>
+				<tr>
+					<td class=" " data-handler="selectDay" data-event="click" data-month="5" data-year="2023"><a
+							class="ui-state-default"
+							href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&amp;date=2023-06-27&amp;UpperLeft=WC_KNMI_overview&amp;UpperRight=skiron_wind_direction&amp;LowerRight=WC_TUD_wind_speed&amp;LowerLeft=ceilometer#">26</a>
+					</td>
+					<td class="  ui-datepicker-current-day" data-handler="selectDay" data-event="click" data-month="5"
+						data-year="2023"><a class="ui-state-default ui-state-active"
+							href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&amp;date=2023-06-27&amp;UpperLeft=WC_KNMI_overview&amp;UpperRight=skiron_wind_direction&amp;LowerRight=WC_TUD_wind_speed&amp;LowerLeft=ceilometer#">27</a>
+					</td>
+					<td class=" " data-handler="selectDay" data-event="click" data-month="5" data-year="2023"><a
+							class="ui-state-default"
+							href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&amp;date=2023-06-27&amp;UpperLeft=WC_KNMI_overview&amp;UpperRight=skiron_wind_direction&amp;LowerRight=WC_TUD_wind_speed&amp;LowerLeft=ceilometer#">28</a>
+					</td>
+					<td class=" " data-handler="selectDay" data-event="click" data-month="5" data-year="2023"><a
+							class="ui-state-default"
+							href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&amp;date=2023-06-27&amp;UpperLeft=WC_KNMI_overview&amp;UpperRight=skiron_wind_direction&amp;LowerRight=WC_TUD_wind_speed&amp;LowerLeft=ceilometer#">29</a>
+					</td>
+					<td class=" " data-handler="selectDay" data-event="click" data-month="5" data-year="2023"><a
+							class="ui-state-default"
+							href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&amp;date=2023-06-27&amp;UpperLeft=WC_KNMI_overview&amp;UpperRight=skiron_wind_direction&amp;LowerRight=WC_TUD_wind_speed&amp;LowerLeft=ceilometer#">30</a>
+					</td>
+					<td class=" ui-datepicker-week-end ui-datepicker-other-month ui-datepicker-unselectable ui-state-disabled">
+						&nbsp;</td>
+					<td class=" ui-datepicker-week-end ui-datepicker-other-month ui-datepicker-unselectable ui-state-disabled">
+						&nbsp;</td>
+				</tr>
+			</tbody>
+		</table>
 	</div>
-</div>
+	<div class="ui-dialog ui-widget ui-widget-content ui-corner-all" tabindex="-1" role="dialog"
+		aria-labelledby="ui-dialog-title-dialog-modal" style="display: none; z-index: 1000; outline: 0px;">
+		<div class="ui-dialog-titlebar ui-widget-header ui-corner-all ui-helper-clearfix"><span class="ui-dialog-title"
+				id="ui-dialog-title-dialog-modal">Get Permanent Link</span><a
+				href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&amp;date=2023-06-27&amp;UpperLeft=WC_KNMI_overview&amp;UpperRight=skiron_wind_direction&amp;LowerRight=WC_TUD_wind_speed&amp;LowerLeft=ceilometer#"
+				class="ui-dialog-titlebar-close ui-corner-all" role="button"><span
+					class="ui-icon ui-icon-closethick">close</span></a></div>
+		<div id="dialog-modal" class="ui-dialog-content ui-widget-content" style="display: block;">
+			Use this url to load the data browser directly with the current instruments,<br> display data of
+			<select id="dialog-modal-select">
+				<option value="-1">yesterday</option>
+				<option value="0">today</option>
+				<option value="xy" id="dialog-modal-extraDate">xy</option>
+			</select>:
+			<br>&nbsp;<br>
+			<a href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/url" id="dialog-modal-url">URL</a>
 
+		</div>
+		<div class="ui-dialog-buttonpane ui-widget-content ui-helper-clearfix">
+			<div class="ui-dialog-buttonset"><button type="button">Ok</button></div>
+		</div>
+	</div>
+</body>
 
-
-
-
-
-<div><template shadowrootmode="open"><style>
-  #gpt-text-summarize-button {
-  display: none;
-  background-color: #10a37f;
-  border: 0;
-  color: white;
-  text-align: center;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  padding: 0.3em;
-  border-radius: 50%;
-  z-index: 9999;
-  position: absolute;
-  box-shadow: rgba(0, 0, 0, 0.4) 3px 0 5px 0;
-}
-
-#gpt-text-summarize-button:hover {
-  background-color: #14b384;
-}
-
-#gpt-text-summarize-button > img {
-  width: 2em;
-  height: 2em;
-}
-  </style><button id="gpt-text-summarize-button" style="display: none;"><img src="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%3E%0A%20%20%20%20%3Cg%20fill%3D%22none%22%20fill-rule%3D%22nonzero%22%20transform%3D%22translate(5%205)%22%3E%0A%20%20%20%20%20%20%20%20%3Ccircle%20cx%3D%2259%22%20cy%3D%2259%22%20r%3D%2259%22%20fill%3D%22%2310A37F%22%20stroke%3D%22%2310A37F%22%20stroke-width%3D%229%22%20%2F%3E%0A%20%20%20%20%20%20%20%20%3Cpath%20fill%3D%22%23E5E7EB%22%0A%20%20%20%20%20%20%20%20%20%20%20%20d%3D%22M76.397%2067.004c-1.545%205.815-5.642%208.127-10.356%209.47-.464.148-.386.595-.386.595l.695%204.623s.077.373.696.298C83.66%2080.2%2094.714%2068.047%2092.78%2053.285c-2.01-10.215-10.356-14.167-17.93-13.123-7.652%201.193-12.908%208.053-11.67%2015.434%201.004%206.561%206.646%2011.184%2013.215%2011.408Z%22%20%2F%3E%0A%20%20%20%20%20%20%20%20%3Cpath%20fill%3D%22%23FFF%22%0A%20%20%20%20%20%20%20%20%20%20%20%20d%3D%22M26.16%2055.596c1.005%206.487%206.722%2011.11%2013.211%2011.408-1.622%205.815-5.562%208.127-10.352%209.47-.464.148-.387.595-.387.595l.773%204.623s.077.373.695.298c16.534-1.79%2027.736-13.943%2025.65-28.705-1.93-10.215-10.198-14.167-17.846-13.123C30.254%2041.355%2025%2048.215%2026.16%2055.596Z%22%20%2F%3E%0A%20%20%20%20%3C%2Fg%3E%0A%3C%2Fsvg%3E"></button></template></div><div id="ui-datepicker-div" class="ui-datepicker ui-widget ui-widget-content ui-helper-clearfix ui-corner-all"><div class="ui-datepicker-header ui-widget-header ui-helper-clearfix ui-corner-all"><a class="ui-datepicker-prev ui-corner-all ui-state-disabled" title="Prev"><span class="ui-icon ui-icon-circle-triangle-w">Prev</span></a><a class="ui-datepicker-next ui-corner-all" data-handler="next" data-event="click" title="Next"><span class="ui-icon ui-icon-circle-triangle-e">Next</span></a><div class="ui-datepicker-title"><select class="ui-datepicker-month" data-handler="selectMonth" data-event="change"><option value="5" selected="selected">Jun</option><option value="6">Jul</option><option value="7">Aug</option><option value="8">Sep</option><option value="9">Oct</option><option value="10">Nov</option><option value="11">Dec</option></select><select class="ui-datepicker-year" data-handler="selectYear" data-event="change"><option value="2023" selected="selected">2023</option><option value="2024">2024</option></select></div></div><table class="ui-datepicker-calendar"><thead><tr><th><span title="Monday">Mo</span></th><th><span title="Tuesday">Tu</span></th><th><span title="Wednesday">We</span></th><th><span title="Thursday">Th</span></th><th><span title="Friday">Fr</span></th><th class="ui-datepicker-week-end"><span title="Saturday">Sa</span></th><th class="ui-datepicker-week-end"><span title="Sunday">Su</span></th></tr></thead><tbody><tr><td class=" ui-datepicker-other-month ui-datepicker-unselectable ui-state-disabled">&nbsp;</td><td class=" ui-datepicker-other-month ui-datepicker-unselectable ui-state-disabled">&nbsp;</td><td class=" ui-datepicker-other-month ui-datepicker-unselectable ui-state-disabled">&nbsp;</td><td class=" ui-datepicker-unselectable ui-state-disabled "><span class="ui-state-default">1</span></td><td class=" ui-datepicker-unselectable ui-state-disabled "><span class="ui-state-default">2</span></td><td class=" ui-datepicker-week-end ui-datepicker-unselectable ui-state-disabled "><span class="ui-state-default">3</span></td><td class=" ui-datepicker-week-end ui-datepicker-unselectable ui-state-disabled "><span class="ui-state-default">4</span></td></tr><tr><td class=" ui-datepicker-unselectable ui-state-disabled "><span class="ui-state-default">5</span></td><td class=" ui-datepicker-unselectable ui-state-disabled "><span class="ui-state-default">6</span></td><td class=" ui-datepicker-unselectable ui-state-disabled "><span class="ui-state-default">7</span></td><td class=" ui-datepicker-unselectable ui-state-disabled "><span class="ui-state-default">8</span></td><td class=" ui-datepicker-unselectable ui-state-disabled "><span class="ui-state-default">9</span></td><td class=" ui-datepicker-week-end ui-datepicker-unselectable ui-state-disabled "><span class="ui-state-default">10</span></td><td class=" ui-datepicker-week-end ui-datepicker-unselectable ui-state-disabled "><span class="ui-state-default">11</span></td></tr><tr><td class=" ui-datepicker-unselectable ui-state-disabled "><span class="ui-state-default">12</span></td><td class=" ui-datepicker-unselectable ui-state-disabled "><span class="ui-state-default">13</span></td><td class=" ui-datepicker-unselectable ui-state-disabled "><span class="ui-state-default">14</span></td><td class=" ui-datepicker-unselectable ui-state-disabled "><span class="ui-state-default">15</span></td><td class=" " data-handler="selectDay" data-event="click" data-month="5" data-year="2023"><a class="ui-state-default" href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&amp;date=2023-06-27&amp;UpperLeft=WC_KNMI_overview&amp;UpperRight=skiron_wind_direction&amp;LowerRight=WC_TUD_wind_speed&amp;LowerLeft=ceilometer#">16</a></td><td class=" ui-datepicker-week-end " data-handler="selectDay" data-event="click" data-month="5" data-year="2023"><a class="ui-state-default" href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&amp;date=2023-06-27&amp;UpperLeft=WC_KNMI_overview&amp;UpperRight=skiron_wind_direction&amp;LowerRight=WC_TUD_wind_speed&amp;LowerLeft=ceilometer#">17</a></td><td class=" ui-datepicker-week-end " data-handler="selectDay" data-event="click" data-month="5" data-year="2023"><a class="ui-state-default" href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&amp;date=2023-06-27&amp;UpperLeft=WC_KNMI_overview&amp;UpperRight=skiron_wind_direction&amp;LowerRight=WC_TUD_wind_speed&amp;LowerLeft=ceilometer#">18</a></td></tr><tr><td class=" " data-handler="selectDay" data-event="click" data-month="5" data-year="2023"><a class="ui-state-default" href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&amp;date=2023-06-27&amp;UpperLeft=WC_KNMI_overview&amp;UpperRight=skiron_wind_direction&amp;LowerRight=WC_TUD_wind_speed&amp;LowerLeft=ceilometer#">19</a></td><td class=" " data-handler="selectDay" data-event="click" data-month="5" data-year="2023"><a class="ui-state-default" href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&amp;date=2023-06-27&amp;UpperLeft=WC_KNMI_overview&amp;UpperRight=skiron_wind_direction&amp;LowerRight=WC_TUD_wind_speed&amp;LowerLeft=ceilometer#">20</a></td><td class=" " data-handler="selectDay" data-event="click" data-month="5" data-year="2023"><a class="ui-state-default" href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&amp;date=2023-06-27&amp;UpperLeft=WC_KNMI_overview&amp;UpperRight=skiron_wind_direction&amp;LowerRight=WC_TUD_wind_speed&amp;LowerLeft=ceilometer#">21</a></td><td class=" " data-handler="selectDay" data-event="click" data-month="5" data-year="2023"><a class="ui-state-default" href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&amp;date=2023-06-27&amp;UpperLeft=WC_KNMI_overview&amp;UpperRight=skiron_wind_direction&amp;LowerRight=WC_TUD_wind_speed&amp;LowerLeft=ceilometer#">22</a></td><td class=" " data-handler="selectDay" data-event="click" data-month="5" data-year="2023"><a class="ui-state-default" href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&amp;date=2023-06-27&amp;UpperLeft=WC_KNMI_overview&amp;UpperRight=skiron_wind_direction&amp;LowerRight=WC_TUD_wind_speed&amp;LowerLeft=ceilometer#">23</a></td><td class=" ui-datepicker-week-end " data-handler="selectDay" data-event="click" data-month="5" data-year="2023"><a class="ui-state-default" href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&amp;date=2023-06-27&amp;UpperLeft=WC_KNMI_overview&amp;UpperRight=skiron_wind_direction&amp;LowerRight=WC_TUD_wind_speed&amp;LowerLeft=ceilometer#">24</a></td><td class=" ui-datepicker-week-end " data-handler="selectDay" data-event="click" data-month="5" data-year="2023"><a class="ui-state-default" href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&amp;date=2023-06-27&amp;UpperLeft=WC_KNMI_overview&amp;UpperRight=skiron_wind_direction&amp;LowerRight=WC_TUD_wind_speed&amp;LowerLeft=ceilometer#">25</a></td></tr><tr><td class=" " data-handler="selectDay" data-event="click" data-month="5" data-year="2023"><a class="ui-state-default" href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&amp;date=2023-06-27&amp;UpperLeft=WC_KNMI_overview&amp;UpperRight=skiron_wind_direction&amp;LowerRight=WC_TUD_wind_speed&amp;LowerLeft=ceilometer#">26</a></td><td class="  ui-datepicker-current-day" data-handler="selectDay" data-event="click" data-month="5" data-year="2023"><a class="ui-state-default ui-state-active" href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&amp;date=2023-06-27&amp;UpperLeft=WC_KNMI_overview&amp;UpperRight=skiron_wind_direction&amp;LowerRight=WC_TUD_wind_speed&amp;LowerLeft=ceilometer#">27</a></td><td class=" " data-handler="selectDay" data-event="click" data-month="5" data-year="2023"><a class="ui-state-default" href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&amp;date=2023-06-27&amp;UpperLeft=WC_KNMI_overview&amp;UpperRight=skiron_wind_direction&amp;LowerRight=WC_TUD_wind_speed&amp;LowerLeft=ceilometer#">28</a></td><td class=" " data-handler="selectDay" data-event="click" data-month="5" data-year="2023"><a class="ui-state-default" href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&amp;date=2023-06-27&amp;UpperLeft=WC_KNMI_overview&amp;UpperRight=skiron_wind_direction&amp;LowerRight=WC_TUD_wind_speed&amp;LowerLeft=ceilometer#">29</a></td><td class=" " data-handler="selectDay" data-event="click" data-month="5" data-year="2023"><a class="ui-state-default" href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&amp;date=2023-06-27&amp;UpperLeft=WC_KNMI_overview&amp;UpperRight=skiron_wind_direction&amp;LowerRight=WC_TUD_wind_speed&amp;LowerLeft=ceilometer#">30</a></td><td class=" ui-datepicker-week-end ui-datepicker-other-month ui-datepicker-unselectable ui-state-disabled">&nbsp;</td><td class=" ui-datepicker-week-end ui-datepicker-other-month ui-datepicker-unselectable ui-state-disabled">&nbsp;</td></tr></tbody></table></div><div class="ui-dialog ui-widget ui-widget-content ui-corner-all" tabindex="-1" role="dialog" aria-labelledby="ui-dialog-title-dialog-modal" style="display: none; z-index: 1000; outline: 0px;"><div class="ui-dialog-titlebar ui-widget-header ui-corner-all ui-helper-clearfix"><span class="ui-dialog-title" id="ui-dialog-title-dialog-modal">Get Permanent Link</span><a href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&amp;date=2023-06-27&amp;UpperLeft=WC_KNMI_overview&amp;UpperRight=skiron_wind_direction&amp;LowerRight=WC_TUD_wind_speed&amp;LowerLeft=ceilometer#" class="ui-dialog-titlebar-close ui-corner-all" role="button"><span class="ui-icon ui-icon-closethick">close</span></a></div><div id="dialog-modal" class="ui-dialog-content ui-widget-content" style="display: block;">
-	Use this url to load the data browser directly with the current instruments,<br> display data of 
-	<select id="dialog-modal-select">
-		<option value="-1">yesterday</option>
-		<option value="0">today</option>
-		<option value="xy" id="dialog-modal-extraDate">xy</option>
-	</select>:
-	<br>&nbsp;<br>
-	<a href="http://wind-experiment.ceg.tudelft.nl/dataBrowser/url" id="dialog-modal-url">URL</a>
-
-</div><div class="ui-dialog-buttonpane ui-widget-content ui-helper-clearfix"><div class="ui-dialog-buttonset"><button type="button">Ok</button></div></div></div></body></html>
+</html>
