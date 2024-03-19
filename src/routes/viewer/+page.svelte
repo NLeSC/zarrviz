@@ -125,7 +125,7 @@
 		<div class="mt-10 text-xl">Instruments</div>
 		<div class="flex flex-col gap-4 mt-5">
 			<!-- You can open the modal using ID.showModal() method -->
-			<button class="btn" onclick="my_modal_1.showModal()">Instrument 1 details</button>
+			<button class="btn" onclick="my_modal_1.showModal()">Instrument Details Demo</button>
 			<dialog id="my_modal_1" class="modal">
 				<div class="modal-box w-11/12 max-w-full h-[90%] max-h-full">
 					<form method="dialog">
@@ -133,16 +133,12 @@
 					</form>
 					<h3 class="font-bold text-lg">Instrument</h3>
 					<p class="py-4">Press ESC key or click on ✕ button to close</p>
-					<iframe
-						title="Instrument 1 details"
-						class="w-full h-[90%]"
-						src="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&date=2023-06-27&UpperLeft=WC_KNMI_overview&UpperRight=skiron_wind_direction&LowerRight=WC_TUD_wind_speed&LowerLeft=ceilometer"
-						frameborder="0"
+					<iframe title="Instrument 1 details" class="w-full h-[90%]" src="/instrument/index.html" frameborder="0"
 					></iframe>
 				</div>
 			</dialog>
 
-			<button class="btn" onclick="my_modal_2.showModal()">Instrument 2 details</button>
+			<!-- <button class="btn" onclick="my_modal_2.showModal()">Instrument 2 details</button>
 			<dialog id="my_modal_2" class="modal">
 				<div class="modal-box w-11/12 max-w-full h-[90%] max-h-full">
 					<form method="dialog">
@@ -150,14 +146,11 @@
 					</form>
 					<h3 class="font-bold text-lg">Instrument</h3>
 					<p class="py-4">Press ESC key or click on ✕ button to close</p>
-					<iframe
-						title="Instrument 2 details"
-						class="w-full h-[90%]"
-						src="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&date=2023-06-27&UpperLeft=WC_KNMI_overview&UpperRight=skiron_wind_direction&LowerRight=WC_TUD_wind_speed&LowerLeft=ceilometer"
-						frameborder="0"
+					<iframe title="Instrument 2 details" class="w-full h-[90%]" src="/instrument/index.html" frameborder="0"
 					></iframe>
+					src="http://wind-experiment.ceg.tudelft.nl/dataBrowser/dataBrowser4.html?site=CMTRACE-2023&date=2023-06-27&UpperLeft=WC_KNMI_overview&UpperRight=skiron_wind_direction&LowerRight=WC_TUD_wind_speed&LowerLeft=ceilometer"
 				</div>
-			</dialog>
+			</dialog> -->
 		</div>
 	</div>
 </div>
