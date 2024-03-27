@@ -25,6 +25,7 @@ export function updateMaterial({ variable, dataUint8 }) {
   const uniforms = localBox.material.uniforms;
   const sizes = get(volumeSizes)[variable];
   let volumeTexture = null;
+  let coarseVolumeTexture = null;
 
   //
   // Dispose of the old texture to free up memory.
@@ -32,10 +33,12 @@ export function updateMaterial({ variable, dataUint8 }) {
   if (uniforms?.volumeTex.value !== null) {
     uniforms.volumeTex.value.dispose();
   }
+  const s0 = Math.ceil(sizes[0] / 8);
+  const s1 = Math.ceil(sizes[1] / 8);
+  const s2 = Math.ceil(sizes[2] / 8);
   switch (variable) {
     case 'ql':
       volumeTexture = new THREE.Data3DTexture(dataUint8, sizes[0], sizes[1], sizes[2]);
-      volumeTexture.format = THREE.RedFormat;
       volumeTexture.minFilter = THREE.LinearFilter; // Better for volume rendering.
       volumeTexture.magFilter = THREE.LinearFilter;
       uniforms.dataScale.value = qlScale;
@@ -50,10 +53,11 @@ export function updateMaterial({ variable, dataUint8 }) {
       break;
 
     case 'qr':
-      // uniforms?.coarseVolumeTex?.value?.dispose();
-
+      if (uniforms?.coarseVolumeTex.value !== null) {
+        uniforms.coarseVolumeTex.value.dispose();
+      }
+    
       volumeTexture = new THREE.Data3DTexture(dataUint8, sizes[0], sizes[1], sizes[2]);
-      volumeTexture.format = THREE.RedFormat;
       volumeTexture.minFilter = THREE.NearestFilter;
       volumeTexture.magFilter = THREE.NearestFilter;
       uniforms.dataScale.value = qrScale;
@@ -61,7 +65,14 @@ export function updateMaterial({ variable, dataUint8 }) {
       uniforms.alphaNorm.value = 2.0;
       uniforms.finalGamma.value = finalGamma;
 
-      uniforms.coarseVolumeTex.value = new THREE.Data3DTexture(coarseData(sizes, dataUint8), sizes[0] / 8, sizes[1] / 8, sizes[2] / 8);;
+      coarseVolumeTexture = new THREE.Data3DTexture(coarseData(dataUint8, sizes), s0, s1, s2);
+      coarseVolumeTexture.format = THREE.RedFormat;
+      coarseVolumeTexture.minFilter = THREE.NearestFilter;
+      coarseVolumeTexture.magFilter = THREE.NearestFilter;
+      coarseVolumeTexture.type = THREE.UnsignedByteType;
+      coarseVolumeTexture.generateMipmaps = false; // Saves memory.
+      coarseVolumeTexture.needsUpdate = true;
+      uniforms.coarseVolumeTex.value = coarseVolumeTexture;
       break;
 
     case 'thetavmix':

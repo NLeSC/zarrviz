@@ -67,9 +67,8 @@ void main(void){
   tBox.x=max(tBox.x,0.);
 
   ivec3 volumeTexSize=textureSize(coarseVolumeTex,0);
-  //  vec3 dt0 = 1.0 / (vec3(volumeTexSize) * abs(rayDir));
   vec3 dt0=1./(vec3(volumeTexSize)*abs(rayDir));
-  float dt=min(dt0.x,min(dt0.y,dt0.z)) * 0.5;
+  float dt=min(dt0.x,min(dt0.y,dt0.z));
 
   // Prevents a lost WebGL context.
   if(dt<.00001){
@@ -100,9 +99,9 @@ void main(void){
   float transmittance_threshold=0.05;
   vec3 random=fract(sin(gl_FragCoord.x*12.9898+gl_FragCoord.y*78.233)*43758.5453)*dt*rayDir/8.0;
   for(float t=tBox.x;t<tBox.y;t+=dt){
-
+    // look 8 steps ahead
     float value=texture(coarseVolumeTex, pSized).r;
-    if(value != 100.0){
+    if(value != 0.0){
       #pragma unroll_loop_start
       for(int i = 0; i < 8; ++i)
       {
@@ -132,8 +131,6 @@ void main(void){
   }
   else
   {
-    // float g=1./finalGamma;
-    // gl_FragColor=pow(vec4(illumination,1.0-transmittance),vec4(g,g,g,1));
     float g=1./finalGamma;
     vec4 finalColor = pow(vec4(illumination,1.0-transmittance),vec4(g,g,g,1));
     // Apply uTransparency to the alpha component

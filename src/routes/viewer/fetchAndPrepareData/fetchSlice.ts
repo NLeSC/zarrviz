@@ -2,7 +2,7 @@ import { openArray, HTTPStore } from 'zarr';
 import type { PersistenceMode } from 'zarr/types/types';
 
 import { dataSlices } from "../stores/allSlices.store";
-import { coarseData } from './coarseData';
+//import { coarseData } from './coarseData';
 
 // downloadZarrPoints
 export async function fetchSlice({
@@ -27,7 +27,8 @@ export async function fetchSlice({
   let dataUint8 = null;
   if (path == 'qr') {
     // Coarse data to compress the ammount of data
-    dataUint8 = coarseData(shape, data);
+//    dataUint8 = coarseData(shape, data);
+    dataUint8 = data;
   }
   else {
     dataUint8 = data;
