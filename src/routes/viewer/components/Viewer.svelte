@@ -3,7 +3,7 @@
 	import * as THREE from 'three';
 	import DebugButtons from './DebugButtons.svelte';
 
-	import { dataSlices, currentTimeIndex, downloadedTime } from '../stores/allSlices.store';
+	import { dataSlices, downloadedTime } from '../stores/allSlices.store';
 	import { cloudLayerSettings, rainLayerSettings, temperatureLayerSettings, showGrid } from '../stores/viewer.store';
 	import { create3DScene } from '../sceneSetup/create3DScene';
 
@@ -11,6 +11,8 @@
 	import { createGridHelper } from '../sceneSetup/createGridHelper';
 	import { boxes, data_layers } from '../sceneSetup/boxSetup';
 	// import examplePoints from '../fetchAndPrepareData/examplePoints';
+
+	import { currentTimeIndex } from '../sceneSetup/updateMaterial';
 
 	let canvas: HTMLElement;
 	let scene: THREE.Scene;

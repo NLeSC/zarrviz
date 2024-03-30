@@ -6,8 +6,6 @@ import { openArray } from 'zarr';
 
 export const totalSlices = writable(1); // calculated number of slices in the data
 export const dataSlices = writable([]);
-export const currentTimeIndex = writable(0);
-
 export const voxelSizes = writable({})
 export const volumeSizes = writable({})
 export const boxSizes = writable({})

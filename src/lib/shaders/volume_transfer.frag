@@ -15,6 +15,7 @@ uniform highp vec3 boxSize;
 uniform float dataScale;
 uniform float alphaNorm;
 uniform bool useLighting;
+uniform vec3 displacement;
 
 // Optional parameters, for when a solid surface is being drawn along with
 // the volume data.
@@ -100,12 +101,12 @@ void main(void){
   vec3 random=fract(sin(gl_FragCoord.x*12.9898+gl_FragCoord.y*78.233)*43758.5453)*dt*rayDir/8.0;
   for(float t=tBox.x;t<tBox.y;t+=dt){
     // look 8 steps ahead
-    float value=texture(coarseVolumeTex, pSized).r;
+    float value=texture(coarseVolumeTex, pSized - displacement).r;
     if(value != 0.0){
       #pragma unroll_loop_start
       for(int i = 0; i < 8; ++i)
       {
-        float fineValue = texture(volumeTex, pSized + random).r;
+        float fineValue = texture(volumeTex, pSized - displacement + random).r;
         vec4 vColor = fineValue == 0.0 ? vec4(0.0) : texture(transferTex, vec2(fineValue, 0.5));
         vColor.a *= alphaNorm;
         illumination.rgb += transmittance*clamp(vColor.a,0.0,1.0)*vColor.rgb;

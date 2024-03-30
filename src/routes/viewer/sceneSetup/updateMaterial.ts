@@ -1,9 +1,11 @@
 import * as THREE from 'three';
-import { get } from 'svelte/store';
-import { volumeSizes } from '../stores/allSlices.store';
+import { get, writable } from 'svelte/store';
+import { volumeSizes, voxelSizes } from '../stores/allSlices.store';
 import { boxes } from './boxSetup';
 import { coarseData } from '../fetchAndPrepareData/coarseData';
 
+export const currentTimeIndex = writable(0);
+export const currentStepIndex = writable(0);
 
 // Be caruful with these valies, they can clip the data in the 3D scene
 const dtScale: number = 0.8;
@@ -16,6 +18,21 @@ const dataEpsilon: number = 1e-10;
 const bottomColor: number[] = [0.0, 0.0005, 0.0033];
 const bottomHeight: number = 675.0;
 const finalGamma = 6.0;
+
+const dTSnapshot = 10.0;
+const wind = [-10.5, -4.7];
+
+
+export function refreshMaterial({variable, index, maxIndex}) {
+  const localBox = boxes[variable];
+  if (!localBox) { return }
+  const cellSizes = get(voxelSizes)[variable];
+  const numCells = get(volumeSizes)[variable];
+  const deltaX = wind[0] * (index / maxIndex) * dTSnapshot / (cellSizes[0] * numCells[0]);
+  const deltaY = wind[1] * (index / maxIndex) * dTSnapshot / (cellSizes[1] * numCells[1]);
+  const uniforms = localBox.material.uniforms;
+  uniforms.displacement.value = new THREE.Vector3(deltaX, deltaY, 0.0);
+}
 
 export function updateMaterial({ variable, dataUint8 }) {
   const localBox = boxes[variable];
@@ -50,6 +67,7 @@ export function updateMaterial({ variable, dataUint8 }) {
       uniforms.bottomColor.value = bottomColor;
       uniforms.bottomHeight.value = bottomHeight;
       uniforms.finalGamma.value = finalGamma;
+      uniforms.displacement.value = new THREE.Vector3(0.0, 0.0, 0.0);
       break;
 
     case 'qr':
@@ -65,7 +83,7 @@ export function updateMaterial({ variable, dataUint8 }) {
       uniforms.alphaNorm.value = 2.0;
       uniforms.finalGamma.value = finalGamma;
 
-      coarseVolumeTexture = new THREE.Data3DTexture(coarseData(dataUint8, sizes), s0, s1, s2);
+/*      coarseVolumeTexture = new THREE.Data3DTexture(coarseData(dataUint8, sizes), s0, s1, s2);
       coarseVolumeTexture.format = THREE.RedFormat;
       coarseVolumeTexture.minFilter = THREE.NearestFilter;
       coarseVolumeTexture.magFilter = THREE.NearestFilter;
@@ -73,10 +91,12 @@ export function updateMaterial({ variable, dataUint8 }) {
       coarseVolumeTexture.generateMipmaps = false; // Saves memory.
       coarseVolumeTexture.needsUpdate = true;
       uniforms.coarseVolumeTex.value = coarseVolumeTexture;
+*/      uniforms.displacement.value = new THREE.Vector3(0.0, 0.0, 0.0);
       break;
 
     case 'thetavmix':
       volumeTexture = new THREE.DataTexture(dataUint8, sizes[0], sizes[1]);
+      uniforms.displacement.value = new THREE.Vector2(0.0, 0.0);
       break;
   }
   //
@@ -91,5 +111,4 @@ export function updateMaterial({ variable, dataUint8 }) {
   // Apply the updated material uniforms with new texture and parameters.
   //
   uniforms.volumeTex.value = volumeTexture;
-
 }

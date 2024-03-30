@@ -18,6 +18,7 @@ uniform float gHG;
 uniform float dataEpsilon;
 uniform vec3 bottomColor;
 uniform float bottomHeight;
+uniform vec3 displacement;
 
 // Optional parameters, for when a solid surface is being drawn along with
 // the volume data.
@@ -163,7 +164,7 @@ void main(void){
   vec3 dg=vec3(1)/vec3(volumeTexSize);
   for(float t=tBox.x;t<tBox.y;t+=dt){
 
-    float v=texture(volumeTex,pSized).r;
+    float v=texture(volumeTex,pSized - displacement).r;
     float ql=(v==0.0)?0.:(dataScale*pow(dataEpsilon/dataScale,1.0-v)-dataEpsilon);
     if(ql==0.0)
     {
