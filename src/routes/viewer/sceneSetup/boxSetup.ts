@@ -49,7 +49,7 @@ export function createVolumetricRenderingBox({ scene, variable, dataUint8 }) {
     // Clouds Layer
     case 'ql': {
       boxes.ql = new THREE.Mesh(boxGeometry);
-      boxes.ql.position.z = 0.01 + 2000 / get(scaleFactor); // was 0.25 // 570 meters above the map TODO: calculate this value from the data
+      boxes.ql.position.z = 0.04 + 2000 / get(scaleFactor); // was 0.25 // 570 meters above the map TODO: calculate this value from the data
       boxes.ql.renderOrder = 0;
       boxes.ql.material = initMaterial({ variable });
       get(cloudLayerSettings).enabled && scene.add(boxes.ql);
