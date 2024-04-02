@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import { get } from 'svelte/store';
 import { volumeSizes } from '../stores/allSlices.store';
 import { boxes } from './boxSetup';
-import { coarseData } from '../fetchAndPrepareData/coarseData';
 
 
 // Be caruful with these valies, they can clip the data in the 3D scene
@@ -17,7 +16,7 @@ const bottomColor: number[] = [0.0, 0.0005, 0.0033];
 const bottomHeight: number = 675.0;
 const finalGamma = 6.0;
 
-export function updateMaterial({ variable, dataUint8 }) {
+export function updateMaterial({ variable, dataUint8, coarseData = null }) {
   const localBox = boxes[variable];
 
 
@@ -65,7 +64,7 @@ export function updateMaterial({ variable, dataUint8 }) {
       uniforms.alphaNorm.value = 2.0;
       uniforms.finalGamma.value = finalGamma;
 
-      coarseVolumeTexture = new THREE.Data3DTexture(coarseData(dataUint8, sizes), s0, s1, s2);
+      coarseVolumeTexture = new THREE.Data3DTexture(coarseData, s0, s1, s2);
       coarseVolumeTexture.format = THREE.RedFormat;
       coarseVolumeTexture.minFilter = THREE.NearestFilter;
       coarseVolumeTexture.magFilter = THREE.NearestFilter;

@@ -1,9 +1,10 @@
 <script lang="ts">
 	import { createEventDispatcher, onDestroy, onMount } from 'svelte';
 	import { get } from 'svelte/store';
-	import { dataSlices, currentTimeIndex, downloadedTime } from '../stores/allSlices.store';
+	import { dataSlices, coarseDataSlices, currentTimeIndex, downloadedTime } from '../stores/allSlices.store';
 	import { data_layers } from '../sceneSetup/boxSetup';
 	import { updateMaterial } from '../sceneSetup/updateMaterial';
+	import { coarseData } from '../fetchAndPrepareData/coarseData';
 
 	export let playAnimation = false;
 	export let length = 10;
@@ -31,9 +32,10 @@
 		// Update the material when the currentTimeIndex changes
 		currentTimeIndex.subscribe((index: number) => {
 			const data = get(dataSlices)[index];
+			const coarseData = get(coarseDataSlices)[index];
 			if (data) {
 				for (const variable of data_layers) {
-					updateMaterial({ variable, dataUint8: data[variable] });
+					updateMaterial({ variable, dataUint8: data[variable], coarseData: coarseData[variable] ?? null });
 				}
 			}
 		});
