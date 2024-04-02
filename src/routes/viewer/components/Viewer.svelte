@@ -5,7 +5,7 @@
 
 	import { dataSlices, downloadedTime } from '../stores/allSlices.store';
 	import { cloudLayerSettings, rainLayerSettings, temperatureLayerSettings, showGrid } from '../stores/viewer.store';
-	import { create3DScene } from '../sceneSetup/create3DScene';
+	import { create3DScene, scene } from '../sceneSetup/create3DScene';
 
 	import { dataSetup } from '../fetchAndPrepareData/dataSetup';
 	import { createGridHelper } from '../sceneSetup/createGridHelper';
@@ -15,8 +15,7 @@
 	import { currentTimeIndex } from '../sceneSetup/updateMaterial';
 
 	let canvas: HTMLElement;
-	let scene: THREE.Scene;
-	let camera: THREE.PerspectiveCamera;
+
 	let gridHelper: THREE.GridHelper;
 
 	//
@@ -50,11 +49,18 @@
 		const timing = performance.now();
 
 		// Create the base 3D scene (camera, renderer, etc.)
-		scene = await create3DScene({ canvas, camera });
+		await create3DScene({ canvas });
 
 		// Add the grid helper to the scene
 		gridHelper = createGridHelper();
 		scene.add(gridHelper);
+
+		//
+		// Add an axes helper to the scene to help with debugging.
+		//
+		// const axesHelper = new THREE.AxesHelper(5);
+		// scene.add(axesHelper);
+		//
 
 		// Download first slice of the data and
 		// calculate the voxel and volume size.
@@ -79,21 +85,11 @@
 	<div class="fixed top-0 left-0">
 		<a href="/"><button class="btn">← Select dataset</button></a>
 
-		<!-- Open the modal using ID.showModal() method -->
-		<button class="btn" onclick="camera_modal.showModal()">Camera Controls</button>
-		<dialog id="camera_modal" class="modal">
-			<div class="modal-box">
-				<h3 class="font-bold text-lg">Camera Controls!</h3>
-				<DebugButtons {camera} />
-			</div>
-			<form method="dialog" class="modal-backdrop">
-				<button>close</button>
-			</form>
-		</dialog>
 		<button class="btn" on:click={() => toggleGrid()}>
 			<input type="checkbox" bind:checked={$showGrid} id="gridCheckbox" />
 			<label class="pointer-events-none" for="gridCheckbox"> Show Grid </label>
 		</button>
+		<DebugButtons />
 	</div>
 </div>
 <canvas class="w-full h-full" bind:this={canvas} />

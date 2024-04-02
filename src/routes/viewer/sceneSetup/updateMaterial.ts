@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import { get, writable } from 'svelte/store';
 import { volumeSizes, voxelSizes } from '../stores/allSlices.store';
 import { boxes } from './boxSetup';
-import { coarseData } from '../fetchAndPrepareData/coarseData';
 
 export const currentTimeIndex = writable(0);
 export const currentStepIndex = writable(0);
@@ -34,7 +33,7 @@ export function refreshMaterial({variable, index, maxIndex}) {
   uniforms.displacement.value = new THREE.Vector3(deltaX, deltaY, 0.0);
 }
 
-export function updateMaterial({ variable, dataUint8 }) {
+export function updateMaterial({ variable, dataUint8, coarseData = null }) {
   const localBox = boxes[variable];
 
 
@@ -83,7 +82,7 @@ export function updateMaterial({ variable, dataUint8 }) {
       uniforms.alphaNorm.value = 2.0;
       uniforms.finalGamma.value = finalGamma;
 
-/*      coarseVolumeTexture = new THREE.Data3DTexture(coarseData(dataUint8, sizes), s0, s1, s2);
+      coarseVolumeTexture = new THREE.Data3DTexture(coarseData, s0, s1, s2);
       coarseVolumeTexture.format = THREE.RedFormat;
       coarseVolumeTexture.minFilter = THREE.NearestFilter;
       coarseVolumeTexture.magFilter = THREE.NearestFilter;
@@ -91,7 +90,7 @@ export function updateMaterial({ variable, dataUint8 }) {
       coarseVolumeTexture.generateMipmaps = false; // Saves memory.
       coarseVolumeTexture.needsUpdate = true;
       uniforms.coarseVolumeTex.value = coarseVolumeTexture;
-*/      uniforms.displacement.value = new THREE.Vector3(0.0, 0.0, 0.0);
+      uniforms.displacement.value = new THREE.Vector3(0.0, 0.0, 0.0);
       break;
 
     case 'thetavmix':

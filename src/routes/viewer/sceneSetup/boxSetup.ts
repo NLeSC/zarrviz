@@ -36,7 +36,7 @@ export const data_layers = [
  * The box will be centered at the origin, with X in [-0.5, 0.5] so the width is 1, and
  * Y (height) and Z (depth) scaled to match.
  */
-export function createVolumetricRenderingBox({ scene, variable, dataUint8 }) {
+export function createVolumetricRenderingBox({ scene, variable, dataUint8, coarseData = null }) {
   // const boxGeometry = new THREE.BoxGeometry(get(volumeSize)[0], get(volumeSize)[1], get(volumeSize)[2]);
   // const boxSizeInKm = 33.8; // 33.8 km
   // const boxScale = boxSizeInKm; // / scaleFactor; // Convert to meters and then apply scale factor to scene units
@@ -49,7 +49,7 @@ export function createVolumetricRenderingBox({ scene, variable, dataUint8 }) {
     // Clouds Layer
     case 'ql': {
       boxes.ql = new THREE.Mesh(boxGeometry);
-      boxes.ql.position.z = 0.01 + 2000 / get(scaleFactor); // was 0.25 // 570 meters above the map TODO: calculate this value from the data
+      boxes.ql.position.z = 0.04 + 2000 / get(scaleFactor); // was 0.25 // 570 meters above the map TODO: calculate this value from the data
       boxes.ql.renderOrder = 0;
       boxes.ql.material = initMaterial({ variable });
       get(cloudLayerSettings).enabled && scene.add(boxes.ql);
@@ -75,6 +75,6 @@ export function createVolumetricRenderingBox({ scene, variable, dataUint8 }) {
 
     }
   }
-  updateMaterial({ variable, dataUint8 });
+  updateMaterial({ variable, dataUint8, coarseData });
 
 }

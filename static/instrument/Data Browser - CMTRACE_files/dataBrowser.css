@@ -1,0 +1,164 @@
+html {
+	height: 100%;
+	width: 100%;
+}
+body {
+	font-size: 100%;
+	font-family: "Helvetica", "Arial",  "Verdana", "sans-serif";
+	height: 100%;
+	width: 100%;
+	margin:0;
+	padding:0;
+	text-align:center;
+	color:black;
+	background-color:white;
+}
+
+img {
+	border: 0;
+}
+
+div {
+	margin:0;
+	padding:0;
+
+}
+
+div#dialog-modal {
+	display:none;
+	font-size:85%;
+}
+
+div#controls {
+	height:4%;
+	background-color:#aaaaaa;
+	clear: both;
+	font-size: 75%;
+	position:relative;
+	overflow:auto;
+}
+
+
+
+
+div.dataLargeBox {
+	width:100%;
+	overflow: hidden;
+
+}
+div.dataSmallBox {
+	height: 100%;
+	width: 49%;
+	display:inline-block;
+	position:relative;
+
+}
+img.dataPic {
+	max-width:100%;
+	max-height:100%;
+	margin:1px;
+	padding:0;
+}
+.zoombox{
+	clear: both;
+}
+
+div#UpperLeftBox, div#LowerLeftBox {
+	float:left;
+}
+
+div#UpperRightBox, div#LowerRightBox {
+	float:right;
+}
+
+
+.Error {
+	text-align:center;
+	margin:100px;
+}
+
+select {
+	width:10%;
+}
+
+input {
+	width:6%;
+}
+input#datepicker_date {
+	width:10%;
+}
+
+input#datepicker_next, input#datepicker_prev {
+	width:2.5em;
+}
+select#selectSite, select#noOfPanels{
+	width:6%;
+}
+select#dialog-modal-select{
+	width:150px;
+}
+a#logoRight {
+	display:block;
+	top:5px;
+	left:5px;
+	width:175px;
+	float:right;
+	height:52px;
+	margin-left:-175px;
+	margin-bottom:-52px;	
+}
+a#logoRight img{
+	width:175px;
+	height:52px;
+}
+
+a#logoLeft {
+	display:block;
+	top:5px;
+	left:5px;
+	width:83px;
+	height:105px;
+	margin-right:-83px;
+	margin-bottom:-105px;	
+}
+a#logoLeft img{
+	width:83px;
+	height:105px;
+}
+
+div#controls span{
+	margin-left:0.25%;
+	vertical-align: middle;
+}
+
+/* The ghost, nudged to maintain perfect centering */
+#controls:before {
+	content: '';
+	display: inline-block;
+	height: 100%;
+	vertical-align: middle;
+	margin-right: -0.25em; /* Adjusts for spacing */
+}
+
+span#comment{
+	display:inline-block;	
+	width:9%;
+	font-size: 75%;
+}
+
+a:link{
+	color:black;
+	text-decoration: none
+}
+a:visited{
+	color:black;
+	text-decoration: none
+}
+a:hover{
+	color:black;
+	text-decoration: none
+}
+a:active{
+	color:black;
+	text-decoration: none
+}

@@ -1,13 +1,12 @@
 // import { Queue } from "async-await-queue";
 import { get } from "svelte/store";
-import { fetchSlice } from "./fetchSlice";
+import { fetchSlice, fetchRange } from "./fetchSlice";
 import { downloadedTime } from "../stores/allSlices.store";
-import { slicesToRender } from "../stores/viewer.store";
 
 /**
  * Creates a new Queue instance with a concurrency of 1 and a timeout of 5000ms.
  */
-export async function fetchAllSlices({ path = 'ql', dimensions = 4 }) {
+export async function fetchAllSlices({ path = 'ql', dimensions = 4, timeRange = [1, 10] }) {
 
   /**
    * Creates a new Queue instance with a concurrency of 1 and a timeout of 5000ms.
@@ -17,7 +16,8 @@ export async function fetchAllSlices({ path = 'ql', dimensions = 4 }) {
   const promises = [];
 
   console.log('📕 Downloading all slices');
-  for (let i = 1; i < get(slicesToRender); ++i) { // start with 1 because 0 was already fetched at mounted
+  // Start loop at 1 because the first slice was already fetched at mounted
+  for (let i = timeRange[0]; i < timeRange[1]; ++i) { // start with 1 because 0 was already fetched at mounted
     // const me = Symbol();
     // await q.wait(me, 10 - i);
     try {
@@ -38,3 +38,23 @@ export async function fetchAllSlices({ path = 'ql', dimensions = 4 }) {
 
   // return await q.flush();
 }
+
+export async function fetchAllSlicesAtOnce(visible_data, timeRange = [1, 10]) {
+  const timing = performance.now()
+  const promises = [];
+  for (const variable of visible_data) {
+    const dimensions = variable === 'thetavmix' ? 3 : 4;
+    try {
+      promises.push(fetchRange({ timeRange, path: variable, dimensions }));
+    } catch (e) {
+      console.error(e);
+    } finally {
+      // q.end(me);
+    }
+  }
+  await Promise.all(promises);
+  downloadedTime.set(get(downloadedTime) + Math.round(performance.now() - timing))
+  console.log('🎹 all data downladed in', get(downloadedTime), ' + ', Math.round(performance.now() - timing), 'ms');
+}
+
+

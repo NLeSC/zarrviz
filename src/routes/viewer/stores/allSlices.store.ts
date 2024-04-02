@@ -4,8 +4,11 @@ import * as THREE from "three";
 import { openArray } from 'zarr';
 
 
-export const totalSlices = writable(1); // calculated number of slices in the data
+export const totalSlices = writable(0); // calculated number of slices in the data
 export const dataSlices = writable([]);
+export const coarseDataSlices = writable([]);
+export const currentTimeIndex = writable(0);
+
 export const voxelSizes = writable({})
 export const volumeSizes = writable({})
 export const boxSizes = writable({})
@@ -15,6 +18,10 @@ export const downloadedTime = writable(0)
 export async function getVoxelAndVolumeSize(store, shape, path) {
   // if (currentTimeIndex === 0) {
   const zarrxvals = await openArray({ store, path: 'xt', mode: 'r' });
+  console.log("Shape of the dataset: ", shape);
+
+
+
   const zarryvals = await openArray({ store, path: 'yt', mode: 'r' });
   const zarrzvals = await openArray({ store, path: 'z_' + path, mode: 'r' });
   const xvals = await zarrxvals.getRaw([null]);
