@@ -2,7 +2,6 @@ import {
   createVolumetricRenderingBox
 } from "../sceneSetup/boxSetup";
 import {
-  dataSlices,
   getVoxelAndVolumeSize,
   getVoxelAndVolumeSize2D,
   totalSlices,

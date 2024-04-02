@@ -6,7 +6,6 @@
 	import { updateMaterial,
 		refreshMaterial,  
 		currentStepIndex } from '../sceneSetup/updateMaterial';
-	import { coarseData } from '../fetchAndPrepareData/coarseData';
 
 	export let playAnimation = false;
 	export let length = 10;
