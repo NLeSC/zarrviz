@@ -23,7 +23,7 @@
 			dev: true
 		},
 		{
-			title: 'Google cloud Dataset (600MB)',
+			title: 'Local Dataset (600MB)',
 			description: 'Rain and clouds',
 			image: `${base}/images/cover.webp`,
 			url: 'http://localhost:5173/data/movie.zarr',
