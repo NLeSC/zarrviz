@@ -41,7 +41,11 @@
 			const coarseData = get(coarseDataSlices)[index];
 			if (data) {
 				for (const variable of data_layers) {
-					updateMaterial({ variable, dataUint8: data[variable], coarseData: coarseData[variable] ?? null });
+					let variableCoarseData = null;
+					if (coarseData && variable in coarseData){
+						variableCoarseData = coarseData[variable];
+					}
+					updateMaterial({ variable, dataUint8: data[variable], coarseData: variableCoarseData });
 				}
 			}
 		});

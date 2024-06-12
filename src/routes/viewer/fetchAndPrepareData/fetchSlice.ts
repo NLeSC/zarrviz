@@ -39,43 +39,50 @@ export async function fetchRange({
   path = 'ql',
   dimensions = 4,
 }) {
-  console.log('🚀 Downloading slices for ' ,path, ': ', timeRange[0], ' to ', timeRange[1], '...');
+  console.log('🚀 Downloading slices for ', path, ': ', timeRange[0], ' to ', timeRange[1], '...');
 
-  // Create an HTTPStore pointing to the base of the Zarr hierarchy
-  const { data, shape } = dimensions === 4
-    ? await zarrdata[path].getRaw([slice(timeRange[0], timeRange[1]+1), null, null, null])
-    : await zarrdata[path].getRaw([slice(timeRange[0], timeRange[1]+1), null, null]);
-
-  const dataUint8 = data;
+  let dataUint8 = null;
+  let fullShape = null;
 
   // Update the time slices store
+  const chunkSize = 8;
   const coarsening = (path == 'qr');
-  for(let i = timeRange[0]; i < timeRange[1]; ++i){
+
+  for (let i = timeRange[0]; i < timeRange[1]; i += chunkSize) {
+    const end = Math.min(i + chunkSize, timeRange[1]);
+    const { data, shape } = dimensions === 4
+    ? await zarrdata[path].getRaw([slice(timeRange[0], end + 1), null, null, null])
+    : await zarrdata[path].getRaw([slice(timeRange[0], end + 1), null, null]);
+    dataUint8 = data;
+    const gridSize = dimensions === 4 ? shape[1] * shape[2] * shape[3] : shape[1] * shape[2];
+    const gridShape = dimensions === 4 ? [shape[1], shape[2], shape[3]] : [shape[1], shape[2]];
+    fullShape = [timeRange[1] - timeRange[0] + 1].concat(gridShape);
+  
+    const chunk = dataUint8.subarray(i * gridSize, end * gridSize);
     dataSlices.update((timeSlices) => {
-      const gridSize = dimensions === 4 ? shape[1] * shape[2] * shape[3] : shape[1] * shape[2];
-      if (timeSlices[i]) {
-        timeSlices[i][path] = dataUint8.subarray(i * gridSize, (i + 1) * gridSize);
-      }
-      else {
-        timeSlices[i] = {};
-        timeSlices[i][path] = dataUint8.subarray(i * gridSize, (i + 1) * gridSize);
+      for (let j = i; j < end; j++) {
+        if (timeSlices[j]) {
+          timeSlices[j][path] = chunk.subarray((j - i) * gridSize, (j - i + 1) * gridSize);
+        } else {
+          timeSlices[j] = {};
+          timeSlices[j][path] = chunk.subarray((j - i) * gridSize, (j - i + 1) * gridSize);
+        }
       }
       return timeSlices;
     });
-    if(coarsening){
+    if (coarsening) {
       coarseDataSlices.update((timeSlices) => {
-        const gridSize = dimensions === 4 ? shape[1] * shape[2] * shape[3] : shape[1] * shape[2];
-        const gridShape = dimensions ===4 ? [shape[1], shape[2], shape[3]] : [shape[1], shape[2]];
-        if (timeSlices[i]) {
-          timeSlices[i][path] = coarseData(dataUint8.subarray(i * gridSize, (i + 1) * gridSize), gridShape);
-        }
-        else {
-          timeSlices[i] = {};
-          timeSlices[i][path] = coarseData(dataUint8.subarray(i * gridSize, (i + 1) * gridSize), gridShape);
+        for (let j = i; j < end; j++) {
+          if (timeSlices[j]) {
+            timeSlices[j][path] = coarseData(chunk.subarray((j - i) * gridSize, (j - i + 1) * gridSize), gridShape);
+          } else {
+            timeSlices[j] = {};
+            timeSlices[j][path] = coarseData(chunk.subarray((j - i) * gridSize, (j - i + 1) * gridSize), gridShape);
+          }
         }
         return timeSlices;
       });
     }
   }
-  return { dataUint8, shape };
+  return { dataUint8, fullShape };
 }
