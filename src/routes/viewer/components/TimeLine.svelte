@@ -1,14 +1,17 @@
 <script lang="ts">
 	import { createEventDispatcher, onDestroy, onMount } from 'svelte';
 	import { get } from 'svelte/store';
-	import { dataSlices, currentTimeIndex, downloadedTime } from '../stores/allSlices.store';
+	import { dataSlices, coarseDataSlices, currentTimeIndex, downloadedTime } from '../stores/allSlices.store';
 	import { data_layers } from '../sceneSetup/boxSetup';
-	import { updateMaterial } from '../sceneSetup/updateMaterial';
+	import { updateMaterial,
+		refreshMaterial,  
+		currentStepIndex } from '../sceneSetup/updateMaterial';
 
 	export let playAnimation = false;
 	export let length = 10;
 	export let positionIndex = 0;
 	export let playSpeedInMiliseconds = 300;
+	export let subStepsPerFrame = 10;
 
 	let interval;
 	const dispatch = createEventDispatcher();
@@ -18,10 +21,14 @@
 		if (playAnimation) {
 			interval = setInterval(() => {
 				if (get(dataSlices)[get(currentTimeIndex)]) {
-					const next = (get(currentTimeIndex) + 1) % get(dataSlices).length;
-					currentTimeIndex.set(next);
+					const nextStep = (get(currentStepIndex) + 1) % subStepsPerFrame;
+					currentStepIndex.set(nextStep);
+					if(nextStep == 0) {
+						const nextTimeIndex = (get(currentTimeIndex) + 1) % get(dataSlices).length;
+						currentTimeIndex.set(nextTimeIndex);	
+					}
 				}
-			}, playSpeedInMiliseconds);
+			}, playSpeedInMiliseconds/subStepsPerFrame);
 		} else {
 			clearInterval(interval);
 		}
@@ -31,12 +38,24 @@
 		// Update the material when the currentTimeIndex changes
 		currentTimeIndex.subscribe((index: number) => {
 			const data = get(dataSlices)[index];
+			const coarseData = get(coarseDataSlices)[index];
 			if (data) {
 				for (const variable of data_layers) {
-					updateMaterial({ variable, dataUint8: data[variable] });
+					let variableCoarseData = null;
+					if (coarseData && variable in coarseData){
+						variableCoarseData = coarseData[variable];
+					}
+					updateMaterial({ variable, dataUint8: data[variable], coarseData: variableCoarseData });
 				}
 			}
 		});
+		currentStepIndex.subscribe((index: number) => {
+			if(index != 0){
+				for (const variable of data_layers) {
+					refreshMaterial({variable, index, maxIndex: subStepsPerFrame});
+				}
+			}
+		})
 	});
 
 	onDestroy(() => {

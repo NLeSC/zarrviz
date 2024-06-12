@@ -64,7 +64,8 @@ export function initMaterial({ variable }): THREE.Material {
           dataEpsilon: new THREE.Uniform(0),
           bottomColor: new THREE.Uniform(new THREE.Vector3(0.0, 0.0005, 0.0033)),
           bottomHeight: new THREE.Uniform(0),
-          finalGamma: new THREE.Uniform(0)
+          finalGamma: new THREE.Uniform(0),
+          displacement: new THREE.Uniform(new THREE.Vector3(0.0, 0.0, 0.0)),
         }
       });
       break;
@@ -92,7 +93,8 @@ export function initMaterial({ variable }): THREE.Material {
           dataScale: new THREE.Uniform(0),
           alphaNorm: new THREE.Uniform(0),
           finalGamma: new THREE.Uniform(0),
-          useLighting: new THREE.Uniform(false)
+          useLighting: new THREE.Uniform(false),
+          displacement: new THREE.Uniform(new THREE.Vector3(0.0, 0.0, 0.0)),
         }
       });
       break;
@@ -103,7 +105,8 @@ export function initMaterial({ variable }): THREE.Material {
         uniforms: {
           volumeTex: { value: null },
           uTransparency: { value: get(temperatureLayerSettings).opacity / 100 },
-          uScaleFactor: { value: 200.0 }
+          uScaleFactor: { value: 200.0 },
+          displacement: new THREE.Uniform(new THREE.Vector2(0.0, 0.0)),
         },
         vertexShader: vertexShaderSurface,
         fragmentShader: fragmentShaderSurfaceHeatMap,

@@ -36,7 +36,7 @@ export const data_layers = [
  * The box will be centered at the origin, with X in [-0.5, 0.5] so the width is 1, and
  * Y (height) and Z (depth) scaled to match.
  */
-export function createVolumetricRenderingBox({ scene, variable, dataUint8 }) {
+export function createVolumetricRenderingBox({ scene, variable, dataUint8, coarseData = null }) {
   // const boxGeometry = new THREE.BoxGeometry(get(volumeSize)[0], get(volumeSize)[1], get(volumeSize)[2]);
   // const boxSizeInKm = 33.8; // 33.8 km
   // const boxScale = boxSizeInKm; // / scaleFactor; // Convert to meters and then apply scale factor to scene units
@@ -75,6 +75,6 @@ export function createVolumetricRenderingBox({ scene, variable, dataUint8 }) {
 
     }
   }
-  updateMaterial({ variable, dataUint8 });
+  updateMaterial({ variable, dataUint8, coarseData });
 
 }

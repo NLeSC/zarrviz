@@ -1,13 +1,15 @@
 <script lang="ts">
 	import TimeLine from './components/TimeLine.svelte';
 
-	import { dataSlices, currentTimeIndex, totalSlices } from './stores/allSlices.store';
+	import { dataSlices, totalSlices } from './stores/allSlices.store';
 	import {
 		cloudLayerSettings,
 		rainLayerSettings,
 		slicesToRender,
 		temperatureLayerSettings
 	} from './stores/viewer.store';
+
+	import { currentTimeIndex } from './sceneSetup/updateMaterial';
 
 	import Stats from '$lib/components/Stats.svelte';
 	import Viewer from './components/Viewer.svelte';
