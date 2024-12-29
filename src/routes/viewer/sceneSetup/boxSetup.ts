@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { get } from "svelte/store";
-import { volumeSizes } from "../stores/allSlices.store";
-import { cloudLayerSettings, rainLayerSettings, scaleFactor, temperatureLayerSettings } from '../stores/viewer.store';
+import { getVariableMetaData } from "../stores/allSlices.store";
+import { cloudLayerSettings, meshSize, rainLayerSettings, scaleFactor, temperatureLayerSettings } from '../stores/viewer.store';
 import { initMaterial } from './initMaterial';
 import { updateMaterial } from './updateMaterial';
 
@@ -12,7 +12,6 @@ export const boxes: {
   ql?: THREE.Mesh;
   qr?: THREE.Mesh;
   thetavmix?: THREE.Points | THREE.Mesh;
-  // thetavmix?: THREE.Mesh;
 } = {
   ql: undefined,
   qr: undefined,
@@ -25,8 +24,8 @@ export const boxes: {
 // They should be all enabled by default
 //
 export const data_layers = [
-  'qr', // rain
   'ql', // clouds
+  'qr', // rain
   'thetavmix', // temperature
 ];
 
@@ -36,13 +35,12 @@ export const data_layers = [
  * The box will be centered at the origin, with X in [-0.5, 0.5] so the width is 1, and
  * Y (height) and Z (depth) scaled to match.
  */
-export function createVolumetricRenderingBox({ scene, variable, dataUint8, coarseData = null }) {
-  // const boxGeometry = new THREE.BoxGeometry(get(volumeSize)[0], get(volumeSize)[1], get(volumeSize)[2]);
-  // const boxSizeInKm = 33.8; // 33.8 km
-  // const boxScale = boxSizeInKm; // / scaleFactor; // Convert to meters and then apply scale factor to scene units
-
-  const boxZ = get(volumeSizes)[variable][2] / get(volumeSizes)[variable][1];
-  // const boxScale = 33800 / scaleFactor; //  33.8 km in meters in scene units
+export async function createVolumetricRenderingBox({ scene, variable }) {
+  const variableInfo = getVariableMetaData(variable);
+  if (get(meshSize).length === 0) {
+    meshSize.set(variableInfo.numCellsXYZ);
+  }
+  const boxZ = variableInfo.numCellsXYZ[2] < 2 ? variableInfo.numCellsXYZ[1] / variableInfo.numCellsXYZ[0] : 0;
   const boxGeometry = new THREE.BoxGeometry(1, 1, boxZ);
   const planeGeometry = new THREE.PlaneGeometry(1, 1);
   switch (variable) {
@@ -75,6 +73,5 @@ export function createVolumetricRenderingBox({ scene, variable, dataUint8, coars
 
     }
   }
-  updateMaterial({ variable, dataUint8, coarseData });
-
+  await updateMaterial({ variable, timeIndex: 0 });
 }

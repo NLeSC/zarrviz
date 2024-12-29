@@ -1,15 +1,12 @@
 <script lang="ts">
 	import TimeLine from './components/TimeLine.svelte';
+	import { currentTimeIndex, meshSize, numTimes } from './stores/viewer.store';
 
-	import { dataSlices, totalSlices } from './stores/allSlices.store';
 	import {
 		cloudLayerSettings,
 		rainLayerSettings,
-		slicesToRender,
 		temperatureLayerSettings
 	} from './stores/viewer.store';
-
-	import { currentTimeIndex } from './sceneSetup/updateMaterial';
 
 	import Stats from '$lib/components/Stats.svelte';
 	import Viewer from './components/Viewer.svelte';
@@ -28,32 +25,18 @@
 			<Viewer />
 		</div>
 		<TimeLine
-			positionIndex={$currentTimeIndex}
-			length={$dataSlices.length}
+			length={$numTimes}
 			on:onSelectedIndex={(value) => currentTimeIndex.set(value.detail.index)}
 		/>
 	</div>
 	<div class="px-4 py-4">
 		<h2 class="text-2xl mb-3">Dataset</h2>
 		<Stats />
-
-		<div class="text-sm">
-			<!-- 1073741824 = 1GB -->
-			Slices:
-			<input
-				type="number"
-				min="0"
-				bind:value={$slicesToRender}
-				on:change={(e) => {
-					$slicesToRender = e.target.value;
-				}}
-				class="input input-xs w-14"
-			/>
-			of {$totalSlices}<br />
-			dataUint8 (slice) {$dataSlices[0]?.length} - {($dataSlices[0]?.byteLength / 1073741824).toFixed(3)} GB
-			<!-- <pre>dataCellSize: {$dataCellSize.length} |</pre> -->
-			Slices downloaded: {JSON.stringify($dataSlices.length, null, 2)}
-		</div>
+		<span class="label-text w-1/2">No. timestamps: {$numTimes}</span>
+		<br>
+		<span class="label-text w-1/2">Current timestamp: {$currentTimeIndex}</span>
+		<br>
+		<span class="label-text w-1/2">Mesh size: {$meshSize[0]} x {$meshSize[1]} x {$meshSize[2]}</span>
 
 		<h3 class="mt-10 text-xl">Layers</h3>
 		{#if $cloudLayerSettings}

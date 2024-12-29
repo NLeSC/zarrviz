@@ -1,12 +1,8 @@
 import * as THREE from 'three';
-import { get, writable } from 'svelte/store';
-import { volumeSizes, voxelSizes } from '../stores/allSlices.store';
 import { boxes } from './boxSetup';
+import { getVariableMetaData, getVariableData, getVariableCoarsenedData } from '../stores/allSlices.store';
 
-export const currentTimeIndex = writable(0);
-export const currentStepIndex = writable(0);
-
-// Be caruful with these valies, they can clip the data in the 3D scene
+// Be caruful with these values, they can clip the data in the 3D scene
 const dtScale: number = 0.8;
 const ambientFactor: number = 0.0;
 const solarFactor: number = 0.8;
@@ -25,21 +21,20 @@ const wind = [-10.5, -4.7];
 export function refreshMaterial({variable, index, maxIndex}) {
   const localBox = boxes[variable];
   if (!localBox) { return }
-  const cellSizes = get(voxelSizes)[variable];
-  const numCells = get(volumeSizes)[variable];
-  const deltaX = wind[0] * (index / maxIndex) * dTSnapshot / (cellSizes[0] * numCells[0]);
-  const deltaY = wind[1] * (index / maxIndex) * dTSnapshot / (cellSizes[1] * numCells[1]);
+  const variableInfo = getVariableMetaData(variable);
+  const xRange = variableInfo.upperBoundXYZ[0] - variableInfo.lowerBoundXYZ[0];
+  const deltaX = wind[0] * (index / maxIndex) * dTSnapshot / xRange;
+  const yRange = variableInfo.upperBoundXYZ[1] - variableInfo.lowerBoundXYZ[1];
+  const deltaY = wind[1] * (index / maxIndex) * dTSnapshot / yRange;
   const uniforms = localBox.material.uniforms;
   uniforms.displacement.value = new THREE.Vector3(deltaX, deltaY, 0.0);
 }
 
-export function updateMaterial({ variable, dataUint8, coarseData = null }) {
+export async function updateMaterial({ variable, timeIndex }) {
   const localBox = boxes[variable];
-
-
   if (!localBox) { return }
   const uniforms = localBox.material.uniforms;
-  const sizes = get(volumeSizes)[variable];
+  const {data, shape}  = await getVariableData(variable, timeIndex);
   let volumeTexture = null;
   let coarseVolumeTexture = null;
 
@@ -49,12 +44,10 @@ export function updateMaterial({ variable, dataUint8, coarseData = null }) {
   if (uniforms?.volumeTex.value !== null) {
     uniforms.volumeTex.value.dispose();
   }
-  const s0 = Math.ceil(sizes[0] / 8);
-  const s1 = Math.ceil(sizes[1] / 8);
-  const s2 = Math.ceil(sizes[2] / 8);
+  const {coarseData, coarseShape} = getVariableCoarsenedData(variable);
   switch (variable) {
     case 'ql':
-      volumeTexture = new THREE.Data3DTexture(dataUint8, sizes[0], sizes[1], sizes[2]);
+      volumeTexture = new THREE.Data3DTexture(data, shape[0], shape[1], shape[2]);
       volumeTexture.minFilter = THREE.LinearFilter; // Better for volume rendering.
       volumeTexture.magFilter = THREE.LinearFilter;
       uniforms.dataScale.value = qlScale;
@@ -72,17 +65,15 @@ export function updateMaterial({ variable, dataUint8, coarseData = null }) {
     case 'qr':
       if (uniforms?.coarseVolumeTex.value !== null) {
         uniforms.coarseVolumeTex.value.dispose();
-      }
-    
-      volumeTexture = new THREE.Data3DTexture(dataUint8, sizes[0], sizes[1], sizes[2]);
+      }    
+      volumeTexture = new THREE.Data3DTexture(data, shape[0], shape[1], shape[2]);
       volumeTexture.minFilter = THREE.NearestFilter;
       volumeTexture.magFilter = THREE.NearestFilter;
       uniforms.dataScale.value = qrScale;
       uniforms.dtScale.value = dtScale;
       uniforms.alphaNorm.value = 2.0;
       uniforms.finalGamma.value = finalGamma;
-
-      coarseVolumeTexture = new THREE.Data3DTexture(coarseData, s0, s1, s2);
+      coarseVolumeTexture = new THREE.Data3DTexture(coarseData, coarseShape[0], coarseShape[1], coarseShape[2]);
       coarseVolumeTexture.format = THREE.RedFormat;
       coarseVolumeTexture.minFilter = THREE.NearestFilter;
       coarseVolumeTexture.magFilter = THREE.NearestFilter;
@@ -94,7 +85,7 @@ export function updateMaterial({ variable, dataUint8, coarseData = null }) {
       break;
 
     case 'thetavmix':
-      volumeTexture = new THREE.DataTexture(dataUint8, sizes[0], sizes[1]);
+      volumeTexture = new THREE.DataTexture(data, shape[0], shape[1]);
       uniforms.displacement.value = new THREE.Vector2(0.0, 0.0);
       break;
   }

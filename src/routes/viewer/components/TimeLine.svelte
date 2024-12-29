@@ -1,32 +1,29 @@
 <script lang="ts">
 	import { createEventDispatcher, onDestroy, onMount } from 'svelte';
 	import { get } from 'svelte/store';
-	import { dataSlices, coarseDataSlices, currentTimeIndex, downloadedTime } from '../stores/allSlices.store';
+	import { getNumTimes } from '../stores/allSlices.store';
 	import { data_layers } from '../sceneSetup/boxSetup';
-	import { updateMaterial,
-		refreshMaterial,  
-		currentStepIndex } from '../sceneSetup/updateMaterial';
+	import { updateMaterial, refreshMaterial } from '../sceneSetup/updateMaterial';
+	import { currentTimeIndex, currentStepIndex, loading, loadTime } from '../stores/viewer.store';
 
 	export let playAnimation = false;
 	export let length = 10;
-	export let positionIndex = 0;
-	export let playSpeedInMiliseconds = 300;
-	export let subStepsPerFrame = 10;
+	export let playSpeedInMiliseconds = 1000;
+	export let subStepsPerFrame = 20;
 
 	let interval;
+
 	const dispatch = createEventDispatcher();
 
 	function play() {
 		playAnimation = !playAnimation;
 		if (playAnimation) {
 			interval = setInterval(() => {
-				if (get(dataSlices)[get(currentTimeIndex)]) {
-					const nextStep = (get(currentStepIndex) + 1) % subStepsPerFrame;
-					currentStepIndex.set(nextStep);
-					if(nextStep == 0) {
-						const nextTimeIndex = (get(currentTimeIndex) + 1) % get(dataSlices).length;
-						currentTimeIndex.set(nextTimeIndex);	
-					}
+				const nextStep = (get(currentStepIndex) + 1) % subStepsPerFrame;
+				currentStepIndex.set(nextStep);
+				if(nextStep == 0) {
+					const nextTimeIndex = (get(currentTimeIndex) + 1) % getNumTimes();
+					currentTimeIndex.set(nextTimeIndex);	
 				}
 			}, playSpeedInMiliseconds/subStepsPerFrame);
 		} else {
@@ -36,18 +33,17 @@
 
 	onMount(() => {
 		// Update the material when the currentTimeIndex changes
-		currentTimeIndex.subscribe((index: number) => {
-			const data = get(dataSlices)[index];
-			const coarseData = get(coarseDataSlices)[index];
-			if (data) {
-				for (const variable of data_layers) {
-					let variableCoarseData = null;
-					if (coarseData && variable in coarseData){
-						variableCoarseData = coarseData[variable];
-					}
-					updateMaterial({ variable, dataUint8: data[variable], coarseData: variableCoarseData });
+		currentTimeIndex.subscribe(async (index: number) => {
+			loading.set(true);
+			const startTime = performance.now();
+			for (const variable of data_layers) {
+				if (typeof get(currentTimeIndex) !== 'undefined') {
+					await updateMaterial({ variable: variable, timeIndex: get(currentTimeIndex) });
 				}
 			}
+			const endTime = performance.now();
+			loading.set(false);
+			loadTime.set(endTime - startTime);
 		});
 		currentStepIndex.subscribe((index: number) => {
 			if(index != 0){
@@ -90,18 +86,32 @@
 			min="1"
 			max={length}
 			step="1"
-			value={positionIndex + 1}
+			value={$currentTimeIndex}
 			on:input={(event) => {
 				dispatch('onSelectedIndex', { index: parseInt(event.target.value) });
 			}}
 		/>
-		<div class="w-full flex justify-between text-xs px-2 h-[30px]">
+		<div class="w-full flex justify-between text-xs px-2 h-[15px]">
 			<!-- Steps -->
 			<!--  array of steps from 0 to length -->
-			{#each Array.from({ length }, (_, index) => index) as step}
+			{#each Array.from({ length }, (_, index) => index ) as step}
 				<div class="flex flex-col">
 					<div>|</div>
-					<div class="-ml-1">{step + 1 || 0}</div>
+				</div>
+			{/each}
+		</div>
+		<div class="w-full flex justify-between text-xs px-2 h-[15px]">
+			<!-- Steps -->
+			<!--  array of steps from 0 to length -->
+			{#each Array.from({ length }, (_, index) => index ) as step}
+				<div class="flex flex-col">
+					{#if length < 21}
+						<div>{step + 1 || 0}</div>
+					{:else}
+						{#if (step + 1) % 10 == 0}
+							<div>{step + 1 || 0}</div>
+						{/if}
+					{/if}
 				</div>
 			{/each}
 		</div>
@@ -123,12 +133,12 @@
 			wasPlaying && play(); // stop current animation the animation
 		}}
 	/>
-	{#if $dataSlices.length < 1}
+	{#if $loading}
 		<div>
 			Loading data
 			<progress class="progress w-56" />
 		</div>
 	{:else}
-		All data loaded in: {$downloadedTime / 1000} seconds
+		Data buffer loaded in: {($loadTime / 1000).toFixed(2)} seconds
 	{/if}
 </div>

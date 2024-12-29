@@ -7,11 +7,11 @@ import fragmentShaderVolumeTransfer from '$lib/shaders/volume_transfer.frag'; //
 import vertexShaderSurface from '$lib/shaders/surface.vert';
 import fragmentShaderSurfaceHeatMap from '$lib/shaders/surface_heatmap.frag';  // heat map
 
-import { voxelSizes, boxSizes } from '../stores/allSlices.store';
 import { makeRainTransferTex } from '$lib/utils/makeRainTransferTex';
 
 import { cameraFar, cameraNear } from './create3DScene';
 import { cloudLayerSettings, rainLayerSettings, temperatureLayerSettings } from '../stores/viewer.store';
+import { getVariableMetaData } from '../stores/allSlices.store';
 
 // Run only once at mount
 const transferTexture = makeRainTransferTex();
@@ -35,6 +35,7 @@ const ambientLightColorV = new THREE.Vector3(
 
 export function initMaterial({ variable }): THREE.Material {
   let shaderMaterial: THREE.ShaderMaterial = null;
+  const variableInfo = getVariableMetaData(variable);
   switch (variable) {
     case 'ql':
       shaderMaterial = new THREE.ShaderMaterial({
@@ -46,9 +47,9 @@ export function initMaterial({ variable }): THREE.Material {
         depthTest: false,
         uniforms: {
           uTransparency: { value: get(cloudLayerSettings).opacity / 100 },
-          boxSize: new THREE.Uniform(get(boxSizes)[variable]),
+          boxSize: new THREE.Uniform(variableInfo.getBoxSizes()),
           volumeTex: new THREE.Uniform(null),
-          voxelSize: new THREE.Uniform(get(voxelSizes)[variable]),
+          voxelSize: new THREE.Uniform(variableInfo.getVoxelSizes()),
           sunLightDir: new THREE.Uniform(sunLight.position),
           sunLightColor: new THREE.Uniform(lightColorV),
           ambientLightColor: new THREE.Uniform(ambientLightColorV),
@@ -79,7 +80,7 @@ export function initMaterial({ variable }): THREE.Material {
         depthTest: false,
         uniforms: {
           uTransparency: { value: get(rainLayerSettings).opacity / 100 },
-          boxSize: new THREE.Uniform(get(boxSizes)[variable]),
+          boxSize: new THREE.Uniform(variableInfo.getBoxSizes()),
           volumeTex: new THREE.Uniform(null),
           coarseVolumeTex: new THREE.Uniform(null),
           sunLightDir: new THREE.Uniform(sunLight.position),

@@ -3,8 +3,8 @@
 	import * as THREE from 'three';
 	import DebugButtons from './DebugButtons.svelte';
 
-	import { dataSlices, downloadedTime } from '../stores/allSlices.store';
-	import { cloudLayerSettings, rainLayerSettings, temperatureLayerSettings, showGrid } from '../stores/viewer.store';
+	import { clearVariableStores, getNumTimes } from '../stores/allSlices.store';
+	import { cloudLayerSettings, rainLayerSettings, temperatureLayerSettings, showGrid, numTimes } from '../stores/viewer.store';
 	import { create3DScene, scene } from '../sceneSetup/create3DScene';
 
 	import { dataSetup } from '../fetchAndPrepareData/dataSetup';
@@ -12,11 +12,15 @@
 	import { boxes, data_layers } from '../sceneSetup/boxSetup';
 	// import examplePoints from '../fetchAndPrepareData/examplePoints';
 
-	import { currentTimeIndex } from '../sceneSetup/updateMaterial';
+	import { currentTimeIndex } from '../stores/viewer.store';
+	import { writable } from 'svelte/store';
 
 	let canvas: HTMLElement;
 
 	let gridHelper: THREE.GridHelper;
+
+	// Download time
+	const downloadedTime = writable(0);
 
 	//
 	// Listen for changes in the opacity of the layers and update the material
@@ -48,6 +52,12 @@
 	onMount(async () => {
 		const timing = performance.now();
 
+		// Initialize data
+//		for (const variable of data_layers) {
+			// Initialize the variable store
+//			addVariableStore(variable, 8);
+//		}
+
 		// Create the base 3D scene (camera, renderer, etc.)
 		await create3DScene({ canvas });
 
@@ -65,7 +75,8 @@
 		// Download first slice of the data and
 		// calculate the voxel and volume size.
 		// It runs only once.
-		dataSetup(data_layers, scene);
+		await dataSetup(data_layers, scene);
+		numTimes.set(getNumTimes());
 
 		// Add the example points to the scene
 		// scene.add(examplePoints());
@@ -77,7 +88,7 @@
 	onDestroy(() => {
 		// Clean up Three.js resources
 		currentTimeIndex.set(0);
-		dataSlices.set([]);
+		clearVariableStores();
 	});
 </script>
 
