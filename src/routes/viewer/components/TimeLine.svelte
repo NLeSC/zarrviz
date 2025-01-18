@@ -3,7 +3,7 @@
 	import { get } from 'svelte/store';
 	import { getNumTimes } from '../stores/allSlices.store';
 	import { data_layers } from '../sceneSetup/boxSetup';
-	import { updateMaterial, refreshMaterial } from '../sceneSetup/updateMaterial';
+	import { updateMaterialFast, refreshMaterial } from '../sceneSetup/updateMaterial';
 	import { currentTimeIndex, currentStepIndex, loading, loadTime } from '../stores/viewer.store';
 
 	export let playAnimation = false;
@@ -38,7 +38,7 @@
 			const startTime = performance.now();
 			for (const variable of data_layers) {
 				if (typeof get(currentTimeIndex) !== 'undefined') {
-					await updateMaterial({ variable: variable, timeIndex: get(currentTimeIndex) });
+					await updateMaterialFast({ variable: variable, timeIndex: get(currentTimeIndex) });
 				}
 			}
 			const endTime = performance.now();

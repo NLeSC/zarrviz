@@ -1,14 +1,12 @@
 import { BufferMemoryStore } from "./bufferMemoryStore";
-import { CoarseDataMemoryStore } from "./coarseDataMemoryStore";
 import type { RemoteStore } from "./remoteStore";
 
-export let variableStores = [];
+export const remoteStores = {};
+export const variableStores: VariableStore[] = [];
 export const spatialDimensions = ['x', 'y', 'z'];
 
-export let remoteStore = null;
-
-export function setRemoteStore(store: RemoteStore): void {
-  remoteStore = store;
+export function addRemoteStore(store: RemoteStore, coarseningLevel: number): void {
+  remoteStores[coarseningLevel] = store;
 }
 
 export class VariableInfo {
@@ -75,81 +73,135 @@ export class VariableInfo {
   }
 }
 
-export async function addVariableStore(variable: string, bufferSlices: number, coarseningBlockSizes: number[], coarsener: string): Promise<void> {
-  const metaData = await remoteStore.getMetaData(variable);
-  const variableInfo = new VariableInfo(variable, metaData, coarseningBlockSizes);
-  const bufferSize = bufferSlices * Math.max(1, variableInfo.numCellsXYZ[0]) * Math.max(1, variableInfo.numCellsXYZ[1]) * Math.max(1, variableInfo.numCellsXYZ[2]);
-  const dimensions = variableInfo.numCellsXYZ[2] === 0 ? 3 : 4;
-  let memoryStore = null;
-  if (coarsener !== null && coarseningBlockSizes !== null) {
-    memoryStore = new CoarseDataMemoryStore(bufferSize, bufferSlices, variable, variableInfo.getOrignalDataShape(), coarseningBlockSizes, coarsener);
+export class VariableStore {
+  variable: string;
+  private coarseningLevels: number[];
+  private variableInfos: VariableInfo[];
+  private zarrStores: RemoteStore[];
+  private bufferStores: BufferMemoryStore[];
+
+  constructor(variable: string, variableInfo: VariableInfo, remoteStore: RemoteStore, memoryStore: BufferMemoryStore) {
+    this.variable = variable;
+    this.coarseningLevels = [0];
+    this.variableInfos = [variableInfo];
+    this.zarrStores = [remoteStore];
+    this.bufferStores = [memoryStore];
+  }
+
+  addCoarseningLevel(coarseningLevel: number, variableInfo: VariableInfo, remoteStore: RemoteStore, memoryStore: BufferMemoryStore): void {
+    const index = this.coarseningLevels.indexOf(coarseningLevel);
+    if (index >= 0) {
+      this.variableInfos[index] = variableInfo;
+      this.zarrStores[index] = remoteStore;
+      this.bufferStores[index] = memoryStore;
+    }
+    else {
+      this.coarseningLevels.push(coarseningLevel);
+      this.variableInfos.push(variableInfo);
+      this.zarrStores.push(remoteStore);
+      this.bufferStores.push(memoryStore);
+    }
+  }
+
+  getVariableInfo(coarseningLevel: number): VariableInfo {
+    const index = this.coarseningLevels.indexOf(coarseningLevel);
+    if (index >= 0) {
+      return this.variableInfos[index];
+    }
+    throw new Error(`Coarsening level ${coarseningLevel} not found for variable ${this.variable}`);
+  }
+
+  getZarrStore(coarseningLevel: number): RemoteStore {
+    const index = this.coarseningLevels.indexOf(coarseningLevel);
+    if (index >= 0) {
+      return this.zarrStores[index];
+    }
+    throw new Error(`Coarsening level ${coarseningLevel} not found for variable ${this.variable}`);
+  }
+
+  getBufferStore(coarseningLevel: number): BufferMemoryStore {
+    const index = this.coarseningLevels.indexOf(coarseningLevel);
+    if (index >= 0) {
+      return this.bufferStores[index];
+    }
+    throw new Error(`Coarsening level ${coarseningLevel} not found for variable ${this.variable}`);
+  }
+
+  getMaxLevel(): number {
+    return Math.max(...this.coarseningLevels);
+  }
+}
+
+
+export async function addVariableStore(variable: string, bufferSlices: number, coarseningLevel: number = 0): Promise<void> {
+  if (coarseningLevel in remoteStores) {
+    const remoteStore = remoteStores[coarseningLevel];
+    const metaData = await remoteStore.getMetaData(variable);
+    const variableInfo = new VariableInfo(variable, metaData);
+    const bufferSize = bufferSlices * Math.max(1, variableInfo.numCellsXYZ[0]) * Math.max(1, variableInfo.numCellsXYZ[1]) * Math.max(1, variableInfo.numCellsXYZ[2]);
+    const dimensions = variableInfo.numCellsXYZ[2] === 0 ? 3 : 4;
+    const memoryStore = new BufferMemoryStore(bufferSize, bufferSlices, variableInfo.numTimes, variable, dimensions);
+    for (const variableStore of variableStores) {
+      if (variableStore.variable === variable) {
+        variableStore.addCoarseningLevel(coarseningLevel, variableInfo, remoteStore, memoryStore);
+        return;
+      }
+    }
+    if (coarseningLevel != 0) {
+      throw new Error(`Please add the zero-level store first for variable ${variable}`);
+    }
+    variableStores.push(new VariableStore(variable, variableInfo, remoteStore, memoryStore));
   }
   else {
-    memoryStore = new BufferMemoryStore(bufferSize, bufferSlices, variableInfo.numTimes, variable, dimensions);
+    console.log(Error(`Coarsening level ${coarseningLevel} not found`));
   }
-
-  const newStore = new VariableStore(variable);
-  newStore.variableInfo = variableInfo;
-  newStore.zarrStore = remoteStore;
-  newStore.bufferStore = memoryStore;
-  variableStores.push(newStore);
 }
 
-export function clearVariableStores(): void {
-  variableStores = [];
-}
 
-export async function getVariableData(variable: string, timeIndex: number): Promise<{data: Uint8Array, shape: number[]}> {
+export async function getVariableData(variable: string, timeIndex: number, coarseningLevel: number = 0): Promise<{ data: ArrayBufferView<ArrayBufferLike>, shape: number[] }> {
   for (const store of variableStores) {
     if (store.variable === variable) {
-      const shape = store.variableInfo.numCellsXYZ;
-      return {data: await store.bufferStore.setCurrentSliceIndex(timeIndex, remoteStore), shape: shape};
-    }
-  }
-  throw new Error(`Variable ${variable} not found`);
-}
-
-export function getVariableCoarsenedData(variable: string): {coarseData: Uint8Array, coarseShape: number[]} {
-  for (const store of variableStores) {
-    if (store.variable === variable) {
-      const shape = store.variableInfo.coarseCellsXYZ;
-      if (store.bufferStore instanceof CoarseDataMemoryStore) {
-        return {coarseData: (store.bufferStore as CoarseDataMemoryStore).getCurrentCoarseBuffer(), coarseShape: shape};
+      if (coarseningLevel === -1) {
+        coarseningLevel = store.getMaxLevel();
+        if (coarseningLevel === 0) {
+          return { data: null, shape: [] };
+        }
       }
-      else {
-        return {coarseData: null, coarseShape: shape};
-      }
+      const shape = store.getVariableInfo(coarseningLevel).numCellsXYZ;
+      const memoryStore = store.getBufferStore(coarseningLevel);
+      const remoteStore = store.getZarrStore(coarseningLevel);
+      return { data: await memoryStore.setCurrentSliceIndex(timeIndex, remoteStore), shape: shape };
     }
   }
   throw new Error(`Variable ${variable} not found`);
 }
 
 
-export function getVariableMetaData(variable: string): VariableInfo {
+
+export function getVariableMetaData(variable: string, coarseningLevel: number = 0): VariableInfo {
   for (const store of variableStores) {
     if (store.variable === variable) {
-      return store.variableInfo;
+      if (coarseningLevel === -1) {
+        coarseningLevel = store.getMaxLevel();
+        if (coarseningLevel === 0) {
+          return null;
+        }
+      }
+      return store.getVariableInfo(coarseningLevel);
     }
   }
   throw new Error(`Variable ${variable} not found`);
 }
+
 
 export function getNumTimes(): number {
   if (variableStores.length > 0) {
-    return variableStores[0].variableInfo.numTimes;
+    return variableStores[0].getVariableInfo(0).numTimes;
   }
   throw new Error('No variables loaded');
 }
 
-export class VariableStore {
-  variable: string;
-  variableInfo: VariableInfo;
-  zarrStore: RemoteStore;
-  bufferStore: BufferMemoryStore;
 
-  constructor(variable: string) {
-    this.variable = variable;
-    this.zarrStore = null;
-    this.bufferStore = null;
-  }
+export function clearVariableStores(): void {
+  variableStores.length = 0;
 }

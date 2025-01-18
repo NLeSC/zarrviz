@@ -45,6 +45,7 @@
 					<label class="label cursor-pointer justify-start gap-3 w-1/2">
 						<input
 							type="checkbox"
+							disabled={!$cloudLayerSettings.active}
 							checked={$cloudLayerSettings.enabled}
 							class="checkbox checkbox-sm"
 							on:change={(e) => ($cloudLayerSettings.enabled = e.target.checked)}
@@ -67,6 +68,7 @@
 					<label class="label cursor-pointer justify-start gap-3">
 						<input
 							type="checkbox"
+							disabled={!$rainLayerSettings.active}
 							checked={$rainLayerSettings.enabled}
 							class="checkbox checkbox-sm"
 							on:change={(e) => ($rainLayerSettings.enabled = e.target.checked)}
@@ -88,6 +90,7 @@
 					<label class="label cursor-pointer justify-start gap-3 w-1/2">
 						<input
 							type="checkbox"
+							disabled={!$temperatureLayerSettings.active}
 							checked={$temperatureLayerSettings.enabled}
 							class="checkbox checkbox-sm"
 							on:change={(e) => ($temperatureLayerSettings.enabled = e.target.checked)}

@@ -2,10 +2,11 @@ import * as THREE from 'three';
 import { get } from 'svelte/store';
 
 import vertexShaderVolume from '$lib/shaders/volume.vert';
-import fragmentShaderVolume from '$lib/shaders/volume.frag'; // ql
-import fragmentShaderVolumeTransfer from '$lib/shaders/volume_transfer.frag'; // qr
+import fragmentShaderVolumeClouds from '$lib/shaders/volumeClouds.frag'; // ql
+import fragmentShaderVolumeTransfer from '$lib/shaders/volumeTransfer.frag'; // qr
+import fragmentShaderVolumeransferSlow from '$lib/shaders/volumeTransferSlow.frag'; // qr
 import vertexShaderSurface from '$lib/shaders/surface.vert';
-import fragmentShaderSurfaceHeatMap from '$lib/shaders/surface_heatmap.frag';  // heat map
+import fragmentShaderSurfaceHeatMap from '$lib/shaders/surfaceHeatmap.frag';  // heat map
 
 import { makeRainTransferTex } from '$lib/utils/makeRainTransferTex';
 
@@ -36,11 +37,12 @@ const ambientLightColorV = new THREE.Vector3(
 export function initMaterial({ variable }): THREE.Material {
   let shaderMaterial: THREE.ShaderMaterial = null;
   const variableInfo = getVariableMetaData(variable);
+  const hasCoarseData = getVariableMetaData(variable, -1) !== null;
   switch (variable) {
     case 'ql':
       shaderMaterial = new THREE.ShaderMaterial({
         vertexShader: vertexShaderVolume,
-        fragmentShader: fragmentShaderVolume,
+        fragmentShader: fragmentShaderVolumeClouds,
         side: THREE.DoubleSide,
         clipping: true,
         transparent: true,
@@ -73,7 +75,7 @@ export function initMaterial({ variable }): THREE.Material {
     case 'qr':
       shaderMaterial = new THREE.ShaderMaterial({
         vertexShader: vertexShaderVolume,
-        fragmentShader: fragmentShaderVolumeTransfer,
+        fragmentShader: hasCoarseData ? fragmentShaderVolumeTransfer : fragmentShaderVolumeransferSlow,
         side: THREE.DoubleSide,
         transparent: true,
         clipping: true,

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { boxes } from './boxSetup';
-import { getVariableMetaData, getVariableData, getVariableCoarsenedData } from '../stores/allSlices.store';
+import { getVariableMetaData, getVariableData } from '../stores/allSlices.store';
 
 // Be caruful with these values, they can clip the data in the 3D scene
 const dtScale: number = 0.8;
@@ -30,11 +30,21 @@ export function refreshMaterial({variable, index, maxIndex}) {
   uniforms.displacement.value = new THREE.Vector3(deltaX, deltaY, 0.0);
 }
 
+export async function updateMaterialFast({ variable, timeIndex }) {
+//  const localBox = boxes[variable];
+//  if (!localBox) { return }
+//  const uniforms = localBox.material.uniforms;
+//  await getVariableData(variable, timeIndex, 0);
+//  uniforms.volumeTex.value.needsUpdate = true;
+  await updateMaterial({ variable, timeIndex });
+}
+
+
 export async function updateMaterial({ variable, timeIndex }) {
   const localBox = boxes[variable];
   if (!localBox) { return }
   const uniforms = localBox.material.uniforms;
-  const {data, shape}  = await getVariableData(variable, timeIndex);
+  const {data, shape}  = await getVariableData(variable, timeIndex, 0);
   let volumeTexture = null;
   let coarseVolumeTexture = null;
 
@@ -44,7 +54,7 @@ export async function updateMaterial({ variable, timeIndex }) {
   if (uniforms?.volumeTex.value !== null) {
     uniforms.volumeTex.value.dispose();
   }
-  const {coarseData, coarseShape} = getVariableCoarsenedData(variable);
+  const coarse = await getVariableData(variable, timeIndex, -1);
   switch (variable) {
     case 'ql':
       volumeTexture = new THREE.Data3DTexture(data, shape[0], shape[1], shape[2]);
@@ -73,15 +83,17 @@ export async function updateMaterial({ variable, timeIndex }) {
       uniforms.dtScale.value = dtScale;
       uniforms.alphaNorm.value = 2.0;
       uniforms.finalGamma.value = finalGamma;
-      coarseVolumeTexture = new THREE.Data3DTexture(coarseData, coarseShape[0], coarseShape[1], coarseShape[2]);
-      coarseVolumeTexture.format = THREE.RedFormat;
-      coarseVolumeTexture.minFilter = THREE.NearestFilter;
-      coarseVolumeTexture.magFilter = THREE.NearestFilter;
-      coarseVolumeTexture.type = THREE.UnsignedByteType;
-      coarseVolumeTexture.generateMipmaps = false; // Saves memory.
-      coarseVolumeTexture.needsUpdate = true;
-      uniforms.coarseVolumeTex.value = coarseVolumeTexture;
       uniforms.displacement.value = new THREE.Vector3(0.0, 0.0, 0.0);
+      if (coarse.data) {
+        coarseVolumeTexture = new THREE.Data3DTexture(coarse.data, coarse.shape[0], coarse.shape[1], coarse.shape[2]);
+        coarseVolumeTexture.format = THREE.RedFormat;
+        coarseVolumeTexture.minFilter = THREE.NearestFilter;
+        coarseVolumeTexture.magFilter = THREE.NearestFilter;
+        coarseVolumeTexture.type = THREE.UnsignedByteType;
+        coarseVolumeTexture.generateMipmaps = false; // Saves memory.
+        coarseVolumeTexture.needsUpdate = true;
+        uniforms.coarseVolumeTex.value = coarseVolumeTexture;
+        }
       break;
 
     case 'thetavmix':

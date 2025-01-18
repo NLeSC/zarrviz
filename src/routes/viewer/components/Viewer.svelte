@@ -10,7 +10,6 @@
 	import { dataSetup } from '../fetchAndPrepareData/dataSetup';
 	import { createGridHelper } from '../sceneSetup/createGridHelper';
 	import { boxes, data_layers } from '../sceneSetup/boxSetup';
-	// import examplePoints from '../fetchAndPrepareData/examplePoints';
 
 	import { currentTimeIndex } from '../stores/viewer.store';
 	import { writable } from 'svelte/store';
@@ -52,12 +51,6 @@
 	onMount(async () => {
 		const timing = performance.now();
 
-		// Initialize data
-//		for (const variable of data_layers) {
-			// Initialize the variable store
-//			addVariableStore(variable, 8);
-//		}
-
 		// Create the base 3D scene (camera, renderer, etc.)
 		await create3DScene({ canvas });
 
@@ -72,10 +65,10 @@
 		// scene.add(axesHelper);
 		//
 
-		// Download first slice of the data and
-		// calculate the voxel and volume size.
-		// It runs only once.
-		await dataSetup(data_layers, scene);
+		const presentVariables = await dataSetup(data_layers, scene);
+		$cloudLayerSettings.active = presentVariables.includes('ql');
+		$rainLayerSettings.active = presentVariables.includes('qr');
+		$temperatureLayerSettings.active = presentVariables.includes('thetavmix');
 		numTimes.set(getNumTimes());
 
 		// Add the example points to the scene

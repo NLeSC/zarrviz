@@ -35,6 +35,7 @@ export class RemoteZarrStore implements RemoteStore {
       const last = await coordinateArray.get([n - 1]);
       result[dims[i]] = [shape.length > 3 ? shape[i]: shape[i-1], first, last];
     }
+    console.log(result, 'for', variable);
     return result;
   }
 
@@ -49,6 +50,8 @@ export class RemoteZarrStore implements RemoteStore {
 
   async copyTimeRange(variable: string, dimensions: number, currentTimeIndex: number, endTimeIndex: number, destination: TypedArray): Promise<void> {
     const valArray = await this.getValArray(variable);
+    console.log(this.getURL());
+    console.log('copyTimeRange', variable, dimensions, currentTimeIndex, endTimeIndex, destination.length);
     const slicing = slice(currentTimeIndex, endTimeIndex);
     let { data, } = dimensions === 4
       ? await valArray.getRaw([slicing, null, null, null])

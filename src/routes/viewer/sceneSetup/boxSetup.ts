@@ -29,7 +29,6 @@ export const data_layers = [
   'thetavmix', // temperature
 ];
 
-
 /*
  * A box in which the 3D volume texture will be rendered.
  * The box will be centered at the origin, with X in [-0.5, 0.5] so the width is 1, and
