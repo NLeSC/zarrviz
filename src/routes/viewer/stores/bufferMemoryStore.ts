@@ -29,12 +29,16 @@ export class BufferMemoryStore {
     this.nextBufferPromise = null;
   }
 
-  async setCurrentSliceIndex(index: number, remoteStore: RemoteStore): Promise<ArrayBufferView> {
+  allocateBuffer(numSlices: number = this.numSlices): Uint8Array {
+    return new Uint8Array((this.bufferSize / this.bufferSlices) * numSlices);
+  }
+
+  async setCurrentSliceIndex(index: number, remoteStore: RemoteStore): Promise<Uint8Array> {
     if (this.currentBuffer === null) {
-      this.currentBuffer = new Uint8Array(this.bufferSize);
+      this.currentBuffer = this.allocateBuffer();
     }
     if (this.nextBuffer === null) {
-      this.nextBuffer = new Uint8Array(this.bufferSize);
+      this.nextBuffer = this.allocateBuffer();
     }
     this.currentSliceIndex = index;
     const sliceSize = this.bufferSize / this.bufferSlices;
