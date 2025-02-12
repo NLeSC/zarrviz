@@ -2,54 +2,51 @@
 	import { createEventDispatcher, onDestroy, onMount } from 'svelte';
 	import { get } from 'svelte/store';
 	import { getNumTimes } from '../stores/allSlices.store';
-	import { data_layers } from '../sceneSetup/boxSetup';
-	import { updateMaterialFast, refreshMaterial } from '../sceneSetup/updateMaterial';
-	import { currentTimeIndex, currentStepIndex, loading, loadTime } from '../stores/viewer.store';
+	import { updateLayers, displaceLayers } from '../sceneSetup/boxSetup';
+	import { currentTimeIndex, currentStepIndex, loading, loadTime, subStepsPerFrame } from '../stores/viewer.store';
+	import { renderScene } from '../sceneSetup/create3DScene';
 
 	export let playAnimation = false;
 	export let length = 10;
 	export let playSpeedInMiliseconds = 1000;
-	export let subStepsPerFrame = 20;
 
 	let interval;
 
 	const dispatch = createEventDispatcher();
 
-	function play() {
+	async function play() {
 		playAnimation = !playAnimation;
-		if (playAnimation) {
-			interval = setInterval(() => {
-				const nextStep = (get(currentStepIndex) + 1) % subStepsPerFrame;
-				currentStepIndex.set(nextStep);
-				if(nextStep == 0) {
-					const nextTimeIndex = (get(currentTimeIndex) + 1) % getNumTimes();
-					currentTimeIndex.set(nextTimeIndex);	
-				}
-			}, playSpeedInMiliseconds/subStepsPerFrame);
-		} else {
-			clearInterval(interval);
+		while(playAnimation){
+			const nextStep = (get(currentStepIndex) + 1) % subStepsPerFrame;
+			currentStepIndex.set(nextStep);
+			let stepIncrementPromise = displaceLayers(nextStep, subStepsPerFrame).then(() => renderScene());
+			let promises = [stepIncrementPromise];
+			if(nextStep == 0) {
+				const nextTimeIndex = (get(currentTimeIndex) + 1) % getNumTimes();
+				currentTimeIndex.set(nextTimeIndex);
+				let timeUpdatePromise = updateLayers(nextTimeIndex).then(() => renderScene());
+				promises.push(timeUpdatePromise);
+			}
+			const delayPromise = new Promise<void>(res => setTimeout(res, playSpeedInMiliseconds/subStepsPerFrame));
+			promises.push(delayPromise);
+			await Promise.all(promises);
 		}
 	}
 
 	onMount(() => {
 		// Update the material when the currentTimeIndex changes
 		currentTimeIndex.subscribe(async (index: number) => {
+			if(playAnimation) return;
 			loading.set(true);
 			const startTime = performance.now();
-			for (const variable of data_layers) {
-				if (typeof get(currentTimeIndex) !== 'undefined') {
-					await updateMaterialFast({ variable: variable, timeIndex: get(currentTimeIndex) });
-				}
-			}
+			await updateLayers(index).then(() => renderScene());
 			const endTime = performance.now();
 			loading.set(false);
 			loadTime.set(endTime - startTime);
 		});
-		currentStepIndex.subscribe((index: number) => {
-			if(index != 0){
-				for (const variable of data_layers) {
-					refreshMaterial({variable, index, maxIndex: subStepsPerFrame});
-				}
+		currentStepIndex.subscribe(async (index: number) => {
+			if(index != 0 && !playAnimation) {
+				await displaceLayers(index, subStepsPerFrame).then(() => renderScene());
 			}
 		})
 	});
@@ -61,7 +58,7 @@
 
 <div class="flex gap-4 mt-10 items-center px-5">
 	<!--  Play icon -->
-	<button class="btn" class:btn-primary={playAnimation} on:click={() => play()}>
+	<button class="btn" class:btn-primary={playAnimation} on:click={async () => await play()}>
 		{#if !playAnimation}
 			<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24">
 				<path
@@ -83,8 +80,8 @@
 		<input
 			type="range"
 			class="range-slider transparent h-[4px] w-full cursor-pointer appearance-none border-transparent bg-neutral-200 dark:bg-neutral-600"
-			min="1"
-			max={length}
+			min="0"
+			max={ length - 1 }
 			step="1"
 			value={$currentTimeIndex}
 			on:input={(event) => {
@@ -106,10 +103,10 @@
 			{#each Array.from({ length }, (_, index) => index ) as step}
 				<div class="flex flex-col">
 					{#if length < 21}
-						<div>{step + 1 || 0}</div>
+						<div>{step || 0}</div>
 					{:else}
-						{#if (step + 1) % 10 == 0}
-							<div>{step + 1 || 0}</div>
+						{#if step % 10 == 0}
+							<div>{step || 0}</div>
 						{/if}
 					{/if}
 				</div>

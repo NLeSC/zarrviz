@@ -157,6 +157,14 @@ export async function addVariableStore(variable: string, bufferSlices: number, c
   }
 }
 
+export function getVariableStore(variable: string): VariableStore {
+  for (const store of variableStores) {
+    if (store.variable === variable) {
+      return store;
+    }
+  }
+  throw new Error(`Variable ${variable} not found`);
+}
 
 export async function getVariableData(variable: string, timeIndex: number, coarseningLevel: number = 0): Promise<{ data: ArrayBufferView<ArrayBufferLike>, shape: number[] }> {
   for (const store of variableStores) {

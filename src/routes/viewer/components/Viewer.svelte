@@ -4,15 +4,16 @@
 	import DebugButtons from './DebugButtons.svelte';
 
 	import { clearVariableStores, getNumTimes } from '../stores/allSlices.store';
-	import { cloudLayerSettings, rainLayerSettings, temperatureLayerSettings, showGrid, numTimes } from '../stores/viewer.store';
-	import { create3DScene, scene } from '../sceneSetup/create3DScene';
+	import { cloudLayerSettings, rainLayerSettings, temperatureLayerSettings, showGrid, 
+		numTimes, currentTimeIndex, currentStepIndex, subStepsPerFrame, wind } from '../stores/viewer.store';
+	import { create3DScene, scene, renderer, camera, renderScene } from '../sceneSetup/create3DScene';
 
 	import { dataSetup } from '../fetchAndPrepareData/dataSetup';
 	import { createGridHelper } from '../sceneSetup/createGridHelper';
-	import { boxes, data_layers } from '../sceneSetup/boxSetup';
 
-	import { currentTimeIndex } from '../stores/viewer.store';
-	import { writable } from 'svelte/store';
+	import { get, writable } from 'svelte/store';
+	import { layers } from '../sceneSetup/boxSetup';
+	import type { RemoteDataLayer } from '../sceneSetup/remoteDataLayer';
 
 	let canvas: HTMLElement;
 
@@ -28,17 +29,29 @@
 	$: {
 		if (scene) {
 			// Change transparency of the materials
-			boxes.ql && (boxes.ql.material.uniforms.uTransparency.value = $cloudLayerSettings.opacity / 100);
-			boxes.qr && (boxes.qr.material.uniforms.uTransparency.value = $rainLayerSettings.opacity / 100);
-			boxes.thetavmix &&
-				(boxes.thetavmix.material.uniforms.uTransparency.value = $temperatureLayerSettings.opacity / 100);
+			layers.ql && (layers.ql.updateUniforms({uTransparency: $cloudLayerSettings.opacity / 100}));
+			layers.qr && (layers.qr.updateUniforms({uTransparency: $rainLayerSettings.opacity / 100}));
+			layers.thetavmix &&
+				(layers.thetavmix.configureUniforms({uTransparency: $temperatureLayerSettings.opacity / 100}));
 
 			// Enable and disable the layers
-			$rainLayerSettings.enabled && !!boxes.qr ? scene.add(boxes.qr) : scene.remove(boxes.qr);
-			$cloudLayerSettings.enabled && !!boxes.ql ? scene.add(boxes.ql) : scene.remove(boxes.ql);
-			$temperatureLayerSettings.enabled && !!boxes.thetavmix
-				? scene.add(boxes.thetavmix)
-				: scene.remove(boxes.thetavmix);
+			updateLayerVisibility(layers.qr, $rainLayerSettings.enabled);
+			updateLayerVisibility(layers.ql, $cloudLayerSettings.enabled);
+			updateLayerVisibility(layers.thetavmix, $temperatureLayerSettings.enabled);
+
+			// Render the scene
+			renderScene();
+		}
+	}
+
+	function updateLayerVisibility(layer: RemoteDataLayer, enabled: boolean) {
+		if (layer === undefined) return;
+		if (layer && enabled){
+			layer.update(get(currentTimeIndex));
+			layer.displace(get(currentStepIndex), subStepsPerFrame, wind);
+			scene.add(layer.getRenderObject());
+		} else {
+			scene.remove(layer.getRenderObject());
 		}
 	}
 
@@ -65,7 +78,7 @@
 		// scene.add(axesHelper);
 		//
 
-		const presentVariables = await dataSetup(data_layers, scene);
+		const presentVariables = await dataSetup(Object.keys(layers), scene);
 		$cloudLayerSettings.active = presentVariables.includes('ql');
 		$rainLayerSettings.active = presentVariables.includes('qr');
 		$temperatureLayerSettings.active = presentVariables.includes('thetavmix');
@@ -75,6 +88,7 @@
 		// scene.add(examplePoints());
 
 		downloadedTime.set(Math.round(performance.now() - timing));
+		renderer.render(scene, camera);
 		console.log('⏰ data downloaded and displayed in:', Math.round(performance.now() - timing), 'ms');
 	});
 

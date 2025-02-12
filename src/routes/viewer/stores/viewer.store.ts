@@ -18,3 +18,6 @@ export const numTimes = writable(0);
 export const loading = writable(false);
 export const loadTime = writable(0);
 export const meshSize = writable([]);
+
+export const subStepsPerFrame = 20;
+export const wind = [-9.5, -3.7];

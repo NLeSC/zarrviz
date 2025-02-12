@@ -3,7 +3,7 @@ import { addRemoteStore, addVariableStore } from "../stores/allSlices.store";
 import { RemoteZarrStore } from "../stores/remoteZarrStore";
 import { loading, loadTime } from "../stores/viewer.store";
 
-const bufferSlices = {'ql': 6, 'qr': 4, 'thetavmix': 10};
+const bufferSlices = {'ql': 4, 'qr': 4, 'thetavmix': 8};
 const coarseningLevels = {'qr': 2};
 
 // Download first slice of the data and

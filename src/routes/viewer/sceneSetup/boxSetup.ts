@@ -1,17 +1,19 @@
 import * as THREE from 'three';
 import { get } from "svelte/store";
-import { getVariableMetaData } from "../stores/allSlices.store";
-import { cloudLayerSettings, meshSize, rainLayerSettings, scaleFactor, temperatureLayerSettings } from '../stores/viewer.store';
-import { initMaterial } from './initMaterial';
-import { updateMaterial } from './updateMaterial';
+import { getVariableMetaData, getVariableStore } from "../stores/allSlices.store";
+import { cloudLayerSettings, meshSize, rainLayerSettings, scaleFactor, temperatureLayerSettings, wind } from '../stores/viewer.store';
+import { CloudLayer } from './cloudLayer';
+import { TransferFunctionVolumeLayer } from './transferFunctionVolumeLayer';
+import { HeatMapLayer } from './heatMapLayer';
+import type { RemoteDataLayer } from './remoteDataLayer';
 
 //
-// Rendering containers and materials for the volume rendering layers
+// Rendering containers and materials for the layers
 //
-export const boxes: {
-  ql?: THREE.Mesh;
-  qr?: THREE.Mesh;
-  thetavmix?: THREE.Points | THREE.Mesh;
+export const layers: {
+  ql?: CloudLayer;
+  qr?: TransferFunctionVolumeLayer;
+  thetavmix?: HeatMapLayer;
 } = {
   ql: undefined,
   qr: undefined,
@@ -42,35 +44,70 @@ export async function createVolumetricRenderingBox({ scene, variable }) {
   const boxZ = variableInfo.numCellsXYZ[2] < 2 ? variableInfo.numCellsXYZ[1] / variableInfo.numCellsXYZ[0] : 0;
   const boxGeometry = new THREE.BoxGeometry(1, 1, boxZ);
   const planeGeometry = new THREE.PlaneGeometry(1, 1);
+  const variableStore = getVariableStore(variable);
+  let layer = null;
   switch (variable) {
     // Clouds Layer
     case 'ql': {
-      boxes.ql = new THREE.Mesh(boxGeometry);
-      boxes.ql.position.z = 0.04 + 2000 / get(scaleFactor); // was 0.25 // 570 meters above the map TODO: calculate this value from the data
-      boxes.ql.renderOrder = 0;
-      boxes.ql.material = initMaterial({ variable });
-      get(cloudLayerSettings).enabled && scene.add(boxes.ql);
+      layers.ql = new CloudLayer(variableStore, boxGeometry);
+      const cloudMesh = layers.ql.initialize();
+      cloudMesh.position.z = 0.04 + 2000 / get(scaleFactor); // was 0.25 // 570 meters above the map TODO: calculate this value from the data
+      get(cloudLayerSettings).enabled && scene.add(cloudMesh);
+      layer = layers.ql as RemoteDataLayer;
+      await layer.update(0);
       break;
     }
 
     // Rain Layer
     case 'qr': {
-      boxes.qr = new THREE.Mesh(boxGeometry);
-      boxes.qr.position.z = 2000 / get(scaleFactor); // it was 0.25 + 570 meters above the map TODO: calculate this value from the data
-      boxes.qr.renderOrder = 0;
-      boxes.qr.material = initMaterial({ variable });
-      get(rainLayerSettings).enabled && scene.add(boxes.qr);
+      layers.qr = new TransferFunctionVolumeLayer(variableStore, boxGeometry, variableStore);
+      const rainMesh = layers.qr.initialize();
+      rainMesh.position.z = 2000 / get(scaleFactor); // it was 0.25 + 570 meters above the map TODO: calculate this value from the data
+      get(rainLayerSettings).enabled && scene.add(rainMesh);
+      layer = layers.qr as RemoteDataLayer;
+      await layer.update(0);
       break;
     }
     // Temperature Layer
     case 'thetavmix': {
-      boxes.thetavmix = new THREE.Mesh(planeGeometry);
-      boxes.thetavmix.material = initMaterial({ variable });
-      boxes.thetavmix.position.z = 0.03 // it was -
-      get(temperatureLayerSettings).enabled && scene.add(boxes.thetavmix);
+      layers.thetavmix = new HeatMapLayer(variableStore, planeGeometry);
+      const temperatureMesh = layers.thetavmix.initialize();
+      temperatureMesh.position.z = 0.03 // it was -
+      get(temperatureLayerSettings).enabled && scene.add(temperatureMesh);
+      layer = layers.thetavmix as RemoteDataLayer;
+      await layer.update(0);
       break;
-
     }
   }
-  await updateMaterial({ variable, timeIndex: 0 });
+}
+
+export function isVisible(layer: RemoteDataLayer) {
+  if (layer === layers.ql){
+    return get(cloudLayerSettings).enabled;
+  }
+  else if (layer === layers.qr){
+    return get(rainLayerSettings).enabled;
+  }
+  else if (layer === layers.thetavmix){
+    return get(temperatureLayerSettings).enabled;
+  }
+  return false;
+}
+
+export async function updateLayers(timestep: number) {
+  for (const layer of Object.values(layers)) {
+    if (isVisible(layer)){
+      console.log('updateLayers', layer.getVariableMetaData(0).variable, timestep);
+      await layer.update(timestep);
+    }
+  }
+}
+
+export async function displaceLayers(subStep: number, subStepsPerStep: number) {
+  // TODO: get wind from the data
+  for (const layer of Object.values(layers)) {
+    if (isVisible(layer)){
+      layer.displace(subStep, subStepsPerStep, wind);
+    }
+  }
 }

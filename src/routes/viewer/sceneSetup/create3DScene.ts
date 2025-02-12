@@ -15,7 +15,7 @@ export const cameraNear = 0.01;
 export const cameraFar = 1000.0;
 
 // Render the scene. This function can be reused in other effects or callbacks.
-export function renderScene(scene, camera): void {
+export function renderScene(): void {
   renderer.render(scene, camera);
   console.log('🔥 rendered');
 }
@@ -68,14 +68,16 @@ export function create3DScene({ canvas }): void {
   //
   const clock = new THREE.Clock();
   function animate() {
-    requestAnimationFrame(animate);
     const delta = clock.getDelta();
-    cameraControls.update(delta);
-    renderer.render(scene, camera);
+    if(cameraControls.update(delta)) {
+      renderer.render(scene, camera);
+    }
+    requestAnimationFrame(animate);
   }
   window.addEventListener('resize', () => resize(canvas, camera)); // Fix: Pass the correct arguments to the resize function
   resize(canvas, camera);
   animate();
+  renderer.render(scene, camera);
 
   // return Promise.resolve(scene); // Fix: Wrap the scene variable in a Promise.resolve() function
   // console.log('🔋 3d scene created');

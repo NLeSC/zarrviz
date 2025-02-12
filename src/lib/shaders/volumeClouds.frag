@@ -4,7 +4,6 @@ in vec3 lightDir;
 
 uniform lowp sampler3D volumeTex;
 uniform float dtScale;
-uniform float inScatFactor;
 uniform float finalGamma;
 uniform float ambientFactor;
 uniform float solarFactor;
@@ -16,14 +15,8 @@ uniform ivec3 voxelSize;
 uniform float dataScale;
 uniform float gHG;
 uniform float dataEpsilon;
-uniform vec3 bottomColor;
 uniform float bottomHeight;
 uniform vec3 displacement;
-
-// Optional parameters, for when a solid surface is being drawn along with
-// the volume data.
-uniform float near;
-uniform float far;
 
 uniform float uTransparency;
 
@@ -41,12 +34,6 @@ vec2 intersectBox(vec3 orig, vec3 dir) {
   float t0 = max(tmin.x, max(tmin.y, tmin.z));
   float t1 = min(tmax.x, min(tmax.y, tmax.z));
   return vec2(t0, t1);
-}
-
-float cameraDistanceFromDepth(float depth) {
-  float zN = 2. * depth - 1.;
-  float z = 2. * near * far / (far + near - zN * (far - near));
-  return near + z;
 }
 
 float phaseHG(float cosTheta, float g) {
@@ -154,7 +141,7 @@ void main(void) {
   vec3 distvec = vec3(nvx * vsx, nvy * vsy, nvz * vsz);
   float dx = length(distvec * dPSized);
   float dz = length(distvec * dPShadow);
-  float transmittance_threshold = 0.01;
+  float transmittance_threshold = 0.05;
   vec3 dg = vec3(1) / vec3(volumeTexSize);
   for(float t = tBox.x; t < tBox.y; t += dt) {
 
@@ -188,7 +175,6 @@ void main(void) {
     //float outScattering=1.0;
     //float outScattering=((1.0-beer)/ext);
 
-    //transmittance*=(1.0+beer-beer*beer);
     transmittance *= beer;
 
     // Full illumination
