@@ -8,7 +8,6 @@ import * as THREE from "three";
 export class TransferFunctionVolumeLayer extends RemoteDataLayer {
 
     protected readonly coarseVariableStore: VariableStore;
-    protected coarseDataSlice: Uint8Array;
 
     constructor(variableStore: VariableStore, geometry: THREE.BufferGeometry, coarseVariableStore: VariableStore = null) {
         const fragmentShader = coarseVariableStore ? fragmentShaderVolumeTransfer : fragmentShaderVolumeTransferSlow;
@@ -16,47 +15,48 @@ export class TransferFunctionVolumeLayer extends RemoteDataLayer {
         this.coarseVariableStore = coarseVariableStore;
     }
 
-    initialize(): THREE.Mesh {
-        if (this.coarseVariableStore) {
-            this.coarseDataSlice = this.coarseVariableStore.getBufferStore(0).allocateBuffer(1);
-        }
-        return super.initialize();
+    async update(timestep: number) {
+        super.update(timestep);
+        this.getCoarseDataTexture().dispose();
+        const coarseRemoteStore = this.coarseVariableStore.getZarrStore(2);
+        const coarseDataSlice = await this.coarseVariableStore.getBufferStore(2).setCurrentSliceIndex(timestep, coarseRemoteStore);
+        (this.renderObject.material as THREE.ShaderMaterial).uniforms.coarseVolumeTex.value = this.createCoarseDataTexture(coarseDataSlice);
+        this.getCoarseDataTexture().needsUpdate = true;
     }
 
-    async update(timestep: number, coarseningLevel: number = 0) {
-        super.update(timestep, coarseningLevel);
+    configureUniforms(uniforms: { [uniform: string]: THREE.IUniform<any>; }): void {
+        super.configureUniforms(uniforms);
         if (this.coarseVariableStore) {
-            const coarseRemoteStore = this.coarseVariableStore.getZarrStore(0);
-            this.coarseDataSlice.set(await this.coarseVariableStore.getBufferStore(coarseningLevel).setCurrentSliceIndex(timestep, coarseRemoteStore));
-            (this.renderObject.material as THREE.ShaderMaterial).uniforms.coarseVolumeTex.value.needsUpdate = true;
+            uniforms.coarseVolumeTex = new THREE.Uniform(this.createCoarseDataTexture(this.coarseVariableStore.getBufferStore(2).allocateBuffer(1)));
         }
-    }
-
-    configureUniforms(uniforms: { [uniform: string]: THREE.IUniform<any>; }, coarseningLevel: number = 0): void {
-        super.configureUniforms(uniforms, coarseningLevel);
         uniforms.dataScale = new THREE.Uniform(0.0035);
         uniforms.dtScale = new THREE.Uniform(0.8);
         uniforms.ambientFactor = new THREE.Uniform(0.0);
         uniforms.alphaNorm = new THREE.Uniform(2.0);
         uniforms.finalGamma = new THREE.Uniform(6.0);
         uniforms.transferTex = new THREE.Uniform(this.createTransferTexture());
-        if (this.coarseVariableStore) {
-            const shape = this.coarseVariableStore.getVariableInfo(0).getOrignalDataShape();
-            const coarseVolumeTexture = new THREE.Data3DTexture(this.coarseDataSlice, shape[1], shape[2], shape[3]);
-            coarseVolumeTexture.format = THREE.RedFormat;
-            coarseVolumeTexture.minFilter = THREE.NearestFilter;
-            coarseVolumeTexture.magFilter = THREE.NearestFilter;
-            coarseVolumeTexture.type = THREE.UnsignedByteType;
-            coarseVolumeTexture.generateMipmaps = false; // Saves memory.
-            coarseVolumeTexture.needsUpdate = true;
-            uniforms.coarseVolumeTex = new THREE.Uniform(coarseVolumeTexture);
-        }
     }
 
-    createDataTexture(coarseningLevel?: number): THREE.Texture {
-        const texture = super.createDataTexture(coarseningLevel);
+    getCoarseDataTexture(): THREE.Texture {
+        return (this.renderObject.material as THREE.ShaderMaterial).uniforms.coarseVolumeTex.value;
+    }
+
+    createDataTexture(dataSlice: Uint8Array): THREE.Texture {
+        const texture = super.createDataTexture(dataSlice);
         texture.minFilter = THREE.NearestFilter;
         texture.magFilter = THREE.NearestFilter;
+        return texture;
+    }
+
+    createCoarseDataTexture(dataSlice: Uint8Array): THREE.Texture {
+        const shape = this.coarseVariableStore.getVariableInfo(2).getOrignalDataShape();
+        const texture = new THREE.Data3DTexture(dataSlice, shape[1], shape[2], shape[3]);
+        texture.format = THREE.RedFormat;
+        texture.minFilter = THREE.NearestFilter;
+        texture.magFilter = THREE.NearestFilter;
+        texture.type = THREE.UnsignedByteType;
+        texture.generateMipmaps = false; // Saves memory.
+        texture.needsUpdate = true;
         return texture;
     }
 

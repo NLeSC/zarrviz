@@ -7,7 +7,6 @@ export abstract class RemoteDataLayer {
     public readonly vertexShader: string;
     public readonly fragmentShader: string;
 
-    protected dataSlice: Uint8Array;
     protected renderObject: THREE.Mesh;
 
     constructor(variableStore: VariableStore, geometry: THREE.BufferGeometry, vertexShader: string, fragmentShader: string) {
@@ -32,11 +31,11 @@ export abstract class RemoteDataLayer {
         return this.renderObject;
     }
 
-    async update(timestep: number, coarseningLevel: number = 0) {
+    async update(timestep: number) {
         this.getDataTexture().dispose();
-        const remoteStore  = this.variableStore.getZarrStore(coarseningLevel);
-        this.dataSlice = (await this.variableStore.getBufferStore(coarseningLevel).setCurrentSliceIndex(timestep, remoteStore));
-        (this.renderObject.material as THREE.ShaderMaterial).uniforms.volumeTex.value = this.createDataTexture(coarseningLevel);
+        const remoteStore  = this.variableStore.getZarrStore();
+        const dataSlice = await this.variableStore.getBufferStore().setCurrentSliceIndex(timestep, remoteStore);
+        (this.renderObject.material as THREE.ShaderMaterial).uniforms.volumeTex.value = this.createDataTexture(dataSlice);
         this.getDataTexture().needsUpdate = true;        
     }
 
@@ -51,7 +50,7 @@ export abstract class RemoteDataLayer {
         //this.getDataTexture().needsUpdate = true;
     }
 
-    createMaterial(coarseningLevel: number): THREE.ShaderMaterial {
+    createMaterial(): THREE.ShaderMaterial {
         const shaderMaterial = new THREE.ShaderMaterial({
             vertexShader: this.vertexShader, 
             fragmentShader: this.fragmentShader,
@@ -60,14 +59,15 @@ export abstract class RemoteDataLayer {
             transparent: true,
             depthTest: false,
         });
-        this.configureUniforms(shaderMaterial.uniforms, coarseningLevel);
+        this.configureUniforms(shaderMaterial.uniforms);
         return shaderMaterial;
     }
 
-    configureUniforms(uniforms: { [uniform: string]: THREE.IUniform<any>; }, coarseningLevel: number = 0) {
-        uniforms.volumeTex = new THREE.Uniform(this.createDataTexture(coarseningLevel));
-        uniforms.boxSize = new THREE.Uniform(this.variableStore.getVariableInfo(coarseningLevel).getBoxSizes());
-        uniforms.voxelSize = new THREE.Uniform(this.variableStore.getVariableInfo(coarseningLevel).getVoxelSizes());
+    configureUniforms(uniforms: { [uniform: string]: THREE.IUniform<any>; }) {
+        const dataSlice = this.variableStore.getBufferStore().allocateBuffer(1);
+        uniforms.volumeTex = new THREE.Uniform(this.createDataTexture(dataSlice));
+        uniforms.boxSize = new THREE.Uniform(this.variableStore.getVariableInfo().getBoxSizes());
+        uniforms.voxelSize = new THREE.Uniform(this.variableStore.getVariableInfo().getVoxelSizes());
         uniforms.displacement = new THREE.Uniform(new THREE.Vector3(0.0, 0.0, 0.0));
         uniforms.uTransparency = new THREE.Uniform(0.0);
     }
@@ -83,8 +83,8 @@ export abstract class RemoteDataLayer {
         }
     }
 
-    createObject(geometry: THREE.BufferGeometry, coarseningLevel: number): THREE.Mesh {
-        return new THREE.Mesh(geometry, this.createMaterial(coarseningLevel));
+    createObject(geometry: THREE.BufferGeometry): THREE.Mesh {
+        return new THREE.Mesh(geometry, this.createMaterial());
     }
 
     getVariableMetaData(coarseningLevel: number = 0): VariableInfo {
@@ -97,14 +97,14 @@ export abstract class RemoteDataLayer {
         return this.variableStore.getVariableInfo(coarseningLevel);
     }
 
-    createDataTexture(coarseningLevel: number = 0): THREE.Texture {
-        const shape = this.variableStore.getVariableInfo(coarseningLevel).getOrignalDataShape();
+    createDataTexture(dataSlice: Uint8Array): THREE.Texture {
+        const shape = this.variableStore.getVariableInfo().getOrignalDataShape();
         let texture = null;
         if(shape.length === 3){
-            texture = new THREE.DataTexture(this.dataSlice, shape[1], shape[2]);
+            texture = new THREE.DataTexture(dataSlice, shape[1], shape[2]);
         }
         if(shape.length === 4){
-            texture = new THREE.Data3DTexture(this.dataSlice, shape[1], shape[2], shape[3]);
+            texture = new THREE.Data3DTexture(dataSlice, shape[1], shape[2], shape[3]);
         }
         texture.format = THREE.RedFormat;
         texture.type = THREE.UnsignedByteType;

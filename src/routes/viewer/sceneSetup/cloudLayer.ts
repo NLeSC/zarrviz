@@ -9,8 +9,8 @@ export class CloudLayer extends RemoteDataLayer {
         super(variableStore, geometry, vertexShaderVolume, fragmentShaderVolumeClouds);
     }
 
-    configureUniforms(uniforms: { [uniform: string]: THREE.IUniform<any>; }, coarseningLevel: number = 0): void {
-        super.configureUniforms(uniforms, coarseningLevel);
+    configureUniforms(uniforms: { [uniform: string]: THREE.IUniform<any>; }): void {
+        super.configureUniforms(uniforms);
         const sunLightDir = new THREE.Vector3(0.0, 0.5, 0.5);
         const sunLightColor = new THREE.Color(0.99, 0.83, 0.62);
         const sunLight = new THREE.DirectionalLight(sunLightColor.getHex(), 1.0);

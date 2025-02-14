@@ -103,7 +103,7 @@ export class VariableStore {
     }
   }
 
-  getVariableInfo(coarseningLevel: number): VariableInfo {
+  getVariableInfo(coarseningLevel: number = 0): VariableInfo {
     const index = this.coarseningLevels.indexOf(coarseningLevel);
     if (index >= 0) {
       return this.variableInfos[index];
@@ -111,7 +111,7 @@ export class VariableStore {
     throw new Error(`Coarsening level ${coarseningLevel} not found for variable ${this.variable}`);
   }
 
-  getZarrStore(coarseningLevel: number): RemoteStore {
+  getZarrStore(coarseningLevel: number = 0): RemoteStore {
     const index = this.coarseningLevels.indexOf(coarseningLevel);
     if (index >= 0) {
       return this.zarrStores[index];
@@ -119,7 +119,7 @@ export class VariableStore {
     throw new Error(`Coarsening level ${coarseningLevel} not found for variable ${this.variable}`);
   }
 
-  getBufferStore(coarseningLevel: number): BufferMemoryStore {
+  getBufferStore(coarseningLevel: number = 0): BufferMemoryStore {
     const index = this.coarseningLevels.indexOf(coarseningLevel);
     if (index >= 0) {
       return this.bufferStores[index];
