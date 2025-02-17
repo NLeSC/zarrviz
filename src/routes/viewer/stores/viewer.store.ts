@@ -1,5 +1,6 @@
 import { persisted } from 'svelte-persisted-store'
 import { writable } from 'svelte/store';
+import { MultiVariableStore } from './allSlices.store';
 
 export const showGrid = persisted('showGrid', true); // defatult 10. It can be more
 export const cloudLayerSettings = persisted('cloudLayer', { enabled: true, opacity: 100, active: true }); // 0 to 100
@@ -21,3 +22,5 @@ export const meshSize = writable([]);
 
 export const subStepsPerFrame = 20;
 export const wind = [-9.5, -3.7];
+
+export const multiVariableStore: MultiVariableStore = new MultiVariableStore();

@@ -5,8 +5,8 @@ import type { VariableStore } from '../stores/allSlices.store';
 import * as THREE from 'three';
 
 export class CloudLayer extends RemoteDataLayer {
-    constructor(variableStore: VariableStore, geometry: THREE.BufferGeometry) {
-        super(variableStore, geometry, vertexShaderVolume, fragmentShaderVolumeClouds);
+    constructor(variable: string, variableStore: VariableStore, geometry: THREE.BufferGeometry) {
+        super(variable, variableStore, geometry, vertexShaderVolume, fragmentShaderVolumeClouds);
     }
 
     configureUniforms(uniforms: { [uniform: string]: THREE.IUniform<any>; }): void {

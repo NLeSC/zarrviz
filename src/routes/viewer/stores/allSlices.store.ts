@@ -1,31 +1,19 @@
 import { BufferMemoryStore } from "./bufferMemoryStore";
 import type { RemoteStore } from "./remoteStore";
 
-export const remoteStores = {};
-export const variableStores: VariableStore[] = [];
 export const spatialDimensions = ['x', 'y', 'z'];
 
-export function addRemoteStore(store: RemoteStore, coarseningLevel: number): void {
-  remoteStores[coarseningLevel] = store;
-}
-
 export class VariableInfo {
-  variable: string;
-  numCellsXYZ: number[];
-  lowerBoundXYZ: number[];
-  upperBoundXYZ: number[];
-  numTimes: number;
-  timeRange: number[];
-  coarseCellsXYZ: number[];
+  numCellsXYZ: number[] = [];
+  lowerBoundXYZ: number[] = [];
+  upperBoundXYZ: number[] = [];
+  numTimes: number = 0;
+  timeRange: number[] = [];
 
-  constructor(variable: string, metaData: object, coarseningBlockSizes: number[] = null) {
-    this.variable = variable;
+  constructor(metaData: object) {
     this.numCellsXYZ = [1, 1, 0];
     this.lowerBoundXYZ = [0, 0, 0];
     this.upperBoundXYZ = [0, 0, 0];
-    this.numTimes = 0;
-    this.timeRange = [0, 0];
-    this.coarseCellsXYZ = [1, 1, 0];
     for (const key in metaData) {
       if (key.startsWith('t')) {
         this.numTimes = metaData[key][0];
@@ -36,9 +24,6 @@ export class VariableInfo {
           this.numCellsXYZ[i] = metaData[key][0];
           this.lowerBoundXYZ[i] = metaData[key][1];
           this.upperBoundXYZ[i] = metaData[key][2];
-          if (coarseningBlockSizes !== null) {
-            this.coarseCellsXYZ[i] = Math.ceil(this.numCellsXYZ[i] / coarseningBlockSizes[i + 1]);
-          }
         }
       }
     }
@@ -73,143 +58,103 @@ export class VariableInfo {
   }
 }
 
-export class VariableStore {
-  variable: string;
-  private coarseningLevels: number[];
-  private variableInfos: VariableInfo[];
-  private zarrStores: RemoteStore[];
-  private bufferStores: BufferMemoryStore[];
-
-  constructor(variable: string, variableInfo: VariableInfo, remoteStore: RemoteStore, memoryStore: BufferMemoryStore) {
-    this.variable = variable;
-    this.coarseningLevels = [0];
-    this.variableInfos = [variableInfo];
-    this.zarrStores = [remoteStore];
-    this.bufferStores = [memoryStore];
-  }
-
-  addCoarseningLevel(coarseningLevel: number, variableInfo: VariableInfo, remoteStore: RemoteStore, memoryStore: BufferMemoryStore): void {
-    const index = this.coarseningLevels.indexOf(coarseningLevel);
-    if (index >= 0) {
-      this.variableInfos[index] = variableInfo;
-      this.zarrStores[index] = remoteStore;
-      this.bufferStores[index] = memoryStore;
-    }
-    else {
-      this.coarseningLevels.push(coarseningLevel);
-      this.variableInfos.push(variableInfo);
-      this.zarrStores.push(remoteStore);
-      this.bufferStores.push(memoryStore);
-    }
-  }
-
-  getVariableInfo(coarseningLevel: number = 0): VariableInfo {
-    const index = this.coarseningLevels.indexOf(coarseningLevel);
-    if (index >= 0) {
-      return this.variableInfos[index];
-    }
-    throw new Error(`Coarsening level ${coarseningLevel} not found for variable ${this.variable}`);
-  }
-
-  getZarrStore(coarseningLevel: number = 0): RemoteStore {
-    const index = this.coarseningLevels.indexOf(coarseningLevel);
-    if (index >= 0) {
-      return this.zarrStores[index];
-    }
-    throw new Error(`Coarsening level ${coarseningLevel} not found for variable ${this.variable}`);
-  }
-
-  getBufferStore(coarseningLevel: number = 0): BufferMemoryStore {
-    const index = this.coarseningLevels.indexOf(coarseningLevel);
-    if (index >= 0) {
-      return this.bufferStores[index];
-    }
-    throw new Error(`Coarsening level ${coarseningLevel} not found for variable ${this.variable}`);
-  }
-
-  getMaxLevel(): number {
-    return Math.max(...this.coarseningLevels);
-  }
+export interface VariableStore {
+  variableInfo: VariableInfo;
+  remoteStore: RemoteStore;
+  bufferStore: BufferMemoryStore;
 }
 
+export class MultiVariableStore {
+  //  Internal data structure
+  private stores: RemoteStore[] = [];
+  private variables: { [variable: string]: Map<number, VariableStore> } = {};
+  numTimes: number = undefined;
+  timeRange: number[] = undefined;
 
-export async function addVariableStore(variable: string, bufferSlices: number, coarseningLevel: number = 0): Promise<void> {
-  if (coarseningLevel in remoteStores) {
-    const remoteStore = remoteStores[coarseningLevel];
-    const metaData = await remoteStore.getMetaData(variable);
-    const variableInfo = new VariableInfo(variable, metaData);
+  addRemoteStore(remoteStore: RemoteStore): void {
+    for (const store of this.stores) {
+      if (store.getURL() === remoteStore.getURL()) {
+        throw new Error('Remote store with URL ' + remoteStore.getURL() + ' already added');
+      }
+    }
+    this.stores.push(remoteStore);
+  }
+
+  async addVariableStore(variable: string, bufferSlices: number, coarseningLevel: number, remoteStoreOrURL: RemoteStore|string): Promise<VariableStore> {
+    if (!(variable in this.variables)) {
+      this.variables[variable] = new Map<number, VariableStore>();
+    }
+    let remoteStore: RemoteStore = null;
+    if (typeof remoteStoreOrURL === 'string') {
+      for (const store of this.stores) {
+        if (store.getURL() === remoteStoreOrURL) {
+          remoteStore = store;
+          break;
+        }
+      }
+      if (!remoteStore) {
+        throw new Error('Remote store with URL ' + remoteStoreOrURL + ' not found');
+      }
+    }
+    else {
+      remoteStore = remoteStoreOrURL;
+      if(!this.stores.includes(remoteStoreOrURL)) {
+        this.addRemoteStore(remoteStore);
+      }
+    }
+    const variableInfo = new VariableInfo(await remoteStore.getMetaData(variable));
+    this.validateMetaData(variableInfo);
     const bufferSize = bufferSlices * Math.max(1, variableInfo.numCellsXYZ[0]) * Math.max(1, variableInfo.numCellsXYZ[1]) * Math.max(1, variableInfo.numCellsXYZ[2]);
     const dimensions = variableInfo.numCellsXYZ[2] === 0 ? 3 : 4;
     const memoryStore = new BufferMemoryStore(bufferSize, bufferSlices, variableInfo.numTimes, variable, dimensions);
-    for (const variableStore of variableStores) {
-      if (variableStore.variable === variable) {
-        variableStore.addCoarseningLevel(coarseningLevel, variableInfo, remoteStore, memoryStore);
-        return;
+    const value: VariableStore = { variableInfo: variableInfo, remoteStore: remoteStore, bufferStore: memoryStore };
+    this.variables[variable][coarseningLevel] = value;
+    return value;
+  }
+
+  getVariableStore(variable: string, coarseningLevel: number): VariableStore {
+    if (variable in this.variables) {
+      if (coarseningLevel == -1) {
+        return [...this.variables[variable].entries()].reduce((a, e) => e[0] > a[0] ? e : a)[1];
+      }
+      if (coarseningLevel in this.variables[variable].keys()) {
+        return this.variables[variable][coarseningLevel];
+      }
+      else {
+        throw new Error(`Coarsening level ${coarseningLevel} not found for variable ${variable}`);
       }
     }
-    if (coarseningLevel != 0) {
-      throw new Error(`Please add the zero-level store first for variable ${variable}`);
-    }
-    variableStores.push(new VariableStore(variable, variableInfo, remoteStore, memoryStore));
+    throw new Error(`Variable ${variable} not found`);  
   }
-  else {
-    console.log(Error(`Coarsening level ${coarseningLevel} not found`));
-  }
-}
 
-export function getVariableStore(variable: string): VariableStore {
-  for (const store of variableStores) {
-    if (store.variable === variable) {
-      return store;
-    }
+  async getVariableData(variable: string, timeIndex: number, coarseningLevel: number = 0): Promise<{ data: ArrayBufferView<ArrayBufferLike>, shape: number[] }> {
+    const store = this.getVariableStore(variable, coarseningLevel);
+    return { data: await store.bufferStore.setCurrentSliceIndex(timeIndex, store.remoteStore), shape: store.variableInfo.numCellsXYZ };
   }
-  throw new Error(`Variable ${variable} not found`);
-}
 
-export async function getVariableData(variable: string, timeIndex: number, coarseningLevel: number = 0): Promise<{ data: ArrayBufferView<ArrayBufferLike>, shape: number[] }> {
-  for (const store of variableStores) {
-    if (store.variable === variable) {
-      if (coarseningLevel === -1) {
-        coarseningLevel = store.getMaxLevel();
-        if (coarseningLevel === 0) {
-          return { data: null, shape: [] };
-        }
+  getVariableInfo(variable: string, coarseningLevel: number = 0): VariableInfo {
+    return this.getVariableStore(variable, coarseningLevel).variableInfo;
+  }
+
+  validateMetaData(metaData: VariableInfo): void {
+    if (this.numTimes === undefined) {
+      this.numTimes = metaData.numTimes;
+      this.timeRange = metaData.timeRange;
+    }
+    else {
+      if (this.numTimes !== metaData.numTimes) {
+        throw new Error('Number of times does not match');
       }
-      const shape = store.getVariableInfo(coarseningLevel).numCellsXYZ;
-      const memoryStore = store.getBufferStore(coarseningLevel);
-      const remoteStore = store.getZarrStore(coarseningLevel);
-      return { data: await memoryStore.setCurrentSliceIndex(timeIndex, remoteStore), shape: shape };
-    }
-  }
-  throw new Error(`Variable ${variable} not found`);
-}
-
-
-
-export function getVariableMetaData(variable: string, coarseningLevel: number = 0): VariableInfo {
-  for (const store of variableStores) {
-    if (store.variable === variable) {
-      if (coarseningLevel === -1) {
-        coarseningLevel = store.getMaxLevel();
-        if (coarseningLevel === 0) {
-          return null;
-        }
+      if (this.timeRange[0] !== metaData.timeRange[0] || this.timeRange[1] !== metaData.timeRange[1]) {
+        throw new Error('Time range does not match');
       }
-      return store.getVariableInfo(coarseningLevel);
     }
   }
-  throw new Error(`Variable ${variable} not found`);
-}
 
-
-export function getNumTimes(): number {
-  if (variableStores.length > 0) {
-    return variableStores[0].getVariableInfo(0).numTimes;
+  clear(): void {
+    this.stores = [];
+    this.variables = {};
+    this.numTimes = undefined;
+    this.timeRange = undefined;
   }
-  throw new Error('No variables loaded');
-}
-
-
-export function clearVariableStores(): void {
-  variableStores.length = 0;
 }

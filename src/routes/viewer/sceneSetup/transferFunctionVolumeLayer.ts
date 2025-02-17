@@ -9,17 +9,17 @@ export class TransferFunctionVolumeLayer extends RemoteDataLayer {
 
     protected readonly coarseVariableStore: VariableStore;
 
-    constructor(variableStore: VariableStore, geometry: THREE.BufferGeometry, coarseVariableStore: VariableStore = null) {
+    constructor(variable: string, variableStore: VariableStore, geometry: THREE.BufferGeometry, coarseVariableStore: VariableStore = null) {
         const fragmentShader = coarseVariableStore ? fragmentShaderVolumeTransfer : fragmentShaderVolumeTransferSlow;
-        super(variableStore, geometry, vertexShaderVolume, fragmentShader);
+        super(variable, variableStore, geometry, vertexShaderVolume, fragmentShader);
         this.coarseVariableStore = coarseVariableStore;
     }
 
     async update(timestep: number) {
         super.update(timestep);
         this.getCoarseDataTexture().dispose();
-        const coarseRemoteStore = this.coarseVariableStore.getZarrStore(2);
-        const coarseDataSlice = await this.coarseVariableStore.getBufferStore(2).setCurrentSliceIndex(timestep, coarseRemoteStore);
+        const coarseRemoteStore = this.coarseVariableStore.remoteStore;
+        const coarseDataSlice = await this.coarseVariableStore.bufferStore.setCurrentSliceIndex(timestep, coarseRemoteStore);
         (this.renderObject.material as THREE.ShaderMaterial).uniforms.coarseVolumeTex.value = this.createCoarseDataTexture(coarseDataSlice);
         this.getCoarseDataTexture().needsUpdate = true;
     }
@@ -27,7 +27,7 @@ export class TransferFunctionVolumeLayer extends RemoteDataLayer {
     configureUniforms(uniforms: { [uniform: string]: THREE.IUniform<any>; }): void {
         super.configureUniforms(uniforms);
         if (this.coarseVariableStore) {
-            uniforms.coarseVolumeTex = new THREE.Uniform(this.createCoarseDataTexture(this.coarseVariableStore.getBufferStore(2).allocateBuffer(1)));
+            uniforms.coarseVolumeTex = new THREE.Uniform(this.createCoarseDataTexture(this.coarseVariableStore.bufferStore.allocateBuffer(1)));
         }
         uniforms.dataScale = new THREE.Uniform(0.0035);
         uniforms.dtScale = new THREE.Uniform(0.8);
@@ -49,7 +49,7 @@ export class TransferFunctionVolumeLayer extends RemoteDataLayer {
     }
 
     createCoarseDataTexture(dataSlice: Uint8Array): THREE.Texture {
-        const shape = this.coarseVariableStore.getVariableInfo(2).getOrignalDataShape();
+        const shape = this.coarseVariableStore.variableInfo.getOrignalDataShape();
         const texture = new THREE.Data3DTexture(dataSlice, shape[1], shape[2], shape[3]);
         texture.format = THREE.RedFormat;
         texture.minFilter = THREE.NearestFilter;

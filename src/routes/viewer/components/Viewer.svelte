@@ -3,9 +3,8 @@
 	import * as THREE from 'three';
 	import DebugButtons from './DebugButtons.svelte';
 
-	import { clearVariableStores, getNumTimes } from '../stores/allSlices.store';
 	import { cloudLayerSettings, rainLayerSettings, temperatureLayerSettings, showGrid, 
-		numTimes, currentTimeIndex, currentStepIndex, subStepsPerFrame, wind } from '../stores/viewer.store';
+		numTimes, currentTimeIndex, currentStepIndex, subStepsPerFrame, wind, multiVariableStore } from '../stores/viewer.store';
 	import { create3DScene, scene, renderer, camera, renderScene } from '../sceneSetup/create3DScene';
 
 	import { dataSetup } from '../fetchAndPrepareData/dataSetup';
@@ -77,12 +76,11 @@
 		// const axesHelper = new THREE.AxesHelper(5);
 		// scene.add(axesHelper);
 		//
-
-		const presentVariables = await dataSetup(Object.keys(layers), scene);
+		const presentVariables = await dataSetup(Object.keys(layers), scene, multiVariableStore);
 		$cloudLayerSettings.active = presentVariables.includes('ql');
 		$rainLayerSettings.active = presentVariables.includes('qr');
 		$temperatureLayerSettings.active = presentVariables.includes('thetavmix');
-		numTimes.set(getNumTimes());
+		numTimes.set(multiVariableStore.numTimes);
 
 		// Add the example points to the scene
 		// scene.add(examplePoints());
@@ -95,7 +93,7 @@
 	onDestroy(() => {
 		// Clean up Three.js resources
 		currentTimeIndex.set(0);
-		clearVariableStores();
+		multiVariableStore.clear();
 	});
 </script>
 

@@ -1,5 +1,5 @@
 import { createVolumetricRenderingBox } from "../sceneSetup/boxSetup";
-import { addRemoteStore, addVariableStore } from "../stores/allSlices.store";
+import { MultiVariableStore } from "../stores/allSlices.store";
 import { RemoteZarrStore } from "../stores/remoteZarrStore";
 import { loading, loadTime } from "../stores/viewer.store";
 
@@ -9,15 +9,16 @@ const coarseningLevels = {'qr': 2};
 // Download first slice of the data and
 // calculate the voxel and volume size.
 // It runs only once.
-export async function dataSetup(visibleData, scene): Promise<string[]> {
+export async function dataSetup(visibleData: string[], scene: THREE.Scene, store: MultiVariableStore): Promise<string[]> {
 
   const urlSearchParams = new URLSearchParams(document.location.search);
-  const datasetUrl = urlSearchParams.get("dataset") || 'http://localhost:5173/data/movie-0.zarr';
-  addRemoteStore(new RemoteZarrStore(datasetUrl), 0);
+  const datasetUrl = urlSearchParams.get("dataset");
+  const remoteStore = new RemoteZarrStore(datasetUrl);
+  store.addRemoteStore(remoteStore);
   let coarseRemoteZarrStore = null;
   if (datasetUrl.endsWith('-0.zarr')) {
     coarseRemoteZarrStore = new RemoteZarrStore(datasetUrl.replace('-0.zarr', '-2.zarr'));
-    addRemoteStore(coarseRemoteZarrStore, 2);
+    store.addRemoteStore(coarseRemoteZarrStore);
   }
 
   // open array, no need to opening it again for each variable
@@ -27,12 +28,13 @@ export async function dataSetup(visibleData, scene): Promise<string[]> {
   const foundData = [];
   for (const variable of visibleData) {
     try {
-      await addVariableStore(variable,  bufferSlices[variable] || 4, 0);
+      const variableStore = await store.addVariableStore(variable,  bufferSlices[variable] || 4, 0, remoteStore);
+      let coarseVariableStore = null;
       if (coarseningLevels[variable]) {
-        await addVariableStore(variable, bufferSlices[variable] || 4, coarseningLevels[variable]);
+        coarseVariableStore = await store.addVariableStore(variable, bufferSlices[variable] || 4, coarseningLevels[variable], coarseRemoteZarrStore);
       }
       foundData.push(variable);
-      await createVolumetricRenderingBox({ scene, variable });
+      await createVolumetricRenderingBox({ scene, variable, variableStore, coarseVariableStore });
     }
     catch (e) {
       if(e.message.includes(`array not found at path ${variable}`)) {

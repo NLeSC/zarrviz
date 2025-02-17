@@ -1,9 +1,8 @@
 <script lang="ts">
 	import { createEventDispatcher, onDestroy, onMount } from 'svelte';
 	import { get } from 'svelte/store';
-	import { getNumTimes } from '../stores/allSlices.store';
 	import { updateLayers, displaceLayers } from '../sceneSetup/boxSetup';
-	import { currentTimeIndex, currentStepIndex, loading, loadTime, subStepsPerFrame } from '../stores/viewer.store';
+	import { currentTimeIndex, currentStepIndex, loading, loadTime, subStepsPerFrame, multiVariableStore } from '../stores/viewer.store';
 	import { renderScene } from '../sceneSetup/create3DScene';
 
 	export let playAnimation = false;
@@ -22,7 +21,7 @@
 			let stepIncrementPromise = displaceLayers(nextStep, subStepsPerFrame).then(() => renderScene());
 			let promises = [stepIncrementPromise];
 			if(nextStep == 0) {
-				const nextTimeIndex = (get(currentTimeIndex) + 1) % getNumTimes();
+				const nextTimeIndex = (get(currentTimeIndex) + 1) % multiVariableStore.numTimes;
 				currentTimeIndex.set(nextTimeIndex);
 				let timeUpdatePromise = updateLayers(nextTimeIndex).then(() => renderScene());
 				promises.push(timeUpdatePromise);
