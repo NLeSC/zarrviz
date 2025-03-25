@@ -5,14 +5,17 @@ CameraControls.install({ THREE: THREE });
 
 export let scene: THREE.Scene;
 export let camera: THREE.PerspectiveCamera;
-
 export let cameraControls: CameraControls | null = null;
 export let renderer: THREE.WebGLRenderer;
-
+export let updateLODCallback: () => void;
 
 export const cameraFovDegrees = 1.0; // it was 5  - 1.0 has no artifacts almost, but less performant
 export const cameraNear = 0.01;
 export const cameraFar = 1000.0;
+
+export function setUpdateLODCallback(callback: () => void) {
+  updateLODCallback = callback;
+}
 
 // Render the scene. This function can be reused in other effects or callbacks.
 export function renderScene(): void {
@@ -52,7 +55,6 @@ export function create3DScene({ canvas }): void {
   // Add a plane with the Map to the scene
   scene.add(createPlaneMesh());
 
-
   // Add controls to the scene
   // scene.add(viewHelper);
   //
@@ -71,6 +73,7 @@ export function create3DScene({ canvas }): void {
     const delta = clock.getDelta();
     if(cameraControls.update(delta)) {
       renderer.render(scene, camera);
+      updateLODCallback();
     }
     requestAnimationFrame(animate);
   }
@@ -82,3 +85,4 @@ export function create3DScene({ canvas }): void {
   // return Promise.resolve(scene); // Fix: Wrap the scene variable in a Promise.resolve() function
   // console.log('🔋 3d scene created');
 }
+

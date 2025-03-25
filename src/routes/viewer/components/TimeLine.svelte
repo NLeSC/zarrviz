@@ -45,7 +45,7 @@
 		});
 		currentStepIndex.subscribe(async (index: number) => {
 			if(index != 0 && !playAnimation) {
-				await displaceLayers(index, subStepsPerFrame).then(() => renderScene());
+				displaceLayers(index, subStepsPerFrame).then(() => renderScene());
 			}
 		})
 	});

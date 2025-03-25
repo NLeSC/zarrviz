@@ -2,7 +2,7 @@ import { RemoteDataLayer } from "./remoteDataLayer";
 import vertexShaderVolume from "$lib/shaders/volume.vert";
 import fragmentShaderVolumeTransfer from "$lib/shaders/volumeTransfer.frag";
 import fragmentShaderVolumeTransferSlow from "$lib/shaders/volumeTransferSlow.frag";
-import type { VariableStore } from "../stores/allSlices.store";
+import type { VariableStore } from "../stores/multiVariableStore";
 import * as THREE from "three";
 
 export class TransferFunctionVolumeLayer extends RemoteDataLayer {

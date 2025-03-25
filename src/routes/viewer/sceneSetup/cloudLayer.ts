@@ -1,7 +1,7 @@
 import { RemoteDataLayer } from './remoteDataLayer';
 import vertexShaderVolume from '$lib/shaders/volume.vert';
 import fragmentShaderVolumeClouds from '$lib/shaders/volumeClouds.frag'; // ql
-import type { VariableStore } from '../stores/allSlices.store';
+import type { VariableStore } from '../stores/multiVariableStore';
 import * as THREE from 'three';
 
 export class CloudLayer extends RemoteDataLayer {

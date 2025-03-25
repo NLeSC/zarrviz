@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { type VariableStore } from '../stores/allSlices.store';
+import { type VariableStore } from '../stores/multiVariableStore';
 
 export abstract class RemoteDataLayer {
     public readonly variable: string;
@@ -32,12 +32,20 @@ export abstract class RemoteDataLayer {
         return this.renderObject;
     }
 
-    async update(timestep: number) {
-        this.getDataTexture().dispose();
+    async update(timestep: number, interimTexture: THREE.Texture = null) {
+        if (interimTexture) {
+            this.getDataTexture().dispose();
+            (this.renderObject.material as THREE.ShaderMaterial).uniforms.volumeTex.value = interimTexture;
+            this.getDataTexture().needsUpdate = true;
+        }
         const remoteStore  = this.variableStore.remoteStore;
         const dataSlice = await this.variableStore.bufferStore.setCurrentSliceIndex(timestep, remoteStore);
-        (this.renderObject.material as THREE.ShaderMaterial).uniforms.volumeTex.value = this.createDataTexture(dataSlice);
-        this.getDataTexture().needsUpdate = true;        
+        const newDataTexture = this.createDataTexture(dataSlice);
+        if (interimTexture == null) {
+            this.getDataTexture().dispose();
+        }
+        (this.renderObject.material as THREE.ShaderMaterial).uniforms.volumeTex.value = newDataTexture;
+        this.getDataTexture().needsUpdate = true;
     }
 
     displace(subStep: number, subStepsPerStep: number, wind: number[]) {
