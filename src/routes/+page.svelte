@@ -26,7 +26,7 @@
 			title: 'Local Dataset (600MB)',
 			description: 'Rain and clouds',
 			image: `${base}/images/cover.webp`,
-			url: 'http://localhost:5173/data/movie-0.zarr',
+			url: 'http://localhost:5173/data/movie.zarr',
 			dev: true
 		},
 		{

@@ -16,10 +16,20 @@ export async function dataSetup(visibleData: string[], scene: THREE.Scene, store
   store.addRemoteStore(remoteStore);
   const coarseRemoteZarrStores = [remoteStore];
   if (datasetUrl.endsWith('-0.zarr')) {
-    coarseRemoteZarrStores.push(new RemoteZarrStore(datasetUrl.replace('-0.zarr', '-1.zarr')));
-    coarseRemoteZarrStores.push(new RemoteZarrStore(datasetUrl.replace('-0.zarr', '-2.zarr')));
-    store.addRemoteStore(coarseRemoteZarrStores[1]);
-    store.addRemoteStore(coarseRemoteZarrStores[2]);
+    const urlsToCheck = [
+      datasetUrl.replace('-0.zarr', '-1.zarr'),
+      datasetUrl.replace('-0.zarr', '-2.zarr')
+    ];
+    for (const url of urlsToCheck) {
+      try {
+      const response = await fetch(url, { method: 'HEAD' });
+      if (!response.ok) continue;
+      coarseRemoteZarrStores.push(new RemoteZarrStore(url));
+      store.addRemoteStore(coarseRemoteZarrStores[coarseRemoteZarrStores.length - 1]);
+      } catch (e) {
+        console.warn(`Could not access ${url}:`, e);
+      }
+    }
   }
 
   // open array, no need to opening it again for each variable
