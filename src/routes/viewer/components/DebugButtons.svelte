@@ -1,15 +1,16 @@
 <script>
 	import * as THREE from 'three';
-	import { camera, cameraControls } from '../sceneSetup/create3DScene';
+	import { customLayer } from '../stores/viewer.store';
+	import { get } from 'svelte/store';
 	const distance = 50; // Adjust the distance based on your scene scale
 
 	// More examples here
 
 	// Function to update camera position and look at the center of the cube
 	function setCameraView(x, y, z, u = 0, v = -1, w = 0, animate = true) {
-		camera.up.set(u, v, w); // This keeps the camera oriented with the world's up direction
-		cameraControls.setPosition(x, y, z, animate);
-		camera.lookAt(0, 0, 0); // Assuming the cube is at the origin
+		get(customLayer).camera.up.set(u, v, w); // This keeps the camera oriented with the world's up direction
+		get(customLayer).cameraControls.setPosition(x, y, z, animate);
+		get(customLayer).camera.lookAt(0, 0, 0); // Assuming the cube is at the origin
 	}
 </script>
 
@@ -25,25 +26,25 @@
 	<div class="modal-box">
 		<h3 class="font-bold text-lg">Camera Controls!</h3>
 		<div class="info p-6">
-			<button class="btn btn-sm" on:click={() => cameraControls.zoom(camera.zoom / 2, true)}>Zoom in</button>
-			<button class="btn btn-sm" on:click={() => cameraControls.zoom(-camera.zoom / 2, true)}>Zoom out</button>
+			<button class="btn btn-sm" on:click={() => get(customLayer).cameraControls.zoom(get(customLayer).camera.zoom / 2, true)}>Zoom in</button>
+			<button class="btn btn-sm" on:click={() => get(customLayer).cameraControls.zoom(-get(customLayer).camera.zoom / 2, true)}>Zoom out</button>
 
 			<br />
-			<button class="btn btn-sm" on:click={() => cameraControls.reset(true)}>reset</button>
-			<button class="btn btn-sm" on:click={() => cameraControls.saveState()}>saveState</button>
-			<button class="btn btn-sm" on:click={() => console.log(camera?.position)}>Log camera in console</button>
+			<button class="btn btn-sm" on:click={() => get(customLayer).cameraControls.reset(true)}>reset</button>
+			<button class="btn btn-sm" on:click={() => get(customLayer).cameraControls.saveState()}>saveState</button>
+			<button class="btn btn-sm" on:click={() => console.log(get(customLayer).camera?.position)}>Log camera in console</button>
 		</div>
 
 		<br />
-		<button class="btn btn-sm" on:click={() => cameraControls.rotate(90 * THREE.MathUtils.DEG2RAD, 0, true)}>
+		<button class="btn btn-sm" on:click={() => get(customLayer).cameraControls.rotate(90 * THREE.MathUtils.DEG2RAD, 0, true)}>
 			rotate theta 90
 		</button>
-		<button class="btn btn-sm" on:click={() => cameraControls.rotate(0, 90 * THREE.MathUtils.DEG2RAD, true)}>
+		<button class="btn btn-sm" on:click={() => get(customLayer).cameraControls.rotate(0, 90 * THREE.MathUtils.DEG2RAD, true)}>
 			rotate phi 90
 		</button>
 
 		<!-- rotate alpha 90 -->
-		<button class="btn btn-sm" on:click={() => cameraControls.rotate(0, 90 * THREE.MathUtils.DEG2RAD, true)}>
+		<button class="btn btn-sm" on:click={() => get(customLayer).cameraControls.rotate(0, 90 * THREE.MathUtils.DEG2RAD, true)}>
 			rotate alpha 90
 		</button>
 	</div>

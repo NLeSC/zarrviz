@@ -1,88 +1,88 @@
 import * as THREE from 'three';
+//import { createPlaneMesh } from './createPlaneMesh';
+import { type ThreeJsCustomLayer, customLayer } from '../stores/viewer.store';
 import CameraControls from 'camera-controls';
-import { createPlaneMesh } from './createPlaneMesh';
-CameraControls.install({ THREE: THREE });
+import maplibregl from 'maplibre-gl';
+import { mat4 } from 'gl-matrix';
+import { get } from 'svelte/store';
 
-export let scene: THREE.Scene;
-export let camera: THREE.PerspectiveCamera;
-export let cameraControls: CameraControls | null = null;
-export let renderer: THREE.WebGLRenderer;
 export let updateLODCallback: () => void;
 
 export const cameraFovDegrees = 1.0; // it was 5  - 1.0 has no artifacts almost, but less performant
 export const cameraNear = 0.01;
 export const cameraFar = 1000.0;
 
+function createRenderer(canvas: HTMLCanvasElement, context: WebGLRenderingContext | WebGL2RenderingContext): THREE.WebGLRenderer {
+  return new THREE.WebGLRenderer({ antialias: true, canvas: canvas, context: context });
+}
+
+export function renderScene() {
+  if (!get(customLayer) || !get(customLayer).scene || !get(customLayer).renderer) {
+    console.error('Custom layer is not initialized.');
+    return;
+  }
+  console.info('Rendering Three.js scene');
+  get(customLayer).renderer.render(get(customLayer).scene, get(customLayer).camera);
+}
+
 export function setUpdateLODCallback(callback: () => void) {
   updateLODCallback = callback;
 }
 
-// Render the scene. This function can be reused in other effects or callbacks.
-export function renderScene(): void {
-  renderer.render(scene, camera);
-  console.log('🔥 rendered');
-}
-// Resize the canvas and camera when the window is resized
-function resize(canvas, camera) {
-  // Get the dimensions of the parent element
-  const parent = canvas.parentElement;
-  const width = parent.clientWidth;
-  const height = parent.clientHeight;
+export function createCustomLayer(canvasId: string): ThreeJsCustomLayer {
+  return {
+    id: 'threejs-layer',
+    renderingMode: '3d' as const,
+    type: 'custom' as const,
+    scene: null as THREE.Scene,
+    camera: null as THREE.PerspectiveCamera,
+    cameraControls: null as CameraControls,
+    renderer: null as THREE.WebGLRenderer,
+    onAdd: function (map, gl) {
+      // Create the Three.js scene
+      const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
+      this.scene = new THREE.Scene();
+      // Add a plane with the Map to the scene
+      //this.scene.add(createPlaneMesh());
 
-  // Update the renderer and camera with the new sizes
-  renderer.setSize(width, height);
-  camera.aspect = width / height;
-  camera.updateProjectionMatrix();
-}
+      // Synchronize the Three.js camera with the MapLibre camera
+      const center = map.getCenter();
+      const zoom = map.getZoom();
+      const pitch = map.getPitch();
+      const bearing = map.getBearing();
 
-export function create3DScene({ canvas }): void {
-  // Set up the Three.js scene and renderer
-  scene = new THREE.Scene();
-  renderer = new THREE.WebGLRenderer({ antialias: true, canvas: canvas }); // Create a WebGLRenderer and specify the canvas to use
+      // Update the camera position and orientation based on the map's center, zoom, pitch, and bearing
+      this.camera = new THREE.PerspectiveCamera(
+        cameraFovDegrees,
+        window.innerWidth / window.innerHeight,
+        cameraNear,
+        cameraFar
+      );
+      this.camera.position.set(center.lng, center.lat, zoom);
+      this.camera.rotation.set(THREE.MathUtils.degToRad(pitch), THREE.MathUtils.degToRad(bearing), 0);
+      this.cameraControls = new CameraControls(this.camera, canvas);
 
-  camera = new THREE.PerspectiveCamera(
-    cameraFovDegrees,
-    window.innerWidth / window.innerHeight,
-    cameraNear,
-    cameraFar
-  );
+      this.renderer = createRenderer(canvas, gl);
+    },
+    render: function (gl, options: { projectionMatrix: mat4 }) {
+      // Convert MapLibre's matrix to a Three.js matrix
+      const m = new THREE.Matrix4().fromArray(Array.from(options.projectionMatrix) as number[]);
+      this.camera.projectionMatrix = m;
 
-  camera.position.set(0, -30, 50); // Adjusted for scaled scene
-  camera.lookAt(new THREE.Vector3(0, 0, 0));
-
-  cameraControls = new CameraControls(camera, canvas);
-
-  // Add a plane with the Map to the scene
-  scene.add(createPlaneMesh());
-
-  // Add controls to the scene
-  // scene.add(viewHelper);
-  //
-  // Lights, to be used both during rendering the volume, and rendering the optional surface.
-  //
-  // Add the sun light to the scene
-  // scene.add(sunLight);
-  // Add the hemisphere light to the scene
-  // scene.add(hemisphereLight);
-
-  //
-  // Render loop for aniamtion and updating the scene
-  //
-  const clock = new THREE.Clock();
-  function animate() {
-    const delta = clock.getDelta();
-    if(cameraControls.update(delta)) {
-      renderer.render(scene, camera);
-      updateLODCallback();
-    }
-    requestAnimationFrame(animate);
-  }
-  window.addEventListener('resize', () => resize(canvas, camera)); // Fix: Pass the correct arguments to the resize function
-  resize(canvas, camera);
-  animate();
-  renderer.render(scene, camera);
-
-  // return Promise.resolve(scene); // Fix: Wrap the scene variable in a Promise.resolve() function
-  // console.log('🔋 3d scene created');
+      // Render the Three.js scene
+      this.renderer.render(this.scene, this.camera);
+    },
+  };
 }
 
+export function initializeMapWith3DScene(containerId: string) {
+  // Initialize MapLibre map
+  return new maplibregl.Map({
+    container: containerId,
+    style: 'https://demotiles.maplibre.org/style.json', // Replace with your style URL
+    center: [0, 0], // Set your desired center
+    zoom: 2,
+    pitch: 60, // Add pitch for 3D perspective
+    bearing: 0,
+  });
+}

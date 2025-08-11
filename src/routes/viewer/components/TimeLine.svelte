@@ -3,7 +3,7 @@
 	import { get } from 'svelte/store';
 	import { updateLayers, displaceLayers } from '../sceneSetup/boxSetup';
 	import { currentTimeIndex, currentStepIndex, loading, loadTime, subStepsPerFrame, multiVariableStore } from '../stores/viewer.store';
-	import { renderScene } from '../sceneSetup/create3DScene';
+	import { renderScene } from "../sceneSetup/create3DScene";
 
 	export let playAnimation = false;
 	export let length = 10;

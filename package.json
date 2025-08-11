@@ -44,6 +44,7 @@
 	"type": "module",
 	"dependencies": {
 		"@tweenjs/tween.js": "^23.1.1",
+		"maplibre-gl": "^5.6.1",
 		"stats.js": "^0.17.0",
 		"svelte-persisted-store": "^0.9.1"
 	}

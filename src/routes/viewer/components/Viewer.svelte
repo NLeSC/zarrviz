@@ -5,8 +5,8 @@
 
 	import { cloudLayerSettings, rainLayerSettings, temperatureLayerSettings, showGrid, 
 		numTimes, currentTimeIndex, currentStepIndex, subStepsPerFrame, wind, multiVariableStore, 
-		dataRenderLayers} from '../stores/viewer.store';
-	import { create3DScene, scene, renderer, camera, renderScene, updateLODCallback, setUpdateLODCallback } from '../sceneSetup/create3DScene';
+		dataRenderLayers, customLayer} from '../stores/viewer.store';
+	import { setUpdateLODCallback, initializeMapWith3DScene, createCustomLayer, updateLODCallback, renderScene } from '../sceneSetup/create3DScene';
 
 	import { dataSetup } from '../fetchAndPrepareData/dataSetup';
 	import { createGridHelper } from '../sceneSetup/createGridHelper';
@@ -20,13 +20,15 @@
 
 	// Download time
 	const downloadedTime = writable(0);
+	const clock = new THREE.Clock();
+
 
 	//
 	// Listen for changes in the opacity of the layers and update the material
 	// and add and remove the layers from the scene
 	//
 	$: {
-		if (scene) {
+		if (get(customLayer)) {
 			// Change transparency of the materials
 			const qlLevel = dataRenderLayers.ql.lod ? dataRenderLayers.ql.lod.getCurrentLevel() : 0;
 			const qlLayer = dataRenderLayers.ql.layers ? dataRenderLayers.ql.layers[qlLevel] : null;
@@ -54,9 +56,9 @@
 		if (layer && enabled){
 			layer.update(get(currentTimeIndex));
 			layer.displace(get(currentStepIndex), subStepsPerFrame, wind);
-			scene.add(layer.getRenderObject());
+			get(customLayer).scene.add(layer.getRenderObject());
 		} else {
-			scene.remove(layer.getRenderObject());
+			get(customLayer).scene.remove(layer.getRenderObject());
 		}
 	}
 
@@ -97,11 +99,51 @@
 		const timing = performance.now();
 
 		// Create the base 3D scene (camera, renderer, etc.)
-		await create3DScene({ canvas });
+//		await create3DScene(canvas);
+		canvas.id = 'threejs-canvas';
+		// Create a container for the map
+
+		let map = initializeMapWith3DScene('map-container');
+		customLayer.set(createCustomLayer('threejs-canvas'));
+		// Wait for the map to load
+  		map.on('load', async() => {
+    				// Add terrain source for 3D surface
+    				map.addSource('terrain', {
+      				type: 'raster-dem',
+      				url: 'https://demotiles.maplibre.org/terrain-tiles/tiles.json', // Replace with your DEM source
+      				tileSize: 256,
+    				});
+
+    				// Enable terrain
+		    		map.setTerrain({ source: 'terrain', exaggeration: 1.5 });
+
+    				map.addLayer(get(customLayer));
+					function animate() {
+						const delta = clock.getDelta();
+						if(get(customLayer).cameraControls.update(delta)) {
+						renderScene();
+						updateLODCallback();
+						}
+						requestAnimationFrame(animate);
+					}
+					animate();
+					const presentVariables = await dataSetup(Object.keys(dataRenderLayers), get(customLayer).scene, multiVariableStore);
+					$cloudLayerSettings.active = presentVariables.includes('ql');
+					$rainLayerSettings.active = presentVariables.includes('qr');
+					$temperatureLayerSettings.active = presentVariables.includes('thetavmix');
+					numTimes.set(multiVariableStore.numTimes);
+
+					// Add the example points to the scene
+					// scene.add(examplePoints());
+					downloadedTime.set(Math.round(performance.now() - timing));
+					//renderScene();
+					console.log('⏰ data downloaded and displayed in:', Math.round(performance.now() - timing), 'ms');
+		});
+
 
 		// Add the grid helper to the scene
-		gridHelper = createGridHelper();
-		scene.add(gridHelper);
+		//gridHelper = createGridHelper();
+		//scene.add(gridHelper);
 
 		//
 		// Add an axes helper to the scene to help with debugging.
@@ -109,17 +151,6 @@
 		// const axesHelper = new THREE.AxesHelper(5);
 		// scene.add(axesHelper);
 		//
-		const presentVariables = await dataSetup(Object.keys(dataRenderLayers), scene, multiVariableStore);
-		$cloudLayerSettings.active = presentVariables.includes('ql');
-		$rainLayerSettings.active = presentVariables.includes('qr');
-		$temperatureLayerSettings.active = presentVariables.includes('thetavmix');
-		numTimes.set(multiVariableStore.numTimes);
-
-		// Add the example points to the scene
-		// scene.add(examplePoints());
-		downloadedTime.set(Math.round(performance.now() - timing));
-		renderer.render(scene, camera);
-		console.log('⏰ data downloaded and displayed in:', Math.round(performance.now() - timing), 'ms');
 	});
 
 	onDestroy(() => {
@@ -140,4 +171,6 @@
 		<DebugButtons />
 	</div>
 </div>
-<canvas class="w-full h-full" bind:this={canvas} />
+<div class="canvas-container w-full h-full" id="map-container">
+	<canvas class="w-full h-full" bind:this={canvas} />
+</div>
