@@ -32,7 +32,9 @@ export async function dataSetup(visible_data, scene) {
     const dimensions = variable === 'thetavmix' ? 3 : 4;
     const { dataUint8, shape } = await fetchSlice({ currentTimeIndex: 0, path: variable, dimensions });
     let coarseSlice = null;
-    if (variable == 'qr'){
+
+    // Generate coarse data for volumetric variables (both rain and clouds)
+    if (variable == 'qr' || variable == 'ql'){
       coarseSlice = coarseData(dataUint8, shape);
       coarseDataSlices.update((timeSlices) => {
         if(timeSlices[0]){

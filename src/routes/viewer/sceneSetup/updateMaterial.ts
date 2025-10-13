@@ -54,6 +54,11 @@ export function updateMaterial({ variable, dataUint8, coarseData = null }) {
   const s2 = Math.ceil(sizes[2] / 8);
   switch (variable) {
     case 'ql':
+      // Dispose old coarse texture if it exists
+      if (uniforms?.coarseVolumeTex?.value !== null && uniforms?.coarseVolumeTex?.value !== undefined) {
+        uniforms.coarseVolumeTex.value.dispose();
+      }
+
       volumeTexture = new THREE.Data3DTexture(dataUint8, sizes[0], sizes[1], sizes[2]);
       volumeTexture.minFilter = THREE.LinearFilter; // Better for volume rendering.
       volumeTexture.magFilter = THREE.LinearFilter;
@@ -67,6 +72,18 @@ export function updateMaterial({ variable, dataUint8, coarseData = null }) {
       uniforms.bottomHeight.value = bottomHeight;
       uniforms.finalGamma.value = finalGamma;
       uniforms.displacement.value = new THREE.Vector3(0.0, 0.0, 0.0);
+
+      // Add coarse texture if provided
+      if (coarseData) {
+        coarseVolumeTexture = new THREE.Data3DTexture(coarseData, s0, s1, s2);
+        coarseVolumeTexture.format = THREE.RedFormat;
+        coarseVolumeTexture.minFilter = THREE.LinearFilter; // Linear for smooth transitions
+        coarseVolumeTexture.magFilter = THREE.LinearFilter;
+        coarseVolumeTexture.type = THREE.UnsignedByteType;
+        coarseVolumeTexture.generateMipmaps = false; // Saves memory.
+        coarseVolumeTexture.needsUpdate = true;
+        uniforms.coarseVolumeTex.value = coarseVolumeTexture;
+      }
       break;
 
     case 'qr':

@@ -6,12 +6,12 @@ in vec3 rayDirUnnorm;
 in vec3 lightDir;
 
 uniform sampler2D transferTex;
-uniform lowp sampler3D volumeTex;
-uniform lowp sampler3D coarseVolumeTex;
+uniform sampler3D volumeTex;
+uniform sampler3D coarseVolumeTex;
 uniform float dtScale;
 uniform float finalGamma;
 uniform vec3 sunLightColor;
-uniform highp vec3 boxSize;
+uniform vec3 boxSize;
 uniform float dataScale;
 uniform float alphaNorm;
 uniform bool useLighting;
@@ -23,6 +23,10 @@ uniform float near;
 uniform float far;
 
 uniform float uTransparency;
+
+// Constants
+const float TRANSMITTANCE_THRESHOLD = 0.05;
+const float RANDOM_SCALE = 0.125; // 1.0/8.0
 
 // Three.js adds built-in uniforms and attributes:
 // https://threejs.org/docs/#api/en/renderers/webgl/WebGLProgram
@@ -97,10 +101,13 @@ void main(void){
 
   vec3 illumination=vec3(0.,0.,0.);
   float transmittance=1.;
-  float transmittance_threshold=0.05;
-  vec3 random=fract(sin(gl_FragCoord.x*12.9898+gl_FragCoord.y*78.233)*43758.5453)*dt*rayDir/8.0;
+
+  // Optimized random calculation
+  float randomVal = fract(sin(gl_FragCoord.x*12.9898+gl_FragCoord.y*78.233)*43758.5453);
+  vec3 random = randomVal * dt * rayDir * RANDOM_SCALE;
+
   for(float t=tBox.x;t<tBox.y;t+=dt){
-    // look 8 steps ahead
+    // look 8 steps ahead using coarse texture
     float value=texture(coarseVolumeTex, pSized - displacement).r;
     if(value != 0.0){
       #pragma unroll_loop_start
@@ -112,6 +119,9 @@ void main(void){
         illumination.rgb += transmittance*clamp(vColor.a,0.0,1.0)*vColor.rgb;
         transmittance *= ( 1.0 - clamp(vColor.a,0.0,1.0));
         pSized += dPSmall;
+
+        // Early exit in unrolled loop if transmittance is too low
+        if(transmittance < TRANSMITTANCE_THRESHOLD) break;
       }
       #pragma unroll_loop_end
     }
@@ -120,13 +130,13 @@ void main(void){
     }
 
     // Break on opacity
-    if(transmittance<transmittance_threshold){
+    if(transmittance < TRANSMITTANCE_THRESHOLD){
       break;
     }
   }
 
   // Surface
-  if(transmittance>=(1.-transmittance_threshold))
+  if(transmittance>=(1.-TRANSMITTANCE_THRESHOLD))
   {
     transmittance=0.0;
   }

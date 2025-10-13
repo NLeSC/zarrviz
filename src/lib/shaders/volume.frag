@@ -3,6 +3,7 @@ in vec3 rayDirUnnorm;
 in vec3 lightDir;
 
 uniform sampler3D volumeTex;
+uniform lowp sampler3D coarseVolumeTex;
 uniform float dtScale;
 uniform float inScatFactor;
 uniform float finalGamma;
@@ -27,6 +28,11 @@ uniform float far;
 
 uniform float uTransparency;
 
+// Constants
+const float PI = 3.14159265358979323846;
+const float SHADOW_TRANSMITTANCE_THRESHOLD = 0.05;
+const float TRANSMITTANCE_SKIP_SHADOWS = 0.3;
+
 // Three.js adds built-in uniforms and attributes:
 // https://threejs.org/docs/#api/en/renderers/webgl/WebGLProgram
 // uniform vec3 cameraPosition;
@@ -50,7 +56,6 @@ float cameraDistanceFromDepth(float depth){
 }
 
 float phaseHG(float cosTheta, float g) {
-  float PI=3.14159265358979323846;
   float denom=1.0+g*g+2.0*g*cosTheta;
   return (1.-g*g)/(4.0*PI*denom*sqrt(denom));
 }
@@ -82,7 +87,7 @@ float getShadow(vec3 pos, vec3 step, vec2 tbounds, float tstep, float stepLength
     float h = bottomHeight + (samplePos.z - 0.5) * distz;
     float beer = exp(-extinction(ql, h) * (n * stepLengthm));
     transmittance *= beer;
-    if (transmittance < 0.05){
+    if (transmittance < SHADOW_TRANSMITTANCE_THRESHOLD){
       break;
     }
     n *= 1.5;
@@ -162,7 +167,34 @@ void main(void){
   float dz=length(distvec*dPShadow);
   float transmittance_threshold=0.01;
   vec3 dg=vec3(1)/vec3(volumeTexSize);
+
+  // Pre-calculate values that don't change in the loop
+  float cosTheta=dot(rayDir,-lightDir);
+  float phase=phaseHG(cosTheta,gHG);
+  float invTopHeightRange = 1.0/(topHeight-bottomHeight);
+
   for(float t=tBox.x;t<tBox.y;t+=dt){
+
+    // Adaptive step sizing based on coarse texture density
+    // This provides smooth transitions at cloud boundaries
+    float coarseValue = texture(coarseVolumeTex, pSized - displacement).r;
+
+    // Determine step multiplier based on density
+    float stepMultiplier = 1.0;
+    if(coarseValue < 0.01) {
+      // Very empty space - skip more aggressively
+      stepMultiplier = 4.0;
+    } else if(coarseValue < 0.1) {
+      // Low density - moderate skip
+      stepMultiplier = 2.0;
+    }
+    // else: High density or cloud boundary - normal stepping
+
+    if(stepMultiplier > 1.0) {
+      pSized += dPSized * stepMultiplier;
+      t += dt * (stepMultiplier - 1.0);
+      continue;
+    }
 
     float v=texture(volumeTex,pSized - displacement).r;
     float ql=(v==0.0)?0.:(dataScale*pow(dataEpsilon/dataScale,1.0-v)-dataEpsilon);
@@ -176,27 +208,31 @@ void main(void){
     // extinction parameter
     float ext=0.1*extinction(ql,height);
 
-    // Henyey-Greenstein phase function
-    float cosTheta=dot(rayDir,-lightDir);
-    float phase=phaseHG(cosTheta,gHG);
+    // Smooth shadow transition to avoid banding artifacts
+    float shadow;
+    if(transmittance < 0.15) {
+      // Very low transmittance - use approximation
+      shadow = 0.5;
+    } else if(transmittance < 0.35) {
+      // Transition zone - blend between approximation and full calculation
+      float computedShadow = getShadow(pSized,dPShadow,tBoxShadow,dt,dz,distvec.z,dg);
+      float blendFactor = (transmittance - 0.15) / 0.2; // 0.0 to 1.0 over range 0.15-0.35
+      shadow = mix(0.5, computedShadow, blendFactor);
+    } else {
+      // High transmittance - full shadow calculation
+      shadow = getShadow(pSized,dPShadow,tBoxShadow,dt,dz,distvec.z,dg);
+    }
 
-    // Shadowing
-    float shadow=ql>0.?getShadow(pSized,dPShadow,tBoxShadow,dt,dz,distvec.z,dg):1.0;
-    //float shadow=1.0;
-
-    // Ambient Lighting: linear approx
-    float hfrac=(topHeight-height)/(topHeight-bottomHeight);
+    // Ambient Lighting: linear approx (optimized division)
+    float hfrac=(topHeight-height)*invTopHeightRange;
     vec3 ambientLight=mix(ambientLightColorTop,ambientLightColorBot,hfrac);
 
     // Total in-scattering
-    vec3 inScattering=ql>0.0?(ambientFactor*ambientLight+solarFactor*sunLightColor*phase*shadow):vec3(0.0,0.0,0.0);
+    vec3 inScattering=ambientFactor*ambientLight+solarFactor*sunLightColor*phase*shadow;
     // Out-scattering: Beer's law
     float beer=exp(-ext*dx);
     float outScattering=((1.0-beer)/ext)+(1.0-beer*beer);
-    //float outScattering=1.0;
-    //float outScattering=((1.0-beer)/ext);
 
-    //transmittance*=(1.0+beer-beer*beer);
     transmittance*=beer;
 
     // Full illumination

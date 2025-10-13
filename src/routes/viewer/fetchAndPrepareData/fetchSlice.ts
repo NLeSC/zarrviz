@@ -46,7 +46,7 @@ export async function fetchRange({
 
   // Update the time slices store
   const chunkSize = 8;
-  const coarsening = (path == 'qr');
+  const coarsening = (path == 'qr' || path == 'ql'); // Enable coarsening for both rain and cloud data
 
   for (let i = timeRange[0]; i < timeRange[1]; i += chunkSize) {
     const end = Math.min(i + chunkSize, timeRange[1]);

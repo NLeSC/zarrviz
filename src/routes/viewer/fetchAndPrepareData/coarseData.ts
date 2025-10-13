@@ -1,8 +1,9 @@
 //
-// Coarse data to compress the ammount of data for the qr dataset
+// Coarse data downsampling for volumetric data (used for both rain and cloud datasets)
+// Creates a lower resolution version by taking the maximum value in each 8x8x8 block
+// This enables efficient empty space skipping in the shaders
 //
 export function coarseData(data, shape) {
-  // Coarse data to compress the ammount of data
   let dataCoarse = null;
   const blockSize = 8;
   const s0 = Math.ceil(shape[0] / blockSize);

@@ -48,6 +48,7 @@ export function initMaterial({ variable }): THREE.Material {
           uTransparency: { value: get(cloudLayerSettings).opacity / 100 },
           boxSize: new THREE.Uniform(get(boxSizes)[variable]),
           volumeTex: new THREE.Uniform(null),
+          coarseVolumeTex: new THREE.Uniform(null),
           voxelSize: new THREE.Uniform(get(voxelSizes)[variable]),
           sunLightDir: new THREE.Uniform(sunLight.position),
           sunLightColor: new THREE.Uniform(lightColorV),
