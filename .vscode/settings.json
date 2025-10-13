@@ -1,4 +1,5 @@
 {
+  "window.title": "🌤️ Ruisdael CLouds - ${activeEditorShort}",
   "githubPullRequests.ignoredPullRequestBranches": [
     "master"
   ]
