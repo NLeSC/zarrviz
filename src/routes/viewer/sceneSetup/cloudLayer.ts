@@ -5,8 +5,11 @@ import type { VariableStore } from '../stores/multiVariableStore';
 import * as THREE from 'three';
 
 export class CloudLayer extends RemoteDataLayer {
+    dataScaleValue: number;
+
     constructor(variable: string, variableStore: VariableStore, geometry: THREE.BufferGeometry) {
         super(variable, variableStore, geometry, vertexShaderVolume, fragmentShaderVolumeClouds);
+        this.dataScaleValue = 0.00446; // Default value, adjust as needed
     }
 
     configureUniforms(uniforms: { [uniform: string]: THREE.IUniform<any>; }): void {
@@ -15,7 +18,7 @@ export class CloudLayer extends RemoteDataLayer {
         const sunLightColor = new THREE.Color(0.99, 0.83, 0.62);
         const sunLight = new THREE.DirectionalLight(sunLightColor.getHex(), 1.0);
         sunLight.position.copy(sunLightDir);
-        uniforms.dataScale = new THREE.Uniform(0.00446);
+        uniforms.dataScale = new THREE.Uniform(this.dataScaleValue);
         uniforms.dataEpsilon = new THREE.Uniform(1e-10);
         uniforms.dtScale = new THREE.Uniform(0.5);
         uniforms.ambientFactor = new THREE.Uniform(0.0);

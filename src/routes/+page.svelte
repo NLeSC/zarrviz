@@ -3,18 +3,6 @@
 	import logos from '$lib/assets/images/logos.webp';
 
 	const datasets = [
-		// {
-		// 	title: 'Dataset 1 (80MB)',
-		// 	description: 'If a dog chews shoes whose shoes does he choose?',
-		//  image: `${base}/images/cover.webp`,
-		// 	url: 'https://s3.ctwhome.com/ruisdael/data/ql.zarr'
-		// },
-		// {
-		// 	title: 'Dataset 2 (300MB)',
-		// 	description: 'If a dog chews shoes whose shoes does he choose?',
-		//  image: `${base}/images/cover.webp`,
-		// 	url: 'https://s3.ctwhome.com/ruisdael/data/animated-data/ql.zarr'
-		// },
 		{
 			title: 'Google Cloud (Dev) Dataset (600MB)',
 			description: 'Rain and clouds',
@@ -26,7 +14,7 @@
 			title: 'Local Dataset (600MB)',
 			description: 'Rain and clouds',
 			image: `${base}/images/cover.webp`,
-			url: 'http://localhost:5173/data/movie.zarr',
+			url: 'http://localhost:5173/data/movie-0.zarr',
 			dev: true
 		},
 		{

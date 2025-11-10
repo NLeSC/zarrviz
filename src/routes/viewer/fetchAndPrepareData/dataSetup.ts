@@ -15,20 +15,23 @@ export async function dataSetup(visibleData: string[], scene: THREE.Scene, store
   const remoteStore = new RemoteZarrStore(datasetUrl);
   store.addRemoteStore(remoteStore);
   const coarseRemoteZarrStores = [remoteStore];
+  // TODO: add this urls to the datastructure in page.svelte
   if (datasetUrl.endsWith('-0.zarr')) {
     const urlsToCheck = [
       datasetUrl.replace('-0.zarr', '-1.zarr'),
       datasetUrl.replace('-0.zarr', '-2.zarr')
     ];
     for (const url of urlsToCheck) {
+      let coarseRemoteZarrStore: RemoteZarrStore;
       try {
-      const response = await fetch(url, { method: 'HEAD' });
-      if (!response.ok) continue;
-      coarseRemoteZarrStores.push(new RemoteZarrStore(url));
-      store.addRemoteStore(coarseRemoteZarrStores[coarseRemoteZarrStores.length - 1]);
+        coarseRemoteZarrStore = new RemoteZarrStore(url);
+        await coarseRemoteZarrStore.getMetaData(visibleData[0]); // Check if the store can be opened
       } catch (e) {
         console.warn(`Could not access ${url}:`, e);
+        continue;
       }
+      store.addRemoteStore(coarseRemoteZarrStore);
+      coarseRemoteZarrStores.push(coarseRemoteZarrStore);
     }
   }
 
