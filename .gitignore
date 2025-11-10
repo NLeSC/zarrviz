@@ -11,3 +11,4 @@ vite.config.ts.timestamp-*
 .history
 static/data
 public/data
+.chrome-sandbox

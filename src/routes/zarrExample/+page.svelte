@@ -4,7 +4,7 @@
 	import { openArray, HTTPStore, create } from 'zarr';
 	import CameraControls from 'camera-controls';
 	import vertexShaderVolume from '$lib/shaders/volume.vert';
-	import fragmentShaderVolume from '$lib/shaders/volume.frag';
+	import fragmentShaderVolume from '$lib/shaders/volumeTransfer.frag';
 	import { makeCloudTransferTex } from '$lib/utils/makeCloudTransferTex';
 	import { getBoxSize } from '$lib/utils/Utils';
 	import type { PersistenceMode } from 'zarr/types/types';
