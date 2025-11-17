@@ -87,12 +87,14 @@
 		<input
 			type="range"
 			class="range-slider transparent h-[4px] w-full cursor-pointer appearance-none border-transparent bg-neutral-200 dark:bg-neutral-600"
-			min="1"
-			max={length}
+			min="0"
+			max={length - 1}
 			step="1"
-			value={positionIndex + 1}
+			value={$currentTimeIndex}
 			on:input={(event) => {
-				dispatch('onSelectedIndex', { index: parseInt(event.target.value) });
+				const newIndex = parseInt(event.target.value);
+				currentTimeIndex.set(newIndex);
+				dispatch('onSelectedIndex', { index: newIndex });
 			}}
 		/>
 		<div class="w-full flex justify-between text-xs px-2 h-[30px]">
@@ -101,7 +103,7 @@
 			{#each Array.from({ length }, (_, index) => index) as step}
 				<div class="flex flex-col">
 					<div>|</div>
-					<div class="-ml-1">{step + 1 || 0}</div>
+					<div class="-ml-1">{step}</div>
 				</div>
 			{/each}
 		</div>
