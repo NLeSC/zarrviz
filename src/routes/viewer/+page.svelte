@@ -1,7 +1,7 @@
 <script lang="ts">
 	import TimeLine from './components/TimeLine.svelte';
 
-	import { dataSlices, totalSlices } from './stores/allSlices.store';
+	import { dataSlices, totalSlices, volumeSizes, downloadedTime } from './stores/allSlices.store';
 	import {
 		cloudLayerSettings,
 		rainLayerSettings,
@@ -37,22 +37,63 @@
 		<h2 class="text-2xl mb-3">Dataset</h2>
 		<Stats />
 
-		<div class="text-sm">
-			<!-- 1073741824 = 1GB -->
-			Slices:
-			<input
-				type="number"
-				min="0"
-				bind:value={$slicesToRender}
-				on:change={(e) => {
-					$slicesToRender = e.target.value;
-				}}
-				class="input input-xs w-14"
-			/>
-			of {$totalSlices}<br />
-			dataUint8 (slice) {$dataSlices[0]?.length} - {($dataSlices[0]?.byteLength / 1073741824).toFixed(3)} GB
-			<!-- <pre>dataCellSize: {$dataCellSize.length} |</pre> -->
-			Slices downloaded: {JSON.stringify($dataSlices.length, null, 2)}
+		<div class="text-sm space-y-1">
+			<div class="flex items-center gap-2">
+				<span class="font-semibold">Time slices:</span>
+				<input
+					type="number"
+					min="0"
+					bind:value={$slicesToRender}
+					on:change={(e) => {
+						$slicesToRender = e.target.value;
+					}}
+					class="input input-xs w-14"
+				/>
+				<span>of {$totalSlices}</span>
+			</div>
+
+			{#if $dataSlices.length > 0}
+				{@const firstSlice = $dataSlices[0]}
+				{@const sliceMemory = firstSlice ? Object.values(firstSlice).reduce((sum, arr) => sum + (arr?.byteLength ?? 0), 0) : 0}
+				{@const totalMemory = $dataSlices.reduce((sum, slice) => {
+					if (!slice) return sum;
+					return sum + Object.values(slice).reduce((s, arr) => s + (arr?.byteLength ?? 0), 0);
+				}, 0)}
+				{@const layerCount = firstSlice ? Object.keys(firstSlice).length : 0}
+
+				<div class="text-xs opacity-80 space-y-0.5">
+					<div>
+						<span class="font-medium">Downloaded:</span> {$dataSlices.length} / {$slicesToRender} slices
+						{#if $downloadedTime > 0}
+							<span class="opacity-60">({($downloadedTime / 1000).toFixed(1)}s)</span>
+						{/if}
+					</div>
+					<div>
+						<span class="font-medium">Layers per slice:</span> {layerCount}
+						{#if firstSlice}
+							<span class="opacity-60">({Object.keys(firstSlice).join(', ')})</span>
+						{/if}
+					</div>
+					<div>
+						<span class="font-medium">Memory per slice:</span>
+						{(sliceMemory / (1024 * 1024)).toFixed(2)} MB
+					</div>
+					<div>
+						<span class="font-medium">Total memory:</span>
+						{(totalMemory / (1024 * 1024)).toFixed(2)} MB
+					</div>
+					{#if Object.keys($volumeSizes).length > 0}
+						<div>
+							<span class="font-medium">Volume size:</span>
+							{#if $volumeSizes.ql}
+								{$volumeSizes.ql[0]} × {$volumeSizes.ql[1]} × {$volumeSizes.ql[2]} cells
+							{/if}
+						</div>
+					{/if}
+				</div>
+			{:else}
+				<div class="text-xs opacity-60 italic">Loading data...</div>
+			{/if}
 		</div>
 
 		<h3 class="mt-10 text-xl">Layers</h3>
