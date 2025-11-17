@@ -4,10 +4,13 @@ precision highp float;
   uniform float uScaleFactor; // Scaling factor to adjust color sensitivity
   varying vec2 vUv;
 
+  // Constant for normalization (faster than division)
+  const float INV_255 = 0.00392156862745;
+
   void main() {
     float value = texture2D(volumeTex, vUv).r;
-    // Normalize the value to the expected range of your data
-    value = value / 255.0;
+    // Normalize the value to the expected range of your data (multiply is faster than divide)
+    value = value * INV_255;
     // Apply the scaling factor
     value = clamp(value * uScaleFactor, 0.0, 1.0);
 

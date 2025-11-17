@@ -28,6 +28,11 @@ uniform float uTransparency;
 // https://threejs.org/docs/#api/en/renderers/webgl/WebGLProgram
 // uniform vec3 cameraPosition;
 
+// Fast interleaved gradient noise for dithering (much faster than sin/fract)
+float interleavedGradientNoise(vec2 coord) {
+  return fract(52.9829189 * fract(0.06711056 * coord.x + 0.00583715 * coord.y));
+}
+
 vec2 intersectBox(vec3 orig,vec3 dir){
   vec3 boxMin=vec3(-.5)*boxSize;
   vec3 boxMax=vec3(.5)*boxSize;
@@ -98,7 +103,7 @@ void main(void){
   vec3 illumination=vec3(0.,0.,0.);
   float transmittance=1.;
   float transmittance_threshold=0.05;
-  vec3 random=fract(sin(gl_FragCoord.x*12.9898+gl_FragCoord.y*78.233)*43758.5453)*dt*rayDir/8.0;
+  vec3 random=interleavedGradientNoise(gl_FragCoord.xy)*dt*rayDir/8.0;
   for(float t=tBox.x;t<tBox.y;t+=dt){
     // look 8 steps ahead
     float value=texture(coarseVolumeTex, pSized - displacement).r;

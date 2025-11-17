@@ -9,12 +9,18 @@ import fragmentShaderSurfaceHeatMap from '$lib/shaders/surface_heatmap.frag';  /
 
 import { voxelSizes, boxSizes } from '../stores/allSlices.store';
 import { makeRainTransferTex } from '$lib/utils/makeRainTransferTex';
+import { makeDataConversionTex } from '$lib/utils/makeDataConversionTex';
 
 import { cameraFar, cameraNear } from './create3DScene';
 import { cloudLayerSettings, rainLayerSettings, temperatureLayerSettings } from '../stores/viewer.store';
 
 // Run only once at mount
 const transferTexture = makeRainTransferTex();
+
+// Data conversion parameters from updateMaterial.ts
+const qlScale = 0.00446;
+const dataEpsilon = 1e-10;
+const qlConversionTexture = makeDataConversionTex(qlScale, dataEpsilon);
 
 const sunLightDir = new THREE.Vector3(0.0, 0.5, 0.5);
 const sunLightColor = new THREE.Color(0.99, 0.83, 0.62);
@@ -48,6 +54,7 @@ export function initMaterial({ variable }): THREE.Material {
           uTransparency: { value: get(cloudLayerSettings).opacity / 100 },
           boxSize: new THREE.Uniform(get(boxSizes)[variable]),
           volumeTex: new THREE.Uniform(null),
+          dataConversionTex: new THREE.Uniform(qlConversionTexture),
           voxelSize: new THREE.Uniform(get(voxelSizes)[variable]),
           sunLightDir: new THREE.Uniform(sunLight.position),
           sunLightColor: new THREE.Uniform(lightColorV),

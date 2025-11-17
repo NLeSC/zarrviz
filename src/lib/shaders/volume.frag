@@ -1,8 +1,12 @@
-precision highp float;
-in vec3 rayDirUnnorm;
+// Default to mediump for performance, use highp only where needed for precision
+precision mediump float;
+
+// Need highp for position accumulators to avoid precision issues
+in highp vec3 rayDirUnnorm;
 in vec3 lightDir;
 
 uniform sampler3D volumeTex;
+uniform sampler2D dataConversionTex;
 uniform float dtScale;
 uniform float inScatFactor;
 uniform float finalGamma;
@@ -27,9 +31,18 @@ uniform float far;
 
 uniform float uTransparency;
 
+// Constants moved to file level for performance
+const float PI = 3.14159265358979323846;
+
 // Three.js adds built-in uniforms and attributes:
 // https://threejs.org/docs/#api/en/renderers/webgl/WebGLProgram
 // uniform vec3 cameraPosition;
+
+// Fast interleaved gradient noise for dithering (much faster than sin/fract)
+float interleavedGradientNoise(vec2 coord) {
+  return fract(52.9829189 * fract(0.06711056 * coord.x + 0.00583715 * coord.y));
+}
+
 vec2 intersectBox(vec3 orig,vec3 dir){
   vec3 boxMin=vec3(-.5)*boxSize;
   vec3 boxMax=vec3(.5)*boxSize;
@@ -50,7 +63,6 @@ float cameraDistanceFromDepth(float depth){
 }
 
 float phaseHG(float cosTheta, float g) {
-  float PI=3.14159265358979323846;
   float denom=1.0+g*g+2.0*g*cosTheta;
   return (1.-g*g)/(4.0*PI*denom*sqrt(denom));
 }
@@ -72,7 +84,8 @@ float getShadow(vec3 pos, vec3 step, vec2 tbounds, float tstep, float stepLength
     samplePos += (n * step);
 
     float v=texture(volumeTex,samplePos).r;
-    float ql=(v==0.0)?0.:(dataScale*pow(dataEpsilon/dataScale,1.0-v)-dataEpsilon);
+    // Use lookup texture for fast conversion (replaces expensive pow calculation)
+    float ql=texture(dataConversionTex,vec2(v,0.5)).r;
     if(ql==0.)
     {
       n*=1.5;
@@ -91,11 +104,11 @@ float getShadow(vec3 pos, vec3 step, vec2 tbounds, float tstep, float stepLength
 }
 
 void main(void){
-  vec3 rayDir=normalize(rayDirUnnorm);
+  highp vec3 rayDir=normalize(rayDirUnnorm);
 
   // Reflect z-axis to make the top level face the viewer
   //rayDir.z=-rayDir.z;
-  vec3 cameraPositionAdjusted=cameraPosition;
+  highp vec3 cameraPositionAdjusted=cameraPosition;
   //cameraPositionAdjusted.z=-cameraPosition.z;
 
   // Find the part of the ray that intersects the box, where this part is
@@ -129,11 +142,11 @@ void main(void){
   }
 
   // Ray starting point, in the "real" space where the box may not be a cube.
-  vec3 p=cameraPositionAdjusted+tBox.x*rayDir;
+  highp vec3 p=cameraPositionAdjusted+tBox.x*rayDir;
 
-  // Dither to reduce banding (aliasing).
+  // Dither to reduce banding (aliasing) using fast gradient noise
   // https://www.marcusbannerman.co.uk/articles/VolumeRendering.html
-  float random=fract(sin(gl_FragCoord.x*12.9898+gl_FragCoord.y*78.233)*43758.5453);
+  float random=interleavedGradientNoise(gl_FragCoord.xy);
   random*=5.;
   p+=random*dt*rayDir;
 
@@ -141,8 +154,8 @@ void main(void){
   // the box has been warped to a cube, for accessing the cubical data texture.
   // The vec3(0.5) is necessary because rays are defined in the space where the box is
   // centered at the origin, but texture look-ups have the origin at a box corner.
-  vec3 pSized=p/boxSize+vec3(.5);
-  vec3 dPSized=(rayDir*dt)/boxSize;
+  highp vec3 pSized=p/boxSize+vec3(.5);
+  highp vec3 dPSized=(rayDir*dt)/boxSize;
   vec3 dPShadow=(lightDir*dtS)/boxSize;
 
   // Most browsers do not need this initialization, but add it to be safe.
@@ -162,26 +175,39 @@ void main(void){
   float dz=length(distvec*dPShadow);
   float transmittance_threshold=0.01;
   vec3 dg=vec3(1)/vec3(volumeTexSize);
-  for(float t=tBox.x;t<tBox.y;t+=dt){
+
+  // Hoist constant calculations out of loop for performance
+  float cosTheta=dot(rayDir,-lightDir);
+  float phase=phaseHG(cosTheta,gHG);
+
+  // Adaptive step size for empty space skipping
+  float stepMultiplier=1.0;
+
+  for(float t=tBox.x;t<tBox.y;t+=dt*stepMultiplier){
 
     float v=texture(volumeTex,pSized - displacement).r;
-    float ql=(v==0.0)?0.:(dataScale*pow(dataEpsilon/dataScale,1.0-v)-dataEpsilon);
+    // Use lookup texture for fast conversion (replaces expensive pow calculation)
+    float ql=texture(dataConversionTex,vec2(v,0.5)).r;
     if(ql==0.0)
     {
-      pSized+=dPSized;
+      // Increase step size in empty space for faster traversal
+      stepMultiplier=2.0;
+      pSized+=dPSized*stepMultiplier;
       continue;
     }
+
+    // Reset to normal step size when we hit data
+    stepMultiplier=1.0;
     float height=bottomHeight+(0.5-pSized.z)*distvec.z;
 
     // extinction parameter
     float ext=0.1*extinction(ql,height);
 
-    // Henyey-Greenstein phase function
-    float cosTheta=dot(rayDir,-lightDir);
-    float phase=phaseHG(cosTheta,gHG);
-
-    // Shadowing
-    float shadow=ql>0.?getShadow(pSized,dPShadow,tBoxShadow,dt,dz,distvec.z,dg):1.0;
+    // Shadowing - skip expensive calculation when transmittance is very low (won't affect result much)
+    float shadow=1.0;
+    if(ql>0.0 && transmittance>0.1) {
+      shadow=getShadow(pSized,dPShadow,tBoxShadow,dt,dz,distvec.z,dg);
+    }
     //float shadow=1.0;
 
     // Ambient Lighting: linear approx
@@ -207,7 +233,7 @@ void main(void){
       break;
     }
 
-    // Move to the next point along the ray.
+    // Move to the next point along the ray (normal step when data is present)
     pSized+=dPSized;
   }
 
