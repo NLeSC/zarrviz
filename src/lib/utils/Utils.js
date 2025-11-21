@@ -118,9 +118,7 @@ export async function textFromFileOrURL(src) {
 				if (response.status === 200) {
 					return response.text();
 				}
-				throw new Error(
-					`${errPrefix} response.status ${response.status}, "${response.statusText}"`
-				);
+				throw new Error(`${errPrefix} response.status ${response.status}, "${response.statusText}"`);
 			}
 			throw new Error(`${errPrefix} response.ok false`);
 		});

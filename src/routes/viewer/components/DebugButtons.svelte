@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 	import * as THREE from 'three';
 	import { camera, cameraControls } from '../sceneSetup/create3DScene';
 	const distance = 50; // Adjust the distance based on your scene scale
@@ -11,9 +11,16 @@
 		cameraControls.setPosition(x, y, z, animate);
 		camera.lookAt(0, 0, 0); // Assuming the cube is at the origin
 	}
+
+	function showCameraModal() {
+		const modal = document.getElementById('camera_modal');
+		if (modal && 'showModal' in modal) {
+			(modal as any).showModal();
+		}
+	}
 </script>
 
-<button class="btn btn-sm" onclick="camera_modal.showModal()">Camera Controls</button>
+<button class="btn btn-sm" on:click={showCameraModal}>Camera Controls</button>
 <button class="btn btn-sm" on:click={() => setCameraView(0, 0, distance, 0, 1, 0)}>Up</button>
 
 <button class="btn btn-sm" on:click={() => setCameraView(0, -distance, 0, 0, 1, 0, true)}>Front</button>

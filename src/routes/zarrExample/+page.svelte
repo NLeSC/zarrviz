@@ -4,10 +4,12 @@
 	import { openArray, HTTPStore, create } from 'zarr';
 	import CameraControls from 'camera-controls';
 	import vertexShaderVolume from '$lib/shaders/volume.vert';
-	import fragmentShaderVolume from '$lib/shaders/volume.frag';
+	import fragmentShaderVolume from '$lib/shaders/volumeTransfer.frag';
 	import { makeCloudTransferTex } from '$lib/utils/makeCloudTransferTex';
 	import { getBoxSize } from '$lib/utils/Utils';
-	import type { PersistenceMode } from 'zarr/types/types';
+
+	// Define PersistenceMode type locally
+	type PersistenceMode = 'r' | 'r+' | 'a' | 'w' | 'w-';
 
 	// import examplePoints from '$lib/components/3DVolumetric/examplePoints';
 
@@ -201,7 +203,7 @@
 		return planeMesh;
 	}
 
-	async function getVoxelAndVolumeSize({ store, shape, path, mode }) {
+	async function getVoxelAndVolumeSize({ store, shape, path = 'xt', mode = 'r' as PersistenceMode }) {
 		// if (timeSliceIndex === 0) {
 		const zarrxvals = await openArray({ store, path: 'xt', mode: 'r' });
 		const zarryvals = await openArray({ store, path: 'yt', mode: 'r' });

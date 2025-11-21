@@ -2,7 +2,14 @@
 	import { createEventDispatcher, onDestroy, onMount } from 'svelte';
 	import { get } from 'svelte/store';
 	import { updateLayers, displaceLayers } from '../sceneSetup/boxSetup';
-	import { currentTimeIndex, currentStepIndex, loading, loadTime, subStepsPerFrame, multiVariableStore } from '../stores/viewer.store';
+	import {
+		currentTimeIndex,
+		currentStepIndex,
+		loading,
+		loadTime,
+		subStepsPerFrame,
+		multiVariableStore
+	} from '../stores/viewer.store';
 	import { renderScene } from '../sceneSetup/create3DScene';
 
 	export let playAnimation = false;
@@ -13,20 +20,25 @@
 
 	const dispatch = createEventDispatcher();
 
+	// Helper function to safely get value from input event
+	function getInputValue(event: Event): string {
+		return (event.target as HTMLInputElement).value;
+	}
+
 	async function play() {
 		playAnimation = !playAnimation;
-		while(playAnimation){
+		while (playAnimation) {
 			const nextStep = (get(currentStepIndex) + 1) % subStepsPerFrame;
 			currentStepIndex.set(nextStep);
 			let stepIncrementPromise = displaceLayers(nextStep, subStepsPerFrame).then(() => renderScene());
 			let promises = [stepIncrementPromise];
-			if(nextStep == 0) {
+			if (nextStep == 0) {
 				const nextTimeIndex = (get(currentTimeIndex) + 1) % multiVariableStore.numTimes;
 				currentTimeIndex.set(nextTimeIndex);
 				let timeUpdatePromise = updateLayers(nextTimeIndex).then(() => renderScene());
 				promises.push(timeUpdatePromise);
 			}
-			const delayPromise = new Promise<void>(res => setTimeout(res, playSpeedInMiliseconds/subStepsPerFrame));
+			const delayPromise = new Promise<void>((res) => setTimeout(res, playSpeedInMiliseconds / subStepsPerFrame));
 			promises.push(delayPromise);
 			await Promise.all(promises);
 		}
@@ -35,7 +47,7 @@
 	onMount(() => {
 		// Update the material when the currentTimeIndex changes
 		currentTimeIndex.subscribe(async (index: number) => {
-			if(playAnimation) return;
+			if (playAnimation) return;
 			loading.set(true);
 			const startTime = performance.now();
 			await updateLayers(index).then(() => renderScene());
@@ -44,10 +56,10 @@
 			loadTime.set(endTime - startTime);
 		});
 		currentStepIndex.subscribe(async (index: number) => {
-			if(index != 0 && !playAnimation) {
+			if (index != 0 && !playAnimation) {
 				displaceLayers(index, subStepsPerFrame).then(() => renderScene());
 			}
-		})
+		});
 	});
 
 	onDestroy(() => {
@@ -80,17 +92,17 @@
 			type="range"
 			class="range-slider transparent h-[4px] w-full cursor-pointer appearance-none border-transparent bg-neutral-200 dark:bg-neutral-600"
 			min="0"
-			max={ length - 1 }
+			max={length - 1}
 			step="1"
 			value={$currentTimeIndex}
 			on:input={(event) => {
-				dispatch('onSelectedIndex', { index: parseInt(event.target.value) });
+				dispatch('onSelectedIndex', { index: parseInt(getInputValue(event)) });
 			}}
 		/>
 		<div class="w-full flex justify-between text-xs px-2 h-[15px]">
 			<!-- Steps -->
 			<!--  array of steps from 0 to length -->
-			{#each Array.from({ length }, (_, index) => index ) as step}
+			{#each Array.from({ length }, (_, index) => index) as step}
 				<div class="flex flex-col">
 					<div>|</div>
 				</div>
@@ -99,14 +111,12 @@
 		<div class="w-full flex justify-between text-xs px-2 h-[15px]">
 			<!-- Steps -->
 			<!--  array of steps from 0 to length -->
-			{#each Array.from({ length }, (_, index) => index ) as step}
+			{#each Array.from({ length }, (_, index) => index) as step}
 				<div class="flex flex-col">
 					{#if length < 21}
 						<div>{step || 0}</div>
-					{:else}
-						{#if step % 10 == 0}
-							<div>{step || 0}</div>
-						{/if}
+					{:else if step % 10 == 0}
+						<div>{step || 0}</div>
 					{/if}
 				</div>
 			{/each}
@@ -125,7 +135,7 @@
 		on:input={(event) => {
 			const wasPlaying = playAnimation;
 			wasPlaying && play(); // stop current animation the animation
-			playSpeedInMiliseconds = parseInt(event?.target?.value);
+			playSpeedInMiliseconds = parseInt(getInputValue(event));
 			wasPlaying && play(); // stop current animation the animation
 		}}
 	/>
