@@ -3,10 +3,28 @@
 	import * as THREE from 'three';
 	import DebugButtons from './DebugButtons.svelte';
 
-	import { cloudLayerSettings, rainLayerSettings, temperatureLayerSettings, showGrid, 
-		numTimes, currentTimeIndex, currentStepIndex, subStepsPerFrame, wind, multiVariableStore, 
-		dataRenderLayers} from '../stores/viewer.store';
-	import { create3DScene, scene, renderer, camera, renderScene, updateLODCallback, setUpdateLODCallback } from '../sceneSetup/create3DScene';
+	import {
+		cloudLayerSettings,
+		rainLayerSettings,
+		temperatureLayerSettings,
+		showGrid,
+		numTimes,
+		currentTimeIndex,
+		currentStepIndex,
+		subStepsPerFrame,
+		wind,
+		multiVariableStore,
+		dataRenderLayers
+	} from '../stores/viewer.store';
+	import {
+		create3DScene,
+		scene,
+		renderer,
+		camera,
+		renderScene,
+		updateLODCallback,
+		setUpdateLODCallback
+	} from '../sceneSetup/create3DScene';
 
 	import { dataSetup } from '../fetchAndPrepareData/dataSetup';
 	import { createGridHelper } from '../sceneSetup/createGridHelper';
@@ -30,14 +48,15 @@
 			// Change transparency of the materials
 			const qlLevel = dataRenderLayers.ql.lod ? dataRenderLayers.ql.lod.getCurrentLevel() : 0;
 			const qlLayer = dataRenderLayers.ql.layers ? dataRenderLayers.ql.layers[qlLevel] : null;
-			qlLayer && (qlLayer.updateUniforms({uTransparency: $cloudLayerSettings.opacity / 100}));
+			qlLayer && qlLayer.updateUniforms({ uTransparency: $cloudLayerSettings.opacity / 100 });
 			const qrLevel = dataRenderLayers.qr.lod ? dataRenderLayers.qr.lod.getCurrentLevel() : 0;
 			const qrLayer = dataRenderLayers.qr.layers ? dataRenderLayers.qr.layers[qrLevel] : null;
-			qrLayer && (qrLayer.updateUniforms({uTransparency: $rainLayerSettings.opacity / 100}));
+			qrLayer && qrLayer.updateUniforms({ uTransparency: $rainLayerSettings.opacity / 100 });
 			const thetavmixLevel = dataRenderLayers.thetavmix.lod ? dataRenderLayers.thetavmix.lod.getCurrentLevel() : 0;
-			const thetavmixLayer = dataRenderLayers.thetavmix.layers ? dataRenderLayers.thetavmix.layers[thetavmixLevel] : null;
-			thetavmixLayer &&
-				(thetavmixLayer.updateUniforms({uTransparency: $temperatureLayerSettings.opacity / 100}));
+			const thetavmixLayer = dataRenderLayers.thetavmix.layers
+				? dataRenderLayers.thetavmix.layers[thetavmixLevel]
+				: null;
+			thetavmixLayer && thetavmixLayer.updateUniforms({ uTransparency: $temperatureLayerSettings.opacity / 100 });
 
 			// Enable and disable the layers
 			updateLayerVisibility(qrLayer, $rainLayerSettings.enabled);
@@ -51,7 +70,7 @@
 
 	function updateLayerVisibility(layer: RemoteDataLayer, enabled: boolean) {
 		if (layer === undefined) return;
-		if (layer && enabled){
+		if (layer && enabled) {
 			layer.update(get(currentTimeIndex));
 			layer.displace(get(currentStepIndex), subStepsPerFrame, wind);
 			scene.add(layer.getRenderObject());
@@ -66,21 +85,29 @@
 			const interimDataTexture = dataRenderLayers.ql.layers[dataRenderLayers.ql.currentLODLevel].getDataTexture();
 			dataRenderLayers.ql.layers[qlLevel].update(get(currentTimeIndex), interimDataTexture);
 			const qlLayer = dataRenderLayers.ql.layers ? dataRenderLayers.ql.layers[qlLevel] : null;
-			qlLayer && qlLayer.update(get(currentTimeIndex)) && qlLayer.displace(get(currentStepIndex), subStepsPerFrame, wind);
+			qlLayer &&
+				qlLayer.update(get(currentTimeIndex)) &&
+				qlLayer.displace(get(currentStepIndex), subStepsPerFrame, wind);
 			dataRenderLayers.ql.currentLODLevel = qlLevel;
 		}
 		const qrLevel = dataRenderLayers.qr.lod ? dataRenderLayers.qr.lod.getCurrentLevel() : 0;
 		if (qrLevel !== dataRenderLayers.qr.currentLODLevel) {
 			dataRenderLayers.qr.layers[qrLevel].update(get(currentTimeIndex));
 			const qrLayer = dataRenderLayers.qr.layers ? dataRenderLayers.qr.layers[qrLevel] : null;
-			qrLayer && qrLayer.update(get(currentTimeIndex)) && qrLayer.displace(get(currentStepIndex), subStepsPerFrame, wind);
+			qrLayer &&
+				qrLayer.update(get(currentTimeIndex)) &&
+				qrLayer.displace(get(currentStepIndex), subStepsPerFrame, wind);
 			dataRenderLayers.qr.currentLODLevel = qrLevel;
 		}
 		const thetavmixLevel = dataRenderLayers.thetavmix.lod ? dataRenderLayers.thetavmix.lod.getCurrentLevel() : 0;
 		if (thetavmixLevel !== dataRenderLayers.thetavmix.currentLODLevel) {
 			dataRenderLayers.thetavmix.layers[thetavmixLevel].update(get(currentTimeIndex));
-			const thetavmixLayer = dataRenderLayers.thetavmix.layers ? dataRenderLayers.thetavmix.layers[thetavmixLevel] : null;
-			thetavmixLayer && thetavmixLayer.update(get(currentTimeIndex)) && thetavmixLayer.displace(get(currentStepIndex), subStepsPerFrame, wind);
+			const thetavmixLayer = dataRenderLayers.thetavmix.layers
+				? dataRenderLayers.thetavmix.layers[thetavmixLevel]
+				: null;
+			thetavmixLayer &&
+				thetavmixLayer.update(get(currentTimeIndex)) &&
+				thetavmixLayer.displace(get(currentStepIndex), subStepsPerFrame, wind);
 			dataRenderLayers.thetavmix.currentLODLevel = thetavmixLevel;
 		}
 	}
