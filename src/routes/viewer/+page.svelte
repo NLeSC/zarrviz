@@ -23,8 +23,8 @@
 
 	function showModal() {
 		const modal = document.getElementById('my_modal_1');
-		if (modal && 'showModal' in modal) {
-			(modal as HTMLDialogElement).showModal();
+		if (modal && modal instanceof HTMLDialogElement) {
+			modal.showModal();
 		}
 	}
 </script>

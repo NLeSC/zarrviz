@@ -14,8 +14,8 @@
 
 	function showCameraModal() {
 		const modal = document.getElementById('camera_modal');
-		if (modal && 'showModal' in modal) {
-			(modal as any).showModal();
+		if (modal && modal instanceof HTMLDialogElement) {
+			modal.showModal();
 		}
 	}
 </script>

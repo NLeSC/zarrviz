@@ -219,6 +219,13 @@
 		return planeMesh;
 	}
 
+	/**
+	 * Get voxel size and volume size from zarr metadata.
+	 * @param store - Zarr store containing the data
+	 * @param shape - Array shape from the zarr metadata
+	 * @param path - Base path for coordinate arrays (defaults to 'xt')
+	 * @param mode - Persistence mode for opening arrays (defaults to 'r')
+	 */
 	async function getVoxelAndVolumeSize({ store, shape, path = 'xt', mode = 'r' as PersistenceMode }) {
 		// if (timeSliceIndex === 0) {
 		const zarrxvals = await openArray({ store, path: 'xt', mode: 'r' });
