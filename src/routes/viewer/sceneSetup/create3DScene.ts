@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import WebGL from 'three/examples/jsm/capabilities/WebGL.js';
 import CameraControls from 'camera-controls';
 import { createPlaneMesh } from './createPlaneMesh';
 CameraControls.install({ THREE: THREE });
@@ -36,6 +37,13 @@ function resize(canvas, camera) {
 }
 
 export function create3DScene({ canvas }): void {
+  // Check WebGL availability before attempting to create the renderer
+  if (!WebGL.isWebGL2Available()) {
+    const warning = WebGL.getWebGL2ErrorMessage();
+    canvas.parentElement?.appendChild(warning);
+    throw new Error('WebGL2 is not available in this browser/environment. ' + warning.textContent);
+  }
+
   // Set up the Three.js scene and renderer
   scene = new THREE.Scene();
   renderer = new THREE.WebGLRenderer({ antialias: true, canvas: canvas }); // Create a WebGLRenderer and specify the canvas to use
