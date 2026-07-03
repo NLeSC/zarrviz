@@ -18,6 +18,13 @@
 			dev: true
 		},
 		{
+			title: 'Local Dataset – low res only (movie-2)',
+			description: 'Rain and clouds, coarsest LOD only',
+			image: `${base}/images/cover.webp`,
+			url: 'http://localhost:5173/data/movie-2.zarr',
+			dev: true
+		},
+		{
 			title: 'Dataset with Rain 3 (600MB)',
 			description: 'Rain and clouds',
 			image: `${base}/images/cover.webp`,
