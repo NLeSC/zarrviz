@@ -17,11 +17,13 @@ export class TransferFunctionVolumeLayer extends RemoteDataLayer {
 
     async update(timestep: number) {
         super.update(timestep);
-        this.getCoarseDataTexture().dispose();
-        const coarseRemoteStore = this.coarseVariableStore.remoteStore;
-        const coarseDataSlice = await this.coarseVariableStore.bufferStore.setCurrentSliceIndex(timestep, coarseRemoteStore);
-        (this.renderObject.material as THREE.ShaderMaterial).uniforms.coarseVolumeTex.value = this.createCoarseDataTexture(coarseDataSlice);
-        this.getCoarseDataTexture().needsUpdate = true;
+        if (this.coarseVariableStore) {
+            this.getCoarseDataTexture().dispose();
+            const coarseRemoteStore = this.coarseVariableStore.remoteStore;
+            const coarseDataSlice = await this.coarseVariableStore.bufferStore.setCurrentSliceIndex(timestep, coarseRemoteStore);
+            (this.renderObject.material as THREE.ShaderMaterial).uniforms.coarseVolumeTex.value = this.createCoarseDataTexture(coarseDataSlice);
+            this.getCoarseDataTexture().needsUpdate = true;
+        }
     }
 
     configureUniforms(uniforms: { [uniform: string]: THREE.IUniform<any>; }): void {

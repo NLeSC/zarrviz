@@ -6,21 +6,19 @@ varying vec2 vUv;
 
 void main() {
   float value = texture2D(volumeTex, vUv).r;
-    // Normalize the value to the expected range of your data
-  value = value / 255.0;
-    // Apply the scaling factor
-  value = clamp(value * uScaleFactor, 0.0, 1.0);
 
-    // Define the gradient colors
-  vec3 coldColor = vec3(0.0, 0.0, 1.0); // Blue
-  vec3 warmColor = vec3(1.0, 0.5, 0.0); // Dark Orange
+// Multi-stop gradient: blue -> cyan -> green -> yellow -> orange -> red
+  vec3 c0 = vec3(0.0, 0.0, 1.0);   // blue
+  vec3 c1 = vec3(0.0, 1.0, 1.0);   // cyan
+  vec3 c2 = vec3(0.0, 1.0, 0.0);   // green
+  vec3 c3 = vec3(1.0, 1.0, 0.0);   // yellow
+  vec3 c4 = vec3(0.5, 0.0, 0.5);   // purple
 
-    // Calculate the color by interpolating between cold and warm colors based on the value
-  vec3 color = mix(coldColor, warmColor, value);
+  vec3 color;
+  if (value < 0.2)       color = mix(c0, c1, value / 0.2);
+  else if (value < 0.4)  color = mix(c1, c2, (value - 0.2) / 0.2);
+  else if (value < 0.6)  color = mix(c2, c3, (value - 0.4) / 0.2);
+  else                   color = mix(c3, c4, (value - 0.6) / 0.2);
 
-    // Calculate the alpha, making red always more transparent than blue
-  float baseAlpha = uTransparency * 0.3; // Red's maximum transparency is half of the global transparency
-  float alpha = mix(uTransparency, baseAlpha, value); // Interpolate alpha between the global transparency and red's max transparency
-
-  gl_FragColor = vec4(color, alpha); // Set the color with the new alpha
+  gl_FragColor = vec4(color, uTransparency); // Set the color with the new alpha
 }

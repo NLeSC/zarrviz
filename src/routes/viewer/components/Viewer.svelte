@@ -31,7 +31,7 @@
 			layers.ql && (layers.ql.updateUniforms({uTransparency: $cloudLayerSettings.opacity / 100}));
 			layers.qr && (layers.qr.updateUniforms({uTransparency: $rainLayerSettings.opacity / 100}));
 			layers.thetavmix &&
-				(layers.thetavmix.configureUniforms({uTransparency: $temperatureLayerSettings.opacity / 100}));
+				(layers.thetavmix.updateUniforms({uTransparency: $temperatureLayerSettings.opacity / 100}));
 
 			// Enable and disable the layers
 			updateLayerVisibility(layers.qr, $rainLayerSettings.enabled);

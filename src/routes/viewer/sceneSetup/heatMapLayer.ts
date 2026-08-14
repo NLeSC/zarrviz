@@ -11,6 +11,7 @@ export class HeatMapLayer extends RemoteDataLayer {
 
     configureUniforms(uniforms) {
         super.configureUniforms(uniforms);
-        uniforms.uScaleFactor = new THREE.Uniform(200.0);
+        uniforms.uScaleFactor = new THREE.Uniform(1.0);
+        uniforms.uTransparency = new THREE.Uniform(1.0);
     }
 }
