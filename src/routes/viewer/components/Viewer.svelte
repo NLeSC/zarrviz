@@ -40,23 +40,30 @@
 				(thetavmixLayer.updateUniforms({uTransparency: $temperatureLayerSettings.opacity / 100}));
 
 			// Enable and disable the layers
-			updateLayerVisibility(qrLayer, $rainLayerSettings.enabled);
-			updateLayerVisibility(qlLayer, $cloudLayerSettings.enabled);
-			updateLayerVisibility(thetavmixLayer, $temperatureLayerSettings.enabled);
+			updateLayerVisibility(dataRenderLayers.qr, qrLayer, $rainLayerSettings.enabled);
+			updateLayerVisibility(dataRenderLayers.ql, qlLayer, $cloudLayerSettings.enabled);
+			updateLayerVisibility(dataRenderLayers.thetavmix, thetavmixLayer, $temperatureLayerSettings.enabled);
 
 			// Render the scene
 			renderScene();
 		}
 	}
 
-	function updateLayerVisibility(layer: RemoteDataLayer, enabled: boolean) {
+	// When a variable has multiple LOD levels, only the shared THREE.LOD container is ever
+	// added to the scene; the per-level meshes are its children, not direct scene children.
+	function updateLayerVisibility(
+		layerInfo: { layers: RemoteDataLayer[]; lod: THREE.LOD },
+		layer: RemoteDataLayer,
+		enabled: boolean
+	) {
 		if (layer === undefined) return;
-		if (layer && enabled){
+		const renderObject: THREE.Object3D = layerInfo.lod ?? layer.getRenderObject();
+		if (enabled){
 			layer.update(get(currentTimeIndex));
 			layer.displace(get(currentStepIndex), subStepsPerFrame, wind);
-			scene.add(layer.getRenderObject());
+			scene.add(renderObject);
 		} else {
-			scene.remove(layer.getRenderObject());
+			scene.remove(renderObject);
 		}
 	}
 

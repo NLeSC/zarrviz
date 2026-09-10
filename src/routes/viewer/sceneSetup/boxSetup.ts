@@ -62,21 +62,21 @@ export async function createVolumetricRenderingBox({ scene, variable, variableSt
         break;
       }
     }
-    if (enabled) {
-      await layer.update(0);
-      renderingLayerInfo.layers.push(layer);
-      if (variableStores.length > 1) {
-        if (renderingLayerInfo.lod === null){
-          renderingLayerInfo.lod = new THREE.LOD();
-        }
-        renderingLayerInfo.lod.addLevel(mesh, (0.5 * level ** 2 + 0.25 * level + 0.1) * 20);
-        if (level == variableStores.length - 1) {
-          scene.add(renderingLayerInfo.lod);
-        }
+    // Always create and populate the layer, even if currently disabled, so that
+    // toggling the checkbox later can add it to the scene without a fresh fetch.
+    await layer.update(0);
+    renderingLayerInfo.layers.push(layer);
+    if (variableStores.length > 1) {
+      if (renderingLayerInfo.lod === null){
+        renderingLayerInfo.lod = new THREE.LOD();
       }
-      else {
-        scene.add(mesh);
+      renderingLayerInfo.lod.addLevel(mesh, (0.5 * level ** 2 + 0.25 * level + 0.1) * 20);
+      if (enabled && level == variableStores.length - 1) {
+        scene.add(renderingLayerInfo.lod);
       }
+    }
+    else if (enabled) {
+      scene.add(mesh);
     }
     level++;
   }
