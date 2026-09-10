@@ -6,6 +6,10 @@ import { TransferFunctionVolumeLayer } from './transferFunctionVolumeLayer';
 import { HeatMapLayer } from './heatMapLayer';
 import { RemoteDataLayer } from './remoteDataLayer';
 
+// Finest LOD level of the cloud layer is split into this many tiles per horizontal
+// axis, so off-screen tiles can be skipped via per-object frustum culling.
+const CLOUD_TILE_GRID = 2;
+
 /*
  * A box in which the 3D volume texture will be rendered.
  * The box will be centered at the origin, with X in [-0.5, 0.5] so the width is 1, and
@@ -33,7 +37,9 @@ export async function createVolumetricRenderingBox({ scene, variable, variableSt
       // Clouds Layer
       case 'ql': {
         const cloudLayer = new CloudLayer(variable, variableStore, boxGeometry)
-        mesh = cloudLayer.initialize();
+        mesh = level === 0
+          ? cloudLayer.initializeTiles(CLOUD_TILE_GRID, CLOUD_TILE_GRID)
+          : cloudLayer.initialize();
         mesh.position.z = 0.04 + 2000 / get(scaleFactor); // was 0.25 // 570 meters above the map TODO: calculate this value from the data
         enabled = get(cloudLayerSettings).enabled;
         layer = cloudLayer as RemoteDataLayer;
