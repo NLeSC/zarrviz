@@ -2,14 +2,13 @@ import * as THREE from 'three';
 import { get } from "svelte/store";
 import { cloudLayerSettings, meshSize, rainLayerSettings, scaleFactor, temperatureLayerSettings, wind, dataRenderLayers } from '../stores/viewer.store';
 import { CloudLayer } from './cloudLayer';
-import { TiledCloudLayer } from './tiledCloudLayer';
 import { TransferFunctionVolumeLayer } from './transferFunctionVolumeLayer';
 import { HeatMapLayer } from './heatMapLayer';
 import { RemoteDataLayer } from './remoteDataLayer';
 
 // Finest LOD level of the cloud layer is split into this many tiles per horizontal
-// axis; only tiles intersecting the camera frustum keep their data fetched.
-const CLOUD_TILE_GRID = 4;
+// axis, so off-screen tiles can be skipped via per-object frustum culling.
+const CLOUD_TILE_GRID = 2;
 
 /*
  * A box in which the 3D volume texture will be rendered.
@@ -37,16 +36,10 @@ export async function createVolumetricRenderingBox({ scene, variable, variableSt
     switch (variable) {
       // Clouds Layer
       case 'ql': {
-        let cloudLayer: RemoteDataLayer;
-        if (level === 0) {
-          const tiledCloudLayer = new TiledCloudLayer(variable, variableStore, CLOUD_TILE_GRID, CLOUD_TILE_GRID, boxZ);
-          mesh = tiledCloudLayer.initialize();
-          cloudLayer = tiledCloudLayer;
-        } else {
-          const singleCloudLayer = new CloudLayer(variable, variableStore, boxGeometry);
-          mesh = singleCloudLayer.initialize();
-          cloudLayer = singleCloudLayer;
-        }
+        const cloudLayer = new CloudLayer(variable, variableStore, boxGeometry)
+        mesh = level === 0
+          ? cloudLayer.initializeTiles(CLOUD_TILE_GRID, CLOUD_TILE_GRID)
+          : cloudLayer.initialize();
         mesh.position.z = 0.04 + 2000 / get(scaleFactor); // was 0.25 // 570 meters above the map TODO: calculate this value from the data
         enabled = get(cloudLayerSettings).enabled;
         layer = cloudLayer as RemoteDataLayer;
