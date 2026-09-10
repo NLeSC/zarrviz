@@ -75,6 +75,10 @@
 			const qlLayer = dataRenderLayers.ql.layers ? dataRenderLayers.ql.layers[qlLevel] : null;
 			qlLayer && qlLayer.update(get(currentTimeIndex)) && qlLayer.displace(get(currentStepIndex), subStepsPerFrame, wind);
 			dataRenderLayers.ql.currentLODLevel = qlLevel;
+		} else if (qlLevel === 0 && dataRenderLayers.ql.layers[0]) {
+			// Camera moved without switching LOD level: re-check which tiles of the
+			// finest (tiled) level are in frustum. Cheap no-op if nothing changed.
+			dataRenderLayers.ql.layers[0].update(get(currentTimeIndex));
 		}
 		const qrLevel = dataRenderLayers.qr.lod ? dataRenderLayers.qr.lod.getCurrentLevel() : 0;
 		if (qrLevel !== dataRenderLayers.qr.currentLODLevel) {

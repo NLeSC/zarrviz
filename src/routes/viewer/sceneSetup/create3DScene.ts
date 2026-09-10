@@ -81,7 +81,13 @@ export function create3DScene({ canvas }): void {
     const delta = clock.getDelta();
     if(cameraControls.update(delta)) {
       renderer.render(scene, camera);
-      updateLODCallback();
+      // Never let an exception here skip the requestAnimationFrame reschedule below,
+      // or camera controls would silently stop responding for the rest of the session.
+      try {
+        updateLODCallback();
+      } catch (e) {
+        console.error('updateLODCallback failed', e);
+      }
     }
     requestAnimationFrame(animate);
   }

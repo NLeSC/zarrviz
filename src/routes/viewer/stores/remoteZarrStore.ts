@@ -1,6 +1,7 @@
 import { openArray, ZarrArray, HTTPStore, slice } from 'zarr';
 import type { RemoteStore } from './remoteStore';
 import type { TypedArray } from 'three';
+import type { SpatialRegion } from './spatialRegion';
 
 export class RemoteZarrStore implements RemoteStore {
   zarrStore: HTTPStore;
@@ -39,23 +40,27 @@ export class RemoteZarrStore implements RemoteStore {
     return result;
   }
 
-  async getTimeRange(variable: string, dimensions: number, currentTimeIndex: number, endTimeIndex: number): Promise<TypedArray> {
+  async getTimeRange(variable: string, dimensions: number, currentTimeIndex: number, endTimeIndex: number, region?: SpatialRegion): Promise<TypedArray> {
     const valArray = await this.getValArray(variable);
-    const slicing = slice(currentTimeIndex, endTimeIndex);
+    const timeSlicing = slice(currentTimeIndex, endTimeIndex);
+    const ySlicing = region ? slice(region.yStart, region.yEnd) : null;
+    const xSlicing = region ? slice(region.xStart, region.xEnd) : null;
     const { data, } = dimensions === 4
-      ? await valArray.getRaw([slicing, null, null, null])
-      : await valArray.getRaw([slicing, null, null]);
+      ? await valArray.getRaw([timeSlicing, null, ySlicing, xSlicing])
+      : await valArray.getRaw([timeSlicing, ySlicing, xSlicing]);
     return data;
   }
 
-  async copyTimeRange(variable: string, dimensions: number, currentTimeIndex: number, endTimeIndex: number, destination: TypedArray): Promise<void> {
+  async copyTimeRange(variable: string, dimensions: number, currentTimeIndex: number, endTimeIndex: number, destination: TypedArray, region?: SpatialRegion): Promise<void> {
     const valArray = await this.getValArray(variable);
     console.log(this.getURL());
     console.log('copyTimeRange', variable, dimensions, currentTimeIndex, endTimeIndex, destination.length);
-    const slicing = slice(currentTimeIndex, endTimeIndex);
+    const timeSlicing = slice(currentTimeIndex, endTimeIndex);
+    const ySlicing = region ? slice(region.yStart, region.yEnd) : null;
+    const xSlicing = region ? slice(region.xStart, region.xEnd) : null;
     let { data, } = dimensions === 4
-      ? await valArray.getRaw([slicing, null, null, null])
-      : await valArray.getRaw([slicing, null, null]);
+      ? await valArray.getRaw([timeSlicing, null, ySlicing, xSlicing])
+      : await valArray.getRaw([timeSlicing, ySlicing, xSlicing]);
     destination.set(data);
     data = null;
   }

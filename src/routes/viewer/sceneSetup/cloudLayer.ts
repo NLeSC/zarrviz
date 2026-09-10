@@ -29,6 +29,14 @@ export class CloudLayer extends RemoteDataLayer {
         uniforms.sunLightColor = new THREE.Uniform(sunLightColor);
         uniforms.gHG = new THREE.Uniform(0.6);
         uniforms.bottomHeight = new THREE.Uniform(675.0); // TODO: calculate this value from the data
-        uniforms.finalGamma = new THREE.Uniform(6.0);        
+        uniforms.finalGamma = new THREE.Uniform(6.0);
+        uniforms.uvOffset = new THREE.Uniform(new THREE.Vector3(0, 0, 0));
+        uniforms.uvScale = new THREE.Uniform(new THREE.Vector3(1, 1, 1));
+    }
+
+    // Restricts this layer's volumeTex sampling to a sub-region of the full domain,
+    // used when this CloudLayer instance represents a single tile of a larger grid.
+    setTileRegion(uvOffset: THREE.Vector3, uvScale: THREE.Vector3) {
+        this.updateUniforms({ uvOffset, uvScale });
     }
 }

@@ -1,5 +1,6 @@
 import { type RemoteStore } from "./remoteStore";
 import {type WorkerResultBuffers } from "./bufferWorker"
+import type { SpatialRegion } from "./spatialRegion";
 
 
 export class BufferMemoryStore {
@@ -8,6 +9,7 @@ export class BufferMemoryStore {
   readonly numSlices: number;
   readonly variable: string;
   readonly dimensions: number;
+  readonly region: SpatialRegion | null;
   currentBuffer: Uint8Array;
   currentBufferStartIndex: number;
   currentBufferSlices: number;
@@ -18,12 +20,13 @@ export class BufferMemoryStore {
   dataFetchWorker: Worker;
   nextBufferPromise: Promise<WorkerResultBuffers>;
 
-  constructor(bufferSize_: number, bufferSlices_: number, numSlices_: number, variable_: string, dimensions_: number) {
+  constructor(bufferSize_: number, bufferSlices_: number, numSlices_: number, variable_: string, dimensions_: number, region_: SpatialRegion | null = null) {
     this.bufferSize = bufferSize_;
     this.bufferSlices = bufferSlices_;
     this.numSlices = numSlices_;
     this.variable = variable_;
     this.dimensions = dimensions_;
+    this.region = region_;
     this.currentBuffer = null;
     this.currentBufferStartIndex = 0;
     this.currentBufferSlices = 0;
@@ -144,6 +147,7 @@ export class BufferMemoryStore {
         startIndex: startIndex,
         endIndex: startIndex + length,
         path: remoteStore.getURL(),
+        region: this.region,
     });
     this.nextBufferPromise = new Promise<WorkerResultBuffers>((resolve, reject) => {
         this.dataFetchWorker.onmessage = (event) => { resolve(event.data); };
@@ -152,7 +156,7 @@ export class BufferMemoryStore {
   }
 
   public async fetchCurrentBuffer(startIndex: number, length: number, remoteStore: RemoteStore) {
-    await remoteStore.copyTimeRange(this.variable, this.dimensions, startIndex, startIndex + length, this.currentBuffer);
+    await remoteStore.copyTimeRange(this.variable, this.dimensions, startIndex, startIndex + length, this.currentBuffer, this.region);
     this.currentBufferStartIndex = startIndex;
     this.currentBufferSlices = length;
   }

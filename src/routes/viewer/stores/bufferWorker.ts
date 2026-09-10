@@ -11,12 +11,12 @@ export interface WorkerResultBuffers {
 }
 
 self.onmessage = async function(event) {
-    const { variable, dimensions, startIndex, endIndex, path, coarseningData } = event.data;
+    const { variable, dimensions, startIndex, endIndex, path, coarseningData, region } = event.data;
 //    console.log("WEBWORKER: launching for", variable, "from", startIndex, "to", endIndex);
 
     const remoteStore = new RemoteZarrStore(path);
 
-    const bufferData = await remoteStore.getTimeRange(variable, dimensions, startIndex, endIndex);
+    const bufferData = await remoteStore.getTimeRange(variable, dimensions, startIndex, endIndex, region);
 
 //    console.log("WEBWORKER: Fetched buffer for", variable, "from", startIndex, "to", endIndex);
 

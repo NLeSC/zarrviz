@@ -20,9 +20,19 @@ uniform vec3 displacement;
 
 uniform float uTransparency;
 
+// Maps a coordinate normalized against the full domain (0..1) to this layer's own
+// volumeTex, which may only cover a sub-region (tile) of that domain. Identity
+// (offset 0, scale 1) for untiled layers.
+uniform vec3 uvOffset;
+uniform vec3 uvScale;
+
 // Three.js adds built-in uniforms and attributes:
 // https://threejs.org/docs/#api/en/renderers/webgl/WebGLProgram
 // uniform vec3 cameraPosition;
+vec3 tileUV(vec3 fullDomainUV) {
+  return (fullDomainUV - uvOffset) / uvScale;
+}
+
 vec2 intersectBox(vec3 orig, vec3 dir) {
   vec3 boxMin = vec3(-.5) * boxSize;
   vec3 boxMax = vec3(.5) * boxSize;
@@ -58,7 +68,7 @@ float getShadow(vec3 pos, vec3 step, vec2 tbounds, float tstep, float stepLength
     t += (n * tstep);
     samplePos += (n * step);
 
-    float v = texture(volumeTex, samplePos).r;
+    float v = texture(volumeTex, tileUV(samplePos)).r;
     float ql = (v == 0.0) ? 0. : (dataScale * pow(dataEpsilon / dataScale, 1.0 - v) - dataEpsilon);
     if(ql == 0.) {
       n *= 1.5;
@@ -94,7 +104,8 @@ void main(void) {
 
 // Prepare for ray marching
   ivec3 volumeTexSize = textureSize(volumeTex, 0);
-  vec3 dt0 = 1. / (vec3(volumeTexSize));
+  // One texel step, expressed in full-domain-normalized units (uvScale == 1 for untiled layers).
+  vec3 dt0 = uvScale / vec3(volumeTexSize);
   float dt1 = min(dt0.x, min(dt0.y, dt0.z));
   float slabThickness = float(volumeTexSize.z * voxelSize.z);
   float topHeight = bottomHeight + slabThickness;
@@ -138,14 +149,16 @@ void main(void) {
   float vsx = float(voxelSize.x);
   float vsy = float(voxelSize.y);
   float vsz = float(voxelSize.z);
-  vec3 distvec = vec3(nvx * vsx, nvy * vsy, nvz * vsz);
+  // Physical size covered by a full [0,1] step in full-domain-normalized space;
+  // divide by uvScale to recover the full domain's width when volumeTex is cropped.
+  vec3 distvec = vec3(nvx * vsx, nvy * vsy, nvz * vsz) / uvScale;
   float dx = length(distvec * dPSized);
   float dz = length(distvec * dPShadow);
   float transmittance_threshold = 0.05;
   vec3 dg = vec3(1) / vec3(volumeTexSize);
   for(float t = tBox.x; t < tBox.y; t += dt) {
 
-    float v = texture(volumeTex, pSized - displacement).r;
+    float v = texture(volumeTex, tileUV(pSized - displacement)).r;
     float ql = (v == 0.0) ? 0. : (dataScale * pow(dataEpsilon / dataScale, 1.0 - v) - dataEpsilon);
     if(ql == 0.0) {
       pSized += dPSized;
