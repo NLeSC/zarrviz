@@ -68,9 +68,13 @@ export async function createVolumetricRenderingBox({ scene, variable, variableSt
         break;
       }
     }
-    // Always create and populate the layer, even if currently disabled, so that
-    // toggling the checkbox later can add it to the scene without a fresh fetch.
-    await layer.update(0);
+    // Only eagerly fetch level 0. Coarser LOD levels start with just the tiny
+    // placeholder texture from configureUniforms() and are fetched lazily by
+    // updateLOD() the first time they actually become the active level - so GPU
+    // memory isn't spent on every LOD level's full-size texture up front.
+    if (level === 0) {
+      await layer.update(0);
+    }
     renderingLayerInfo.layers.push(layer);
     if (variableStores.length > 1) {
       if (renderingLayerInfo.lod === null){

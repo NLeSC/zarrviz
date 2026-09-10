@@ -64,6 +64,16 @@ export abstract class RemoteDataLayer {
         return this.tileGroup ?? this.renderObject;
     }
 
+    // Frees this layer's current (full-size) GPU texture and replaces it with a tiny
+    // placeholder, for LOD levels that are no longer the active one - so GPU memory
+    // is only spent on whichever level is actually being displayed.
+    disposeTexture() {
+        this.getDataTexture().dispose();
+        const placeholderSlice = this.variableStore.bufferStore.allocateBuffer(1);
+        (this.renderObject.material as THREE.ShaderMaterial).uniforms.volumeTex.value = this.createDataTexture(placeholderSlice);
+        this.getDataTexture().needsUpdate = true;
+    }
+
     async update(timestep: number, interimTexture: THREE.Texture = null) {
         if (interimTexture) {
             this.getDataTexture().dispose();
