@@ -6,6 +6,10 @@ import { TransferFunctionVolumeLayer } from './transferFunctionVolumeLayer';
 import { HeatMapLayer } from './heatMapLayer';
 import { RemoteDataLayer } from './remoteDataLayer';
 
+// Finest LOD level of the cloud layer is split into this many tiles per horizontal
+// axis, so off-screen tiles can be skipped via per-object frustum culling.
+const CLOUD_TILE_GRID = 2;
+
 /*
  * A box in which the 3D volume texture will be rendered.
  * The box will be centered at the origin, with X in [-0.5, 0.5] so the width is 1, and
@@ -33,7 +37,9 @@ export async function createVolumetricRenderingBox({ scene, variable, variableSt
       // Clouds Layer
       case 'ql': {
         const cloudLayer = new CloudLayer(variable, variableStore, boxGeometry)
-        mesh = cloudLayer.initialize();
+        mesh = level === 0
+          ? cloudLayer.initializeTiles(CLOUD_TILE_GRID, CLOUD_TILE_GRID)
+          : cloudLayer.initialize();
         mesh.position.z = 0.04 + 2000 / get(scaleFactor); // was 0.25 // 570 meters above the map TODO: calculate this value from the data
         enabled = get(cloudLayerSettings).enabled;
         layer = cloudLayer as RemoteDataLayer;
@@ -62,9 +68,13 @@ export async function createVolumetricRenderingBox({ scene, variable, variableSt
         break;
       }
     }
-    // Always create and populate the layer, even if currently disabled, so that
-    // toggling the checkbox later can add it to the scene without a fresh fetch.
-    await layer.update(0);
+    // Only eagerly fetch level 0. Coarser LOD levels start with just the tiny
+    // placeholder texture from configureUniforms() and are fetched lazily by
+    // updateLOD() the first time they actually become the active level - so GPU
+    // memory isn't spent on every LOD level's full-size texture up front.
+    if (level === 0) {
+      await layer.update(0);
+    }
     renderingLayerInfo.layers.push(layer);
     if (variableStores.length > 1) {
       if (renderingLayerInfo.lod === null){

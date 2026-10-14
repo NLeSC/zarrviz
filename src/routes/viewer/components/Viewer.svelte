@@ -70,22 +70,30 @@
 	function updateLOD() {
 		const qlLevel = dataRenderLayers.ql.lod ? dataRenderLayers.ql.lod.getCurrentLevel() : 0;
 		if (qlLevel !== dataRenderLayers.ql.currentLODLevel) {
-			const interimDataTexture = dataRenderLayers.ql.layers[dataRenderLayers.ql.currentLODLevel].getDataTexture();
-			dataRenderLayers.ql.layers[qlLevel].update(get(currentTimeIndex), interimDataTexture);
+			const previousQlLayer = dataRenderLayers.ql.layers[dataRenderLayers.ql.currentLODLevel];
+			const interimDataTexture = previousQlLayer.getDataTexture();
+			// Once the new level has its own real texture, the previous level's texture
+			// (only kept alive here as an interim placeholder) can be freed.
+			dataRenderLayers.ql.layers[qlLevel].update(get(currentTimeIndex), interimDataTexture)
+				.then(() => previousQlLayer.disposeTexture());
 			const qlLayer = dataRenderLayers.ql.layers ? dataRenderLayers.ql.layers[qlLevel] : null;
 			qlLayer && qlLayer.update(get(currentTimeIndex)) && qlLayer.displace(get(currentStepIndex), subStepsPerFrame, wind);
 			dataRenderLayers.ql.currentLODLevel = qlLevel;
 		}
 		const qrLevel = dataRenderLayers.qr.lod ? dataRenderLayers.qr.lod.getCurrentLevel() : 0;
 		if (qrLevel !== dataRenderLayers.qr.currentLODLevel) {
-			dataRenderLayers.qr.layers[qrLevel].update(get(currentTimeIndex));
+			const previousQrLayer = dataRenderLayers.qr.layers[dataRenderLayers.qr.currentLODLevel];
+			dataRenderLayers.qr.layers[qrLevel].update(get(currentTimeIndex))
+				.then(() => previousQrLayer.disposeTexture());
 			const qrLayer = dataRenderLayers.qr.layers ? dataRenderLayers.qr.layers[qrLevel] : null;
 			qrLayer && qrLayer.update(get(currentTimeIndex)) && qrLayer.displace(get(currentStepIndex), subStepsPerFrame, wind);
 			dataRenderLayers.qr.currentLODLevel = qrLevel;
 		}
 		const thetavmixLevel = dataRenderLayers.thetavmix.lod ? dataRenderLayers.thetavmix.lod.getCurrentLevel() : 0;
 		if (thetavmixLevel !== dataRenderLayers.thetavmix.currentLODLevel) {
-			dataRenderLayers.thetavmix.layers[thetavmixLevel].update(get(currentTimeIndex));
+			const previousThetavmixLayer = dataRenderLayers.thetavmix.layers[dataRenderLayers.thetavmix.currentLODLevel];
+			dataRenderLayers.thetavmix.layers[thetavmixLevel].update(get(currentTimeIndex))
+				.then(() => previousThetavmixLayer.disposeTexture());
 			const thetavmixLayer = dataRenderLayers.thetavmix.layers ? dataRenderLayers.thetavmix.layers[thetavmixLevel] : null;
 			thetavmixLayer && thetavmixLayer.update(get(currentTimeIndex)) && thetavmixLayer.displace(get(currentStepIndex), subStepsPerFrame, wind);
 			dataRenderLayers.thetavmix.currentLODLevel = thetavmixLevel;

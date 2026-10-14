@@ -9,6 +9,9 @@ export abstract class RemoteDataLayer {
     public readonly fragmentShader: string;
 
     protected renderObject: THREE.Mesh;
+    // When tiled, renderObject still holds the shared material/uniforms, but is
+    // never itself added to the scene; tileGroup's meshes are rendered instead.
+    protected tileGroup: THREE.Group | null = null;
 
     constructor(variable: string, variableStore: VariableStore, geometry: THREE.BufferGeometry, vertexShader: string, fragmentShader: string) {
         this.variable = variable;
@@ -24,12 +27,51 @@ export abstract class RemoteDataLayer {
         return this.renderObject;
     }
 
+    // Splits this.geometry into a tilesX x tilesY grid of smaller meshes sharing one
+    // material, so THREE.js's per-object frustum culling can skip off-screen tiles.
+    initializeTiles(tilesX: number, tilesY: number): THREE.Group {
+        this.renderObject = this.createObject(this.geometry);
+        const material = this.renderObject.material as THREE.ShaderMaterial;
+        this.geometry.computeBoundingBox();
+        const bb = this.geometry.boundingBox;
+        const tileSizeX = (bb.max.x - bb.min.x) / tilesX;
+        const tileSizeY = (bb.max.y - bb.min.y) / tilesY;
+        const sizeZ = bb.max.z - bb.min.z;
+        const centerZ = (bb.min.z + bb.max.z) / 2;
+
+        this.tileGroup = new THREE.Group();
+        for (let iy = 0; iy < tilesY; iy++) {
+            for (let ix = 0; ix < tilesX; ix++) {
+                const tileGeometry = new THREE.BoxGeometry(tileSizeX, tileSizeY, sizeZ);
+                tileGeometry.translate(
+                    bb.min.x + (ix + 0.5) * tileSizeX,
+                    bb.min.y + (iy + 0.5) * tileSizeY,
+                    centerZ
+                );
+                const tileMesh = new THREE.Mesh(tileGeometry, material);
+                tileMesh.renderOrder = 0;
+                this.tileGroup.add(tileMesh);
+            }
+        }
+        return this.tileGroup;
+    }
+
     getDataTexture(): THREE.Texture {
         return (this.renderObject.material as THREE.ShaderMaterial).uniforms.volumeTex.value as THREE.Texture;
     }
 
-    getRenderObject(): THREE.Mesh {
-        return this.renderObject;
+    getRenderObject(): THREE.Object3D {
+        return this.tileGroup ?? this.renderObject;
+    }
+
+    // Frees this layer's current (full-size) GPU texture and replaces it with a tiny
+    // placeholder, for LOD levels that are no longer the active one - so GPU memory
+    // is only spent on whichever level is actually being displayed.
+    disposeTexture() {
+        this.getDataTexture().dispose();
+        const placeholderSlice = this.variableStore.bufferStore.allocateBuffer(1);
+        (this.renderObject.material as THREE.ShaderMaterial).uniforms.volumeTex.value = this.createDataTexture(placeholderSlice);
+        this.getDataTexture().needsUpdate = true;
     }
 
     async update(timestep: number, interimTexture: THREE.Texture = null) {
