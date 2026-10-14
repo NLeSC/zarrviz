@@ -21,6 +21,63 @@ uniform vec3 displacement;
 
 uniform float uTransparency;
 
+// 0 disables the procedural detail; 1 is full strength.
+uniform float noiseStrength;
+
+// Noise feature sizes are expressed in data voxels.
+const highp float NOISE_BASE_WAVELENGTH_VOXELS = 1.0;
+const float NOISE_EDGE_EROSION = 0.85;
+const float NOISE_CORE_EROSION = 0.35;
+
+highp float hashLattice(highp ivec3 c) {
+  highp uvec3 v = uvec3(c) * 1664525u + 1013904223u;
+  v.x += v.y * v.z;
+  v.y += v.z * v.x;
+  v.z += v.x * v.y;
+  v ^= v >> 16u;
+  v.x += v.y * v.z;
+  v.y += v.z * v.x;
+  v.z += v.x * v.y;
+  return float(v.x) * (1.0 / 4294967296.0);
+}
+
+highp float valueNoise(highp vec3 p) {
+  highp vec3 i = floor(p);
+  highp vec3 f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  ivec3 ii = ivec3(i);
+  float n000 = hashLattice(ii);
+  float n100 = hashLattice(ii + ivec3(1, 0, 0));
+  float n010 = hashLattice(ii + ivec3(0, 1, 0));
+  float n110 = hashLattice(ii + ivec3(1, 1, 0));
+  float n001 = hashLattice(ii + ivec3(0, 0, 1));
+  float n101 = hashLattice(ii + ivec3(1, 0, 1));
+  float n011 = hashLattice(ii + ivec3(0, 1, 1));
+  float n111 = hashLattice(ii + ivec3(1, 1, 1));
+  return mix(mix(mix(n000, n100, f.x), mix(n010, n110, f.x), f.y),
+             mix(mix(n001, n101, f.x), mix(n011, n111, f.x), f.y), f.z);
+}
+
+// Three-octave fBm, normalized to [0, 1].
+highp float fbm(highp vec3 p) {
+  float sum = 0.0;
+  float amp = 0.5;
+  for(int i = 0; i < 3; i++) {
+    sum += amp * valueNoise(p);
+    p = p * 2.02 + 17.0;
+    amp *= 0.5;
+  }
+  return sum / 0.875;
+}
+
+// Only ever lowers ql, so no cloud appears where the data has none.
+float erodeCloud(float ql, vec3 pTex, vec3 texSize) {
+  float n = fbm(pTex * texSize / NOISE_BASE_WAVELENGTH_VOXELS);
+  float core = smoothstep(0.0, 0.2 * dataScale, ql);
+  float erosion = noiseStrength * mix(NOISE_EDGE_EROSION, NOISE_CORE_EROSION, core);
+  return ql * clamp(1.0 - erosion * (1.0 - n) * 2.0, 0.0, 1.0);
+}
+
 // Three.js adds built-in uniforms and attributes:
 // https://threejs.org/docs/#api/en/renderers/webgl/WebGLProgram
 // uniform vec3 cameraPosition;
@@ -146,8 +203,12 @@ void main(void) {
   vec3 dg = vec3(1) / vec3(volumeTexSize);
   for(float t = tBox.x; t < tBox.y; t += dt) {
 
-    float v = texture(volumeTex, pSized - displacement).r;
+    vec3 pTex = pSized - displacement;
+    float v = texture(volumeTex, pTex).r;
     float ql = (v == 0.0) ? 0. : (dataScale * pow(dataEpsilon / dataScale, 1.0 - v) - dataEpsilon);
+    if(ql > 0.0 && noiseStrength > 0.0) {
+      ql = erodeCloud(ql, pTex, vec3(volumeTexSize));
+    }
     if(ql == 0.0) {
       pSized += dPSized;
       continue;

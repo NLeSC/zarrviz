@@ -13,6 +13,8 @@
 
 	import { get, writable } from 'svelte/store';
 	import type { RemoteDataLayer } from '../sceneSetup/remoteDataLayer';
+	import type { CloudLayer } from '../sceneSetup/cloudLayer';
+	import { cloudDetailAmount } from '../sceneSetup/boxSetup';
 
 	let canvas: HTMLElement;
 
@@ -67,7 +69,19 @@
 		}
 	}
 
+	let lastDetailAmount = -1;
+
+	function updateCloudDetail() {
+		const finestCloudLayer = dataRenderLayers.ql.layers[0] as CloudLayer | undefined;
+		if (!finestCloudLayer) return;
+		const amount = cloudDetailAmount(camera.position.length() / camera.zoom);
+		if (amount === lastDetailAmount) return;
+		lastDetailAmount = amount;
+		finestCloudLayer.setDetailAmount(amount);
+	}
+
 	function updateLOD() {
+		updateCloudDetail();
 		const qlLevel = dataRenderLayers.ql.lod ? dataRenderLayers.ql.lod.getCurrentLevel() : 0;
 		if (qlLevel !== dataRenderLayers.ql.currentLODLevel) {
 			const previousQlLayer = dataRenderLayers.ql.layers[dataRenderLayers.ql.currentLODLevel];

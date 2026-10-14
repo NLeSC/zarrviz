@@ -11,6 +11,9 @@ export class CloudLayer extends RemoteDataLayer {
     // Smaller dtScale limits step banding; smaller extinctionScale offsets density inflated by max-coarsening.
     private static readonly LOD_DT_SCALE = [0.9, 0.6, 0.45, 0.3];
     private static readonly LOD_EXTINCTION_SCALE = [1.0, 0.7, 0.5, 0.35];
+    // Smaller steps so the sub-voxel noise is not undersampled.
+    private static readonly DETAIL_DT_SCALE = 0.5;
+    private lodDtScale = CloudLayer.BASE_DT_SCALE;
 
     constructor(variable: string, variableStore: VariableStore, geometry: THREE.BufferGeometry) {
         super(variable, variableStore, geometry, vertexShaderVolume, fragmentShaderVolumeClouds);
@@ -19,9 +22,19 @@ export class CloudLayer extends RemoteDataLayer {
 
     setLodLevel(level: number) {
         const pick = (table: number[]) => table[Math.min(level, table.length - 1)];
+        this.lodDtScale = pick(CloudLayer.LOD_DT_SCALE);
         this.updateUniforms({
-            dtScale: pick(CloudLayer.LOD_DT_SCALE),
+            dtScale: this.lodDtScale,
             extinctionScale: pick(CloudLayer.LOD_EXTINCTION_SCALE),
+        });
+    }
+
+    // amount in [0, 1]: strength of the procedural erosion noise (finest level only).
+    setDetailAmount(amount: number) {
+        const detailDt = Math.min(this.lodDtScale, CloudLayer.DETAIL_DT_SCALE);
+        this.updateUniforms({
+            noiseStrength: amount,
+            dtScale: THREE.MathUtils.lerp(this.lodDtScale, detailDt, amount),
         });
     }
 
@@ -35,6 +48,7 @@ export class CloudLayer extends RemoteDataLayer {
         uniforms.dataEpsilon = new THREE.Uniform(1e-11);
         uniforms.dtScale = new THREE.Uniform(CloudLayer.BASE_DT_SCALE);
         uniforms.extinctionScale = new THREE.Uniform(1.0);
+        uniforms.noiseStrength = new THREE.Uniform(0.0);
         uniforms.ambientFactor = new THREE.Uniform(0.0);
         uniforms.sunLightDir = new THREE.Uniform(sunLight.position);
         uniforms.solarFactor = new THREE.Uniform(0.8);

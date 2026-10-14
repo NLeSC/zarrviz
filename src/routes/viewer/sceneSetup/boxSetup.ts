@@ -10,6 +10,17 @@ import { RemoteDataLayer } from './remoteDataLayer';
 // axis, so off-screen tiles can be skipped via per-object frustum culling.
 const CLOUD_TILE_GRID = 2;
 
+const lodDistance = (level: number) => (0.5 * level ** 2 + 0.25 * level + 0.1) * 20;
+
+// Procedural cloud detail fades in over this camera-distance range, both inside
+// the range where the finest level (level 0) is active.
+const DETAIL_FADE_FAR = 0.8 * lodDistance(1);
+const DETAIL_FADE_NEAR = 0.4 * lodDistance(1);
+
+export function cloudDetailAmount(cameraDistance: number): number {
+  return 1 - THREE.MathUtils.smoothstep(cameraDistance, DETAIL_FADE_NEAR, DETAIL_FADE_FAR);
+}
+
 /*
  * A box in which the 3D volume texture will be rendered.
  * The box will be centered at the origin, with X in [-0.5, 0.5] so the width is 1, and
@@ -81,7 +92,7 @@ export async function createVolumetricRenderingBox({ scene, variable, variableSt
       if (renderingLayerInfo.lod === null){
         renderingLayerInfo.lod = new THREE.LOD();
       }
-      renderingLayerInfo.lod.addLevel(mesh, (0.5 * level ** 2 + 0.25 * level + 0.1) * 20);
+      renderingLayerInfo.lod.addLevel(mesh, lodDistance(level));
       if (enabled && level == variableStores.length - 1) {
         scene.add(renderingLayerInfo.lod);
       }
