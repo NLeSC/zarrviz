@@ -15,6 +15,7 @@ uniform ivec3 voxelSize;
 uniform float dataScale;
 uniform float gHG;
 uniform float dataEpsilon;
+uniform float extinctionScale;
 uniform float bottomHeight;
 uniform vec3 displacement;
 
@@ -66,7 +67,7 @@ float getShadow(vec3 pos, vec3 step, vec2 tbounds, float tstep, float stepLength
     }
 
     float h = bottomHeight + (samplePos.z - 0.5) * distz;
-    float beer = exp(-extinction(ql, h) * (n * stepLengthm));
+    float beer = exp(-extinction(ql, h) * extinctionScale * (n * stepLengthm));
     transmittance *= beer;
     if(transmittance < 0.05) {
       break;
@@ -114,8 +115,8 @@ void main(void) {
 
   // Dither to reduce banding (aliasing).
   // https://www.marcusbannerman.co.uk/articles/VolumeRendering.html
-  float random = fract(sin(gl_FragCoord.x * 12.9898 + gl_FragCoord.y * 78.233) * 43758.5453);
-  random *= 5.;
+  // Interleaved gradient noise (Jimenez 2014): less visible than white noise, jitter limited to one step.
+  float random = fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))));
   p += random * dt * rayDir;
 
   // Ray starting point, and change in ray point with each step, for the space where
@@ -154,7 +155,7 @@ void main(void) {
     float height = bottomHeight + (0.5 - pSized.z) * distvec.z;
 
     // extinction parameter
-    float ext = 0.1 * extinction(ql, height);
+    float ext = 0.1 * extinction(ql, height) * extinctionScale;
 
     // Henyey-Greenstein phase function
     float cosTheta = dot(rayDir, -lightDir);

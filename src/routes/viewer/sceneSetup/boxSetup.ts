@@ -40,6 +40,7 @@ export async function createVolumetricRenderingBox({ scene, variable, variableSt
         mesh = level === 0
           ? cloudLayer.initializeTiles(CLOUD_TILE_GRID, CLOUD_TILE_GRID)
           : cloudLayer.initialize();
+        cloudLayer.setLodLevel(level);
         mesh.position.z = 0.04 + 2000 / get(scaleFactor); // was 0.25 // 570 meters above the map TODO: calculate this value from the data
         enabled = get(cloudLayerSettings).enabled;
         layer = cloudLayer as RemoteDataLayer;
