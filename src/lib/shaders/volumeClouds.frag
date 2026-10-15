@@ -1,5 +1,6 @@
 precision mediump float;
 in vec3 rayDirUnnorm;
+in vec3 rayOrigin;
 in vec3 lightDir;
 
 uniform lowp sampler3D volumeTex;
@@ -140,7 +141,7 @@ void main(void) {
   // Find the part of the ray that intersects the box, where this part is
   // expressed as a range of "t" values (with "t" being the traditional
   // parameter for a how far a point is along a ray).
-  vec2 tBox = intersectBox(cameraPosition, rayDir);
+  vec2 tBox = intersectBox(rayOrigin, rayDir);
   vec2 tBoxShadow = intersectBox(vec3(0.0), lightDir);
 
   if(tBox.x >= tBox.y) {
@@ -168,7 +169,7 @@ void main(void) {
   }
 
   // Ray starting point, in the "real" space where the box may not be a cube.
-  vec3 p = cameraPosition + tBox.x * rayDir;
+  vec3 p = rayOrigin + tBox.x * rayDir;
 
   // Dither to reduce banding (aliasing).
   // https://www.marcusbannerman.co.uk/articles/VolumeRendering.html

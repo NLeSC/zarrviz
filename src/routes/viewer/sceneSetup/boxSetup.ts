@@ -36,7 +36,10 @@ export async function createVolumetricRenderingBox({ scene, variable, variableSt
       meshSize.set(variableInfo.numCellsXYZ);
     }
     if (level == 0){
-      boxZ = variableInfo.numCellsXYZ[2] < 2 ? variableInfo.numCellsXYZ[1] / variableInfo.numCellsXYZ[0] : 0;
+      // The proxy box needs real thickness: a flat proxy vanishes when viewed edge-on.
+      boxZ = variableInfo.numCellsXYZ[2] < 2
+        ? variableInfo.numCellsXYZ[1] / variableInfo.numCellsXYZ[0]
+        : variableInfo.getBoxSizes()[2];
     }
     const boxGeometry = new THREE.BoxGeometry(1, 1, boxZ);
     const planeGeometry = new THREE.PlaneGeometry(1, 1);
