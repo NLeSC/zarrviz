@@ -20,5 +20,5 @@ void main()
   rayDirUnnorm = position - cameraPosition;
   vec4 viewPosition = modelViewMatrix * vec4(position, 1.);
   gl_Position = projectionMatrix * viewPosition;
-  lightDir = normalize((viewMatrix * vec4(sunLightDir, 1.)).xyz - viewPosition.xyz);
+  lightDir = normalize(sunLightDir);
 }

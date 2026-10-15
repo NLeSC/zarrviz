@@ -223,7 +223,7 @@ void main(void) {
     float phase = phaseHG(cosTheta, gHG);
 
     // Shadowing
-    float shadow = ql > 0. ? getShadow(pSized, dPShadow, tBoxShadow, dt, dz, distvec.z, dg) : 1.0;
+    float shadow = ql > 0. ? getShadow(pTex, dPShadow, tBoxShadow, dt, dz, distvec.z, dg) : 1.0;
 
     // Ambient Lighting: linear approx
     float hfrac = (topHeight - height) / (topHeight - bottomHeight);

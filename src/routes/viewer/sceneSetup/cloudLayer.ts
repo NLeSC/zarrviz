@@ -14,6 +14,15 @@ export class CloudLayer extends RemoteDataLayer {
     // Smaller steps so the sub-voxel noise is not undersampled.
     private static readonly DETAIL_DT_SCALE = 0.5;
     private lodDtScale = CloudLayer.BASE_DT_SCALE;
+    // Azimuth in the box's xy plane from +x; elevation above that plane (box z is up).
+    private static readonly SUN_AZIMUTH_DEG = 90;
+    private static readonly SUN_ELEVATION_DEG = 45;
+
+    private static sunDirection(azimuthDeg: number, elevationDeg: number): THREE.Vector3 {
+        const az = THREE.MathUtils.degToRad(azimuthDeg);
+        const el = THREE.MathUtils.degToRad(elevationDeg);
+        return new THREE.Vector3(Math.cos(el) * Math.cos(az), Math.cos(el) * Math.sin(az), Math.sin(el));
+    }
 
     constructor(variable: string, variableStore: VariableStore, geometry: THREE.BufferGeometry) {
         super(variable, variableStore, geometry, vertexShaderVolume, fragmentShaderVolumeClouds);
@@ -29,6 +38,10 @@ export class CloudLayer extends RemoteDataLayer {
         });
     }
 
+    setSunAngles(azimuthDeg: number, elevationDeg: number) {
+        this.updateUniforms({ sunLightDir: CloudLayer.sunDirection(azimuthDeg, elevationDeg) });
+    }
+
     // amount in [0, 1]: strength of the procedural erosion noise (finest level only).
     setDetailAmount(amount: number) {
         const detailDt = Math.min(this.lodDtScale, CloudLayer.DETAIL_DT_SCALE);
@@ -40,17 +53,14 @@ export class CloudLayer extends RemoteDataLayer {
 
     configureUniforms(uniforms: { [uniform: string]: THREE.IUniform<any>; }): void {
         super.configureUniforms(uniforms);
-        const sunLightDir = new THREE.Vector3(0.0, 0.5, 0.5);
         const sunLightColor = new THREE.Color(0.99, 0.83, 0.62);
-        const sunLight = new THREE.DirectionalLight(sunLightColor.getHex(), 1.0);
-        sunLight.position.copy(sunLightDir);
         uniforms.dataScale = new THREE.Uniform(this.dataScaleValue);
         uniforms.dataEpsilon = new THREE.Uniform(1e-11);
         uniforms.dtScale = new THREE.Uniform(CloudLayer.BASE_DT_SCALE);
         uniforms.extinctionScale = new THREE.Uniform(1.0);
         uniforms.noiseStrength = new THREE.Uniform(0.0);
         uniforms.ambientFactor = new THREE.Uniform(0.0);
-        uniforms.sunLightDir = new THREE.Uniform(sunLight.position);
+        uniforms.sunLightDir = new THREE.Uniform(CloudLayer.sunDirection(CloudLayer.SUN_AZIMUTH_DEG, CloudLayer.SUN_ELEVATION_DEG));
         uniforms.solarFactor = new THREE.Uniform(0.8);
         uniforms.ambientLightColorTop = new THREE.Uniform(new THREE.Color().setRGB(0.529, 0.808, 0.922));
         uniforms.ambientLightColorBot = new THREE.Uniform(new THREE.Color(0.3036, 0.4026, 0.2937));
