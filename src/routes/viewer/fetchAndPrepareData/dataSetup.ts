@@ -1,67 +1,68 @@
-import {
-  createVolumetricRenderingBox
-} from "../sceneSetup/boxSetup";
-import {
-  getVoxelAndVolumeSize,
-  getVoxelAndVolumeSize2D,
-  totalSlices,
-  coarseDataSlices
-} from "../stores/allSlices.store";
-import { fetchAllSlices, fetchAllSlicesAtOnce } from "./fetchAllSlices";
-import { fetchSlice } from "./fetchSlice";
-import { openArray, HTTPStore } from 'zarr';
-import { get } from "svelte/store";
-import { slicesToRender } from "../stores/viewer.store";
-import { coarseData } from "./coarseData";
+import { createVolumetricRenderingBox } from "../sceneSetup/boxSetup";
+import { MultiVariableStore } from "../stores/multiVariableStore";
+import { RemoteZarrStore } from "../stores/remoteZarrStore";
+import { loading, loadTime } from "../stores/viewer.store";
 
+const bufferSlices = {'ql': 4, 'qr': 4, 'thetavmix': 8};
 
-export const zarrdata = []
 // Download first slice of the data and
 // calculate the voxel and volume size.
 // It runs only once.
-export async function dataSetup(visible_data, scene) {
+export async function dataSetup(visibleData: string[], scene: THREE.Scene, store: MultiVariableStore): Promise<string[]> {
 
   const urlSearchParams = new URLSearchParams(document.location.search);
-  const datasetUrl = urlSearchParams.get("dataset") || 'http://localhost:5173/data/movie.zarr';
+  const datasetUrl = urlSearchParams.get("dataset");
+  const remoteStore = new RemoteZarrStore(datasetUrl);
+  store.addRemoteStore(remoteStore);
+  const coarseRemoteZarrStores = [remoteStore];
+  // TODO: add this urls to the datastructure in page.svelte
+  if (datasetUrl.endsWith('-0.zarr')) {
+    const urlsToCheck = [
+      datasetUrl.replace('-0.zarr', '-1.zarr'),
+      datasetUrl.replace('-0.zarr', '-2.zarr')
+    ];
+    for (const url of urlsToCheck) {
+      let coarseRemoteZarrStore: RemoteZarrStore;
+      try {
+        coarseRemoteZarrStore = new RemoteZarrStore(url);
+        await coarseRemoteZarrStore.getMetaData(visibleData[0]); // Check if the store can be opened
+      } catch (e) {
+        console.warn(`Could not access ${url}:`, e);
+        continue;
+      }
+      store.addRemoteStore(coarseRemoteZarrStore);
+      coarseRemoteZarrStores.push(coarseRemoteZarrStore);
+    }
+  }
 
   // open array, no need to opening it again for each variable
 
-  const store = new HTTPStore(datasetUrl, { fetchOptions: { redirect: 'follow', mode: 'cors', credentials: 'include' } });
-  for (const variable of visible_data) {
-    zarrdata[variable] = await openArray({ store, path: variable, mode: 'r' });
-    const dimensions = variable === 'thetavmix' ? 3 : 4;
-    const { dataUint8, shape } = await fetchSlice({ currentTimeIndex: 0, path: variable, dimensions });
-    let coarseSlice = null;
-    if (variable == 'qr'){
-      coarseSlice = coarseData(dataUint8, shape);
-      coarseDataSlices.update((timeSlices) => {
-        if(timeSlices[0]){
-          timeSlices[0][variable] = coarseSlice;
-        }
-        else{
-          timeSlices[0] = {variable: coarseSlice};
-        }
-        return timeSlices
-      })
+  loading.set(true);
+  const startTime = performance.now();
+  const foundData = [];
+  for (const variable of visibleData) {
+    try {
+      const variableStores = [];
+      let i = 0;
+      for (const coarseRemoteZarrStore of coarseRemoteZarrStores) {
+        const variableStore = await store.addVariableStore(variable,  bufferSlices[variable] || 4, ++i, coarseRemoteZarrStore);
+        variableStores.push(variableStore);
+      }
+      foundData.push(variable);
+      await createVolumetricRenderingBox({ scene, variable, variableStores });
     }
-
-    variable === 'thetavmix'
-      ? await getVoxelAndVolumeSize2D(store, shape, variable)
-      : await getVoxelAndVolumeSize(store, shape, variable);
-
-    totalSlices.set(zarrdata[variable].length);
-    await createVolumetricRenderingBox({ scene, variable, dataUint8, coarseData: coarseSlice });
+    catch (e) {
+      if(e.message.includes(`array not found at path ${variable}`)) {
+        console.error(e.message);
+        continue;
+      }
+      else {
+        throw e;
+      }
+    }
   }
-
-  // Fetch all slices after shwing the first one
-  //fetchAllData(visible_data, [1, get(slicesToRender)]);
-  fetchAllSlicesAtOnce(visible_data, [1, Math.floor(get(slicesToRender))]);
+  const endTime = performance.now();
+  loadTime.set(endTime - startTime);
+  loading.set(false);
+  return foundData;
 }
-
-function fetchAllData(visible_data, timeRange) {
-  for (const variable of visible_data) {
-    const dimensions = variable === 'thetavmix' ? 3 : 4;
-    fetchAllSlices({ path: variable, dimensions, timeRange });
-  }
-}
-

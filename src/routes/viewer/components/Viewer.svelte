@@ -3,20 +3,25 @@
 	import * as THREE from 'three';
 	import DebugButtons from './DebugButtons.svelte';
 
-	import { dataSlices, downloadedTime } from '../stores/allSlices.store';
-	import { cloudLayerSettings, rainLayerSettings, temperatureLayerSettings, showGrid } from '../stores/viewer.store';
-	import { create3DScene, scene } from '../sceneSetup/create3DScene';
+	import { cloudLayerSettings, rainLayerSettings, temperatureLayerSettings, showGrid, 
+		numTimes, currentTimeIndex, currentStepIndex, subStepsPerFrame, wind, multiVariableStore, 
+		dataRenderLayers} from '../stores/viewer.store';
+	import { create3DScene, scene, renderer, camera, renderScene, updateLODCallback, setUpdateLODCallback } from '../sceneSetup/create3DScene';
 
 	import { dataSetup } from '../fetchAndPrepareData/dataSetup';
 	import { createGridHelper } from '../sceneSetup/createGridHelper';
-	import { boxes, data_layers } from '../sceneSetup/boxSetup';
-	// import examplePoints from '../fetchAndPrepareData/examplePoints';
 
-	import { currentTimeIndex } from '../sceneSetup/updateMaterial';
+	import { get, writable } from 'svelte/store';
+	import type { RemoteDataLayer } from '../sceneSetup/remoteDataLayer';
+	import type { CloudLayer } from '../sceneSetup/cloudLayer';
+	import { cloudDetailAmount } from '../sceneSetup/boxSetup';
 
 	let canvas: HTMLElement;
 
 	let gridHelper: THREE.GridHelper;
+
+	// Download time
+	const downloadedTime = writable(0);
 
 	//
 	// Listen for changes in the opacity of the layers and update the material
@@ -25,19 +30,91 @@
 	$: {
 		if (scene) {
 			// Change transparency of the materials
-			boxes.ql && (boxes.ql.material.uniforms.uTransparency.value = $cloudLayerSettings.opacity / 100);
-			boxes.qr && (boxes.qr.material.uniforms.uTransparency.value = $rainLayerSettings.opacity / 100);
-			boxes.thetavmix &&
-				(boxes.thetavmix.material.uniforms.uTransparency.value = $temperatureLayerSettings.opacity / 100);
+			const qlLevel = dataRenderLayers.ql.lod ? dataRenderLayers.ql.lod.getCurrentLevel() : 0;
+			const qlLayer = dataRenderLayers.ql.layers ? dataRenderLayers.ql.layers[qlLevel] : null;
+			qlLayer && (qlLayer.updateUniforms({uTransparency: $cloudLayerSettings.opacity / 100}));
+			const qrLevel = dataRenderLayers.qr.lod ? dataRenderLayers.qr.lod.getCurrentLevel() : 0;
+			const qrLayer = dataRenderLayers.qr.layers ? dataRenderLayers.qr.layers[qrLevel] : null;
+			qrLayer && (qrLayer.updateUniforms({uTransparency: $rainLayerSettings.opacity / 100}));
+			const thetavmixLevel = dataRenderLayers.thetavmix.lod ? dataRenderLayers.thetavmix.lod.getCurrentLevel() : 0;
+			const thetavmixLayer = dataRenderLayers.thetavmix.layers ? dataRenderLayers.thetavmix.layers[thetavmixLevel] : null;
+			thetavmixLayer &&
+				(thetavmixLayer.updateUniforms({uTransparency: $temperatureLayerSettings.opacity / 100}));
 
 			// Enable and disable the layers
-			$rainLayerSettings.enabled && !!boxes.qr ? scene.add(boxes.qr) : scene.remove(boxes.qr);
-			$cloudLayerSettings.enabled && !!boxes.ql ? scene.add(boxes.ql) : scene.remove(boxes.ql);
-			$temperatureLayerSettings.enabled && !!boxes.thetavmix
-				? scene.add(boxes.thetavmix)
-				: scene.remove(boxes.thetavmix);
+			updateLayerVisibility(dataRenderLayers.qr, qrLayer, $rainLayerSettings.enabled);
+			updateLayerVisibility(dataRenderLayers.ql, qlLayer, $cloudLayerSettings.enabled);
+			updateLayerVisibility(dataRenderLayers.thetavmix, thetavmixLayer, $temperatureLayerSettings.enabled);
+
+			// Render the scene
+			renderScene();
 		}
 	}
+
+	// When a variable has multiple LOD levels, only the shared THREE.LOD container is ever
+	// added to the scene; the per-level meshes are its children, not direct scene children.
+	function updateLayerVisibility(
+		layerInfo: { layers: RemoteDataLayer[]; lod: THREE.LOD },
+		layer: RemoteDataLayer,
+		enabled: boolean
+	) {
+		if (layer === undefined) return;
+		const renderObject: THREE.Object3D = layerInfo.lod ?? layer.getRenderObject();
+		if (enabled){
+			layer.update(get(currentTimeIndex));
+			layer.displace(get(currentStepIndex), subStepsPerFrame, wind);
+			scene.add(renderObject);
+		} else {
+			scene.remove(renderObject);
+		}
+	}
+
+	let lastDetailAmount = -1;
+
+	function updateCloudDetail() {
+		const finestCloudLayer = dataRenderLayers.ql.layers[0] as CloudLayer | undefined;
+		if (!finestCloudLayer) return;
+		const amount = cloudDetailAmount(camera.position.length() / camera.zoom);
+		if (amount === lastDetailAmount) return;
+		lastDetailAmount = amount;
+		finestCloudLayer.setDetailAmount(amount);
+	}
+
+	function updateLOD() {
+		updateCloudDetail();
+		const qlLevel = dataRenderLayers.ql.lod ? dataRenderLayers.ql.lod.getCurrentLevel() : 0;
+		if (qlLevel !== dataRenderLayers.ql.currentLODLevel) {
+			const previousQlLayer = dataRenderLayers.ql.layers[dataRenderLayers.ql.currentLODLevel];
+			const interimDataTexture = previousQlLayer.getDataTexture();
+			// Once the new level has its own real texture, the previous level's texture
+			// (only kept alive here as an interim placeholder) can be freed.
+			dataRenderLayers.ql.layers[qlLevel].update(get(currentTimeIndex), interimDataTexture)
+				.then(() => previousQlLayer.disposeTexture());
+			const qlLayer = dataRenderLayers.ql.layers ? dataRenderLayers.ql.layers[qlLevel] : null;
+			qlLayer && qlLayer.update(get(currentTimeIndex)) && qlLayer.displace(get(currentStepIndex), subStepsPerFrame, wind);
+			dataRenderLayers.ql.currentLODLevel = qlLevel;
+		}
+		const qrLevel = dataRenderLayers.qr.lod ? dataRenderLayers.qr.lod.getCurrentLevel() : 0;
+		if (qrLevel !== dataRenderLayers.qr.currentLODLevel) {
+			const previousQrLayer = dataRenderLayers.qr.layers[dataRenderLayers.qr.currentLODLevel];
+			dataRenderLayers.qr.layers[qrLevel].update(get(currentTimeIndex))
+				.then(() => previousQrLayer.disposeTexture());
+			const qrLayer = dataRenderLayers.qr.layers ? dataRenderLayers.qr.layers[qrLevel] : null;
+			qrLayer && qrLayer.update(get(currentTimeIndex)) && qrLayer.displace(get(currentStepIndex), subStepsPerFrame, wind);
+			dataRenderLayers.qr.currentLODLevel = qrLevel;
+		}
+		const thetavmixLevel = dataRenderLayers.thetavmix.lod ? dataRenderLayers.thetavmix.lod.getCurrentLevel() : 0;
+		if (thetavmixLevel !== dataRenderLayers.thetavmix.currentLODLevel) {
+			const previousThetavmixLayer = dataRenderLayers.thetavmix.layers[dataRenderLayers.thetavmix.currentLODLevel];
+			dataRenderLayers.thetavmix.layers[thetavmixLevel].update(get(currentTimeIndex))
+				.then(() => previousThetavmixLayer.disposeTexture());
+			const thetavmixLayer = dataRenderLayers.thetavmix.layers ? dataRenderLayers.thetavmix.layers[thetavmixLevel] : null;
+			thetavmixLayer && thetavmixLayer.update(get(currentTimeIndex)) && thetavmixLayer.displace(get(currentStepIndex), subStepsPerFrame, wind);
+			dataRenderLayers.thetavmix.currentLODLevel = thetavmixLevel;
+		}
+	}
+
+	setUpdateLODCallback(updateLOD);
 
 	// Toggle showGrid helper
 	export function toggleGrid() {
@@ -61,23 +138,23 @@
 		// const axesHelper = new THREE.AxesHelper(5);
 		// scene.add(axesHelper);
 		//
-
-		// Download first slice of the data and
-		// calculate the voxel and volume size.
-		// It runs only once.
-		dataSetup(data_layers, scene);
+		const presentVariables = await dataSetup(Object.keys(dataRenderLayers), scene, multiVariableStore);
+		$cloudLayerSettings.active = presentVariables.includes('ql');
+		$rainLayerSettings.active = presentVariables.includes('qr');
+		$temperatureLayerSettings.active = presentVariables.includes('thetavmix');
+		numTimes.set(multiVariableStore.numTimes);
 
 		// Add the example points to the scene
 		// scene.add(examplePoints());
-
 		downloadedTime.set(Math.round(performance.now() - timing));
+		renderer.render(scene, camera);
 		console.log('⏰ data downloaded and displayed in:', Math.round(performance.now() - timing), 'ms');
 	});
 
 	onDestroy(() => {
 		// Clean up Three.js resources
 		currentTimeIndex.set(0);
-		dataSlices.set([]);
+		multiVariableStore.clear();
 	});
 </script>
 

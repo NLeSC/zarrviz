@@ -1,80 +1,148 @@
 import * as THREE from 'three';
 import { get } from "svelte/store";
-import { volumeSizes } from "../stores/allSlices.store";
-import { cloudLayerSettings, rainLayerSettings, scaleFactor, temperatureLayerSettings } from '../stores/viewer.store';
-import { initMaterial } from './initMaterial';
-import { updateMaterial } from './updateMaterial';
+import { cloudLayerSettings, meshSize, rainLayerSettings, scaleFactor, temperatureLayerSettings, wind, dataRenderLayers } from '../stores/viewer.store';
+import { CloudLayer } from './cloudLayer';
+import { TransferFunctionVolumeLayer } from './transferFunctionVolumeLayer';
+import { HeatMapLayer } from './heatMapLayer';
+import { RemoteDataLayer } from './remoteDataLayer';
 
-//
-// Rendering containers and materials for the volume rendering layers
-//
-export const boxes: {
-  ql?: THREE.Mesh;
-  qr?: THREE.Mesh;
-  thetavmix?: THREE.Points | THREE.Mesh;
-  // thetavmix?: THREE.Mesh;
-} = {
-  ql: undefined,
-  qr: undefined,
-  thetavmix: undefined,
-};
+// Finest LOD level of the cloud layer is split into this many tiles per horizontal
+// axis, so off-screen tiles can be skipped via per-object frustum culling.
+const CLOUD_TILE_GRID = 2;
 
-//
-// Layers to be fetch and rendered in the scene programatically
-// Add and remove for debugging and testing
-// They should be all enabled by default
-//
-export const data_layers = [
-  'qr', // rain
-  'ql', // clouds
-  'thetavmix', // temperature
-];
+const lodDistance = (level: number) => (0.5 * level ** 2 + 0.25 * level + 0.1) * 20;
 
+// Procedural cloud detail fades in over this camera-distance range, both inside
+// the range where the finest level (level 0) is active.
+const DETAIL_FADE_FAR = 0.8 * lodDistance(1);
+const DETAIL_FADE_NEAR = 0.4 * lodDistance(1);
+
+export function cloudDetailAmount(cameraDistance: number): number {
+  return 1 - THREE.MathUtils.smoothstep(cameraDistance, DETAIL_FADE_NEAR, DETAIL_FADE_FAR);
+}
 
 /*
  * A box in which the 3D volume texture will be rendered.
  * The box will be centered at the origin, with X in [-0.5, 0.5] so the width is 1, and
  * Y (height) and Z (depth) scaled to match.
  */
-export function createVolumetricRenderingBox({ scene, variable, dataUint8, coarseData = null }) {
-  // const boxGeometry = new THREE.BoxGeometry(get(volumeSize)[0], get(volumeSize)[1], get(volumeSize)[2]);
-  // const boxSizeInKm = 33.8; // 33.8 km
-  // const boxScale = boxSizeInKm; // / scaleFactor; // Convert to meters and then apply scale factor to scene units
-
-  const boxZ = get(volumeSizes)[variable][2] / get(volumeSizes)[variable][1];
-  // const boxScale = 33800 / scaleFactor; //  33.8 km in meters in scene units
-  const boxGeometry = new THREE.BoxGeometry(1, 1, boxZ);
-  const planeGeometry = new THREE.PlaneGeometry(1, 1);
-  switch (variable) {
-    // Clouds Layer
-    case 'ql': {
-      boxes.ql = new THREE.Mesh(boxGeometry);
-      boxes.ql.position.z = 0.04 + 2000 / get(scaleFactor); // was 0.25 // 570 meters above the map TODO: calculate this value from the data
-      boxes.ql.renderOrder = 0;
-      boxes.ql.material = initMaterial({ variable });
-      get(cloudLayerSettings).enabled && scene.add(boxes.ql);
-      break;
+export async function createVolumetricRenderingBox({ scene, variable, variableStores }) {
+  let level = 0;
+  let boxZ = 0;
+  const coarseVariableStore = variableStores[variableStores.length - 1];
+  for (const variableStore of variableStores) {
+    const variableInfo = variableStore.variableInfo;
+    if (level == 0 && get(meshSize).length === 0) {
+      meshSize.set(variableInfo.numCellsXYZ);
     }
-
-    // Rain Layer
-    case 'qr': {
-      boxes.qr = new THREE.Mesh(boxGeometry);
-      boxes.qr.position.z = 2000 / get(scaleFactor); // it was 0.25 + 570 meters above the map TODO: calculate this value from the data
-      boxes.qr.renderOrder = 0;
-      boxes.qr.material = initMaterial({ variable });
-      get(rainLayerSettings).enabled && scene.add(boxes.qr);
-      break;
+    if (level == 0){
+      // The proxy box needs real thickness: a flat proxy vanishes when viewed edge-on.
+      boxZ = variableInfo.numCellsXYZ[2] < 2
+        ? variableInfo.numCellsXYZ[1] / variableInfo.numCellsXYZ[0]
+        : variableInfo.getBoxSizes()[2];
     }
-    // Temperature Layer
-    case 'thetavmix': {
-      boxes.thetavmix = new THREE.Mesh(planeGeometry);
-      boxes.thetavmix.material = initMaterial({ variable });
-      boxes.thetavmix.position.z = 0.03 // it was -
-      get(temperatureLayerSettings).enabled && scene.add(boxes.thetavmix);
-      break;
+    const boxGeometry = new THREE.BoxGeometry(1, 1, boxZ);
+    const planeGeometry = new THREE.PlaneGeometry(1, 1);
+    let layer = null;
+    let mesh = null;
+    let enabled = false;
+    let renderingLayerInfo: {layers: RemoteDataLayer[], lod: THREE.LOD} = {layers: [], lod: null};
+    switch (variable) {
+      // Clouds Layer
+      case 'ql': {
+        const cloudLayer = new CloudLayer(variable, variableStore, boxGeometry)
+        mesh = level === 0
+          ? cloudLayer.initializeTiles(CLOUD_TILE_GRID, CLOUD_TILE_GRID)
+          : cloudLayer.initialize();
+        cloudLayer.setLodLevel(level);
+        mesh.position.z = 0.04 + 2000 / get(scaleFactor); // was 0.25 // 570 meters above the map TODO: calculate this value from the data
+        enabled = get(cloudLayerSettings).enabled;
+        layer = cloudLayer as RemoteDataLayer;
+        renderingLayerInfo = dataRenderLayers.ql;
+        break;
+      }
 
+      // Rain Layer
+      case 'qr': {
+        const rainLayer = new TransferFunctionVolumeLayer(variable, variableStore, boxGeometry, coarseVariableStore);
+        mesh = rainLayer.initialize();
+        mesh.position.z = 2000 / get(scaleFactor); // it was 0.25 + 570 meters above the map TODO: calculate this value from the data
+        enabled = get(rainLayerSettings).enabled;
+        layer = rainLayer as RemoteDataLayer;
+        renderingLayerInfo = dataRenderLayers.qr;
+        break;
+      }
+      // Temperature Layer
+      case 'thetavmix': {
+        const thetaLayer = new HeatMapLayer(variable, variableStore, planeGeometry);
+        mesh = thetaLayer.initialize();
+        mesh.position.z = 0.03 // it was -
+        enabled = get(temperatureLayerSettings).enabled;
+        layer = thetaLayer as RemoteDataLayer;
+        renderingLayerInfo = dataRenderLayers.thetavmix;
+        break;
+      }
+    }
+    // Only eagerly fetch level 0. Coarser LOD levels start with just the tiny
+    // placeholder texture from configureUniforms() and are fetched lazily by
+    // updateLOD() the first time they actually become the active level - so GPU
+    // memory isn't spent on every LOD level's full-size texture up front.
+    if (level === 0) {
+      await layer.update(0);
+    }
+    renderingLayerInfo.layers.push(layer);
+    if (variableStores.length > 1) {
+      if (renderingLayerInfo.lod === null){
+        renderingLayerInfo.lod = new THREE.LOD();
+      }
+      renderingLayerInfo.lod.addLevel(mesh, lodDistance(level));
+      if (enabled && level == variableStores.length - 1) {
+        scene.add(renderingLayerInfo.lod);
+      }
+    }
+    else if (enabled) {
+      scene.add(mesh);
+    }
+    level++;
+  }
+}
+
+export function isVisible(key: string) {
+  if (key == 'ql'){
+    return get(cloudLayerSettings).enabled;
+  }
+  else if (key == 'qr'){
+    return get(rainLayerSettings).enabled;
+  }
+  else if (key == 'thetavmix'){
+    return get(temperatureLayerSettings).enabled;
+  }
+  return false;
+}
+
+export async function updateLayers(timestep: number) {
+  for (const [key, value] of Object.entries(dataRenderLayers)) {
+    if (isVisible(key)){
+      if (value.layers.length == 0){
+        continue;
+      }
+      const level = value.lod ? value.lod.getCurrentLevel() : 0;
+      console.log('updateLayers', value.layers[level].variable, timestep, level);
+      await value.layers[level].update(timestep);
     }
   }
-  updateMaterial({ variable, dataUint8, coarseData });
+}
 
+export async function displaceLayers(subStep: number, subStepsPerStep: number) {
+  // TODO: get wind from the data
+  for (const [key, value] of Object.entries(dataRenderLayers)) {
+    if (isVisible(key)){
+      if (value.layers.length == 0){
+        continue;
+      }
+      const level = value.lod ? value.lod.getCurrentLevel() : 0;
+      console.log('displaceLayers', value.layers[level].variable, subStep, level);
+      value.layers[level].displace(subStep, subStepsPerStep, wind);
+    }
+  }
 }

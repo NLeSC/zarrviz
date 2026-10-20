@@ -1,4 +1,5 @@
 out vec3 rayDirUnnorm;
+out vec3 rayOrigin;
 out vec3 lightDir;
 
 uniform vec3 sunLightDir;
@@ -17,8 +18,10 @@ uniform vec3 sunLightDir;
 
 void main()
 {
-  rayDirUnnorm=position-cameraPosition;
+  // Object space, so the box the fragment shader marches follows the mesh transform.
+  rayOrigin=(inverse(modelMatrix)*vec4(cameraPosition,1.)).xyz;
+  rayDirUnnorm=position-rayOrigin;
   vec4 viewPosition=modelViewMatrix*vec4(position,1.);
   gl_Position=projectionMatrix*viewPosition;
-  lightDir=normalize((viewMatrix*vec4(sunLightDir,1.)).xyz-viewPosition.xyz);
+  lightDir=normalize(sunLightDir);
 }

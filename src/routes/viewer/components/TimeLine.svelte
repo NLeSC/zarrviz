@@ -1,59 +1,51 @@
 <script lang="ts">
 	import { createEventDispatcher, onDestroy, onMount } from 'svelte';
 	import { get } from 'svelte/store';
-	import { dataSlices, coarseDataSlices, currentTimeIndex, downloadedTime } from '../stores/allSlices.store';
-	import { data_layers } from '../sceneSetup/boxSetup';
-	import { updateMaterial,
-		refreshMaterial,  
-		currentStepIndex } from '../sceneSetup/updateMaterial';
+	import { updateLayers, displaceLayers } from '../sceneSetup/boxSetup';
+	import { currentTimeIndex, currentStepIndex, loading, loadTime, subStepsPerFrame, multiVariableStore } from '../stores/viewer.store';
+	import { renderScene } from '../sceneSetup/create3DScene';
 
 	export let playAnimation = false;
 	export let length = 10;
-	export let positionIndex = 0;
-	export let playSpeedInMiliseconds = 300;
-	export let subStepsPerFrame = 10;
+	export let playSpeedInMiliseconds = 1000;
 
 	let interval;
+
 	const dispatch = createEventDispatcher();
 
-	function play() {
+	async function play() {
 		playAnimation = !playAnimation;
-		if (playAnimation) {
-			interval = setInterval(() => {
-				if (get(dataSlices)[get(currentTimeIndex)]) {
-					const nextStep = (get(currentStepIndex) + 1) % subStepsPerFrame;
-					currentStepIndex.set(nextStep);
-					if(nextStep == 0) {
-						const nextTimeIndex = (get(currentTimeIndex) + 1) % get(dataSlices).length;
-						currentTimeIndex.set(nextTimeIndex);	
-					}
-				}
-			}, playSpeedInMiliseconds/subStepsPerFrame);
-		} else {
-			clearInterval(interval);
+		while(playAnimation){
+			const nextStep = (get(currentStepIndex) + 1) % subStepsPerFrame;
+			currentStepIndex.set(nextStep);
+			let stepIncrementPromise = displaceLayers(nextStep, subStepsPerFrame).then(() => renderScene());
+			let promises = [stepIncrementPromise];
+			if(nextStep == 0) {
+				const nextTimeIndex = (get(currentTimeIndex) + 1) % multiVariableStore.numTimes;
+				currentTimeIndex.set(nextTimeIndex);
+				let timeUpdatePromise = updateLayers(nextTimeIndex).then(() => renderScene());
+				promises.push(timeUpdatePromise);
+			}
+			const delayPromise = new Promise<void>(res => setTimeout(res, playSpeedInMiliseconds/subStepsPerFrame));
+			promises.push(delayPromise);
+			await Promise.all(promises);
 		}
 	}
 
 	onMount(() => {
 		// Update the material when the currentTimeIndex changes
-		currentTimeIndex.subscribe((index: number) => {
-			const data = get(dataSlices)[index];
-			const coarseData = get(coarseDataSlices)[index];
-			if (data) {
-				for (const variable of data_layers) {
-					let variableCoarseData = null;
-					if (coarseData && variable in coarseData){
-						variableCoarseData = coarseData[variable];
-					}
-					updateMaterial({ variable, dataUint8: data[variable], coarseData: variableCoarseData });
-				}
-			}
+		currentTimeIndex.subscribe(async (index: number) => {
+			if(playAnimation) return;
+			loading.set(true);
+			const startTime = performance.now();
+			await updateLayers(index).then(() => renderScene());
+			const endTime = performance.now();
+			loading.set(false);
+			loadTime.set(endTime - startTime);
 		});
-		currentStepIndex.subscribe((index: number) => {
-			if(index != 0){
-				for (const variable of data_layers) {
-					refreshMaterial({variable, index, maxIndex: subStepsPerFrame});
-				}
+		currentStepIndex.subscribe(async (index: number) => {
+			if(index != 0 && !playAnimation) {
+				displaceLayers(index, subStepsPerFrame).then(() => renderScene());
 			}
 		})
 	});
@@ -65,7 +57,7 @@
 
 <div class="flex gap-4 mt-10 items-center px-5">
 	<!--  Play icon -->
-	<button class="btn" class:btn-primary={playAnimation} on:click={() => play()}>
+	<button class="btn" class:btn-primary={playAnimation} on:click={async () => await play()}>
 		{#if !playAnimation}
 			<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24">
 				<path
@@ -88,22 +80,34 @@
 			type="range"
 			class="range-slider transparent h-[4px] w-full cursor-pointer appearance-none border-transparent bg-neutral-200 dark:bg-neutral-600"
 			min="0"
-			max={length - 1}
+			max={ length - 1 }
 			step="1"
 			value={$currentTimeIndex}
 			on:input={(event) => {
-				const newIndex = parseInt(event.target.value);
-				currentTimeIndex.set(newIndex);
-				dispatch('onSelectedIndex', { index: newIndex });
+				dispatch('onSelectedIndex', { index: parseInt(event.target.value) });
 			}}
 		/>
-		<div class="w-full flex justify-between text-xs px-2 h-[30px]">
+		<div class="w-full flex justify-between text-xs px-2 h-[15px]">
 			<!-- Steps -->
 			<!--  array of steps from 0 to length -->
-			{#each Array.from({ length }, (_, index) => index) as step}
+			{#each Array.from({ length }, (_, index) => index ) as step}
 				<div class="flex flex-col">
 					<div>|</div>
-					<div class="-ml-1">{step}</div>
+				</div>
+			{/each}
+		</div>
+		<div class="w-full flex justify-between text-xs px-2 h-[15px]">
+			<!-- Steps -->
+			<!--  array of steps from 0 to length -->
+			{#each Array.from({ length }, (_, index) => index ) as step}
+				<div class="flex flex-col">
+					{#if length < 21}
+						<div>{step || 0}</div>
+					{:else}
+						{#if step % 10 == 0}
+							<div>{step || 0}</div>
+						{/if}
+					{/if}
 				</div>
 			{/each}
 		</div>
@@ -125,12 +129,12 @@
 			wasPlaying && play(); // stop current animation the animation
 		}}
 	/>
-	{#if $dataSlices.length < 1}
+	{#if $loading}
 		<div>
 			Loading data
 			<progress class="progress w-56" />
 		</div>
 	{:else}
-		All data loaded in: {$downloadedTime / 1000} seconds
+		Data buffer loaded in: {($loadTime / 1000).toFixed(2)} seconds
 	{/if}
 </div>
