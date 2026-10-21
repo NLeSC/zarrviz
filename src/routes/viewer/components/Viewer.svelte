@@ -158,7 +158,7 @@
 	});
 </script>
 
-<div>
+<div class="relative w-full h-full">
 	<div class="fixed top-0 left-0">
 		<a href="/"><button class="btn">← Select dataset</button></a>
 
@@ -168,5 +168,15 @@
 		</button>
 		<DebugButtons />
 	</div>
+	<canvas class="w-full h-full" bind:this={canvas} />
+	<div class="absolute bottom-2 left-2 z-10 rounded bg-black/30 px-2 py-1 text-xs text-white">
+		<a
+			href="https://creativecommons.org/licenses/by-nc-sa/4.0/"
+			target="_blank"
+			rel="noreferrer"
+			class="hover:underline"
+		>
+			Sentinel-2 cloudless by EOX (2021) · CC BY-NC-SA 4.0
+		</a>
+	</div>
 </div>
-<canvas class="w-full h-full" bind:this={canvas} />

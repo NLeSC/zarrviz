@@ -1,13 +1,15 @@
 import * as THREE from 'three';
 import WebGL from 'three/examples/jsm/capabilities/WebGL.js';
 import CameraControls from 'camera-controls';
-import { createPlaneMesh } from './createPlaneMesh';
+import { createMapTiles } from './createPlaneMesh';
+import type { TilesRenderer } from '3d-tiles-renderer';
 CameraControls.install({ THREE: THREE });
 
 export let scene: THREE.Scene;
 export let camera: THREE.PerspectiveCamera;
 export let cameraControls: CameraControls | null = null;
 export let renderer: THREE.WebGLRenderer;
+export let mapTiles: TilesRenderer;
 export let updateLODCallback: () => void;
 
 export const cameraFovDegrees = 1.0; // it was 5  - 1.0 has no artifacts almost, but less performant
@@ -60,8 +62,10 @@ export function create3DScene({ canvas }): void {
 
   cameraControls = new CameraControls(camera, canvas);
 
-  // Add a plane with the Map to the scene
-  scene.add(createPlaneMesh());
+  // Add the map tiles (3DTilesRendererJS) to the scene
+  let mapDirty = true;
+  mapTiles = createMapTiles(camera, renderer, () => (mapDirty = true));
+  scene.add(mapTiles.group);
 
   // Add controls to the scene
   // scene.add(viewHelper);
@@ -79,9 +83,14 @@ export function create3DScene({ canvas }): void {
   const clock = new THREE.Clock();
   function animate() {
     const delta = clock.getDelta();
-    if(cameraControls.update(delta)) {
+    const cameraChanged = cameraControls.update(delta);
+    if (cameraChanged || mapDirty) {
+      mapDirty = false;
+      camera.updateMatrixWorld();
+      mapTiles.setResolutionFromRenderer(camera, renderer);
+      mapTiles.update();
       renderer.render(scene, camera);
-      updateLODCallback();
+      if (cameraChanged) updateLODCallback();
     }
     requestAnimationFrame(animate);
   }
