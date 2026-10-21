@@ -5,6 +5,7 @@ import { TilesRenderer } from '3d-tiles-renderer';
 // @ts-expect-error missing type declaration
 import { GeneratedSurfacePlugin, XYZTilesOverlay } from '3d-tiles-renderer/plugins';
 import { scaleFactor } from '../stores/viewer.store';
+import type { CloudShadow } from './cloudShadow';
 
 const EARTH_CIRCUMFERENCE = 40075016.686; // Web Mercator world width in meters
 // Geographic center of the data domain (center of the Netherlands)
@@ -26,7 +27,8 @@ function toMercatorNormalized(lon: number, lat: number): [number, number] {
 export function createMapTiles(
   camera: THREE.Camera,
   renderer: THREE.WebGLRenderer,
-  onChange: () => void
+  onChange: () => void,
+  cloudShadow: CloudShadow
 ): TilesRenderer {
   const tiles = new TilesRenderer();
   tiles.registerPlugin(
@@ -52,6 +54,16 @@ export function createMapTiles(
   tiles.setCamera(camera);
   tiles.setResolutionFromRenderer(camera, renderer);
   tiles.addEventListener('needs-update', onChange);
-  tiles.addEventListener('load-model', onChange);
+  const shadowedMaterials = new WeakSet<THREE.Material>();
+  tiles.addEventListener('load-model', ({ scene }: { scene: THREE.Object3D }) => {
+    scene.traverse((object) => {
+      const material = (object as THREE.Mesh).material as THREE.Material | undefined;
+      if (material && !shadowedMaterials.has(material)) {
+        shadowedMaterials.add(material);
+        cloudShadow.applyToMaterial(material);
+      }
+    });
+    onChange();
+  });
   return tiles;
 }

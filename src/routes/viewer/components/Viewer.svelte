@@ -6,7 +6,7 @@
 	import { cloudLayerSettings, rainLayerSettings, temperatureLayerSettings, showGrid, 
 		numTimes, currentTimeIndex, currentStepIndex, subStepsPerFrame, wind, multiVariableStore, 
 		dataRenderLayers} from '../stores/viewer.store';
-	import { create3DScene, scene, renderer, camera, renderScene, updateLODCallback, setUpdateLODCallback } from '../sceneSetup/create3DScene';
+	import { create3DScene, scene, renderer, camera, renderScene, cloudShadow, setUpdateCloudShadowCallback, updateLODCallback, setUpdateLODCallback } from '../sceneSetup/create3DScene';
 
 	import { dataSetup } from '../fetchAndPrepareData/dataSetup';
 	import { createGridHelper } from '../sceneSetup/createGridHelper';
@@ -115,6 +115,12 @@
 	}
 
 	setUpdateLODCallback(updateLOD);
+
+	setUpdateCloudShadowCallback(() => {
+		const level = dataRenderLayers.ql.lod ? dataRenderLayers.ql.lod.getCurrentLevel() : 0;
+		const layer = dataRenderLayers.ql.layers?.[level] ?? null;
+		cloudShadow.update(renderer, get(cloudLayerSettings).enabled ? layer : null);
+	});
 
 	// Toggle showGrid helper
 	export function toggleGrid() {

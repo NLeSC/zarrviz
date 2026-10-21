@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import WebGL from 'three/examples/jsm/capabilities/WebGL.js';
 import CameraControls from 'camera-controls';
 import { createMapTiles } from './createPlaneMesh';
+import { CloudShadow } from './cloudShadow';
 import type { TilesRenderer } from '3d-tiles-renderer';
 CameraControls.install({ THREE: THREE });
 
@@ -10,11 +11,17 @@ export let camera: THREE.PerspectiveCamera;
 export let cameraControls: CameraControls | null = null;
 export let renderer: THREE.WebGLRenderer;
 export let mapTiles: TilesRenderer;
+export let cloudShadow: CloudShadow;
 export let updateLODCallback: () => void;
 
 export const cameraFovDegrees = 1.0; // it was 5  - 1.0 has no artifacts almost, but less performant
 export const cameraNear = 0.01;
 export const cameraFar = 1000.0;
+
+export let updateCloudShadowCallback: (() => void) | null = null;
+export function setUpdateCloudShadowCallback(callback: () => void) {
+  updateCloudShadowCallback = callback;
+}
 
 export function setUpdateLODCallback(callback: () => void) {
   updateLODCallback = callback;
@@ -22,6 +29,8 @@ export function setUpdateLODCallback(callback: () => void) {
 
 // Render the scene. This function can be reused in other effects or callbacks.
 export function renderScene(): void {
+  // The shadow only depends on the cloud data and sun, not on the camera, so it is refreshed here only
+  updateCloudShadowCallback?.();
   renderer.render(scene, camera);
   console.log('🔥 rendered');
 }
@@ -64,7 +73,8 @@ export function create3DScene({ canvas }): void {
 
   // Add the map tiles (3DTilesRendererJS) to the scene
   let mapDirty = true;
-  mapTiles = createMapTiles(camera, renderer, () => (mapDirty = true));
+  cloudShadow = new CloudShadow();
+  mapTiles = createMapTiles(camera, renderer, () => (mapDirty = true), cloudShadow);
   scene.add(mapTiles.group);
 
   // Add controls to the scene

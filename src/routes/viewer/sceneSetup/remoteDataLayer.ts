@@ -60,6 +60,10 @@ export abstract class RemoteDataLayer {
         return (this.renderObject.material as THREE.ShaderMaterial).uniforms.volumeTex.value as THREE.Texture;
     }
 
+    getMaterial(): THREE.ShaderMaterial {
+        return this.renderObject.material as THREE.ShaderMaterial;
+    }
+
     getRenderObject(): THREE.Object3D {
         return this.tileGroup ?? this.renderObject;
     }
