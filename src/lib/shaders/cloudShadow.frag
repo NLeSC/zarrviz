@@ -12,6 +12,9 @@ uniform vec3 sunLightDir;
 uniform vec2 footprintSize;
 uniform float groundZ;
 
+const int BLUR_TAPS = 32;
+const float BLUR_RADIUS_VOXELS = 3.0;
+
 void main(void) {
   vec3 lightDir = normalize(sunLightDir);
   lightDir.z = max(lightDir.z, 0.05);
@@ -28,11 +31,24 @@ void main(void) {
     p += lightDir * ((bottom - p.z) / lightDir.z);
   }
 
-  vec3 pTex = p / boxSize + vec3(0.5) - displacement;
-  if(any(lessThan(pTex.xy, vec2(0.0))) || any(greaterThan(pTex.xy, vec2(1.0)))) {
-    gl_FragColor = vec4(1.0);
-    return;
+  // Blur over a disc of a few voxels (golden-angle spiral) to hide the layered structure of the light volume.
+  ivec3 size = textureSize(lightTex, 0);
+  vec2 radius = BLUR_RADIUS_VOXELS * boxSize.xy / vec2(size.xy);
+  float sum = 0.0;
+  float weightSum = 0.0;
+  for(int i = 0; i < BLUR_TAPS; i++) {
+    float r = sqrt((float(i) + 0.5) / float(BLUR_TAPS));
+    float angle = float(i) * 2.399963;
+    vec2 offset = r * vec2(cos(angle), sin(angle)) * radius;
+    vec3 pTex = (p + vec3(offset, 0.0)) / boxSize + vec3(0.5) - displacement;
+    float lit = 1.0;
+    if(all(greaterThanEqual(pTex.xy, vec2(0.0))) && all(lessThanEqual(pTex.xy, vec2(1.0)))) {
+      pTex.z = clamp(pTex.z, 0.0, 1.0);
+      lit = texture(lightTex, pTex).r;
+    }
+    float w = 1.0 - 0.5 * r * r;
+    sum += w * lit;
+    weightSum += w;
   }
-  pTex.z = clamp(pTex.z, 0.0, 1.0);
-  gl_FragColor = vec4(vec3(texture(lightTex, pTex).r), 1.0);
+  gl_FragColor = vec4(vec3(sum / weightSum), 1.0);
 }

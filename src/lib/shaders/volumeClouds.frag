@@ -36,6 +36,21 @@ const float NOISE_CORE_EROSION = 0.35;
 
 const float PI = 3.14159265358979323846;
 
+// Radius, in data voxels, of the blur applied to the sunlight lookup; hides the voxel grid in the self-shadowing.
+const float LIGHT_BLUR_VOXELS = 2.5;
+
+// Center plus six axis-aligned taps, so shadows are soft in xy and across the z layers.
+float sampleLight(vec3 pTex, vec3 radius) {
+  float sum = 0.25 * texture(lightTex, pTex).r;
+  sum += 0.125 * texture(lightTex, pTex + vec3(radius.x, 0.0, 0.0)).r;
+  sum += 0.125 * texture(lightTex, pTex - vec3(radius.x, 0.0, 0.0)).r;
+  sum += 0.125 * texture(lightTex, pTex + vec3(0.0, radius.y, 0.0)).r;
+  sum += 0.125 * texture(lightTex, pTex - vec3(0.0, radius.y, 0.0)).r;
+  sum += 0.125 * texture(lightTex, pTex + vec3(0.0, 0.0, radius.z)).r;
+  sum += 0.125 * texture(lightTex, pTex - vec3(0.0, 0.0, radius.z)).r;
+  return sum;
+}
+
 highp float hashLattice(highp ivec3 c) {
   highp uvec3 v = uvec3(c) * 1664525u + 1013904223u;
   v.x += v.y * v.z;
@@ -178,6 +193,8 @@ void main(void) {
   float cosTheta = dot(rayDir, -lightDir);
   float phase = phaseHG(cosTheta, gHG);
 
+  vec3 lightBlurRadius = LIGHT_BLUR_VOXELS / vec3(volumeTexSize);
+
   // Adaptive step size for empty space skipping
   float stepMultiplier = 1.0;
   bool backedUp = false;
@@ -215,7 +232,7 @@ void main(void) {
 
     // Always sampled: a single fetch, and skipping it for dense samples made them fully lit
     // depending on where the jittered ray crossed the transmittance cutoff.
-    float shadow = clamp(texture(lightTex, pTex).r, 0.25, 1.0);
+    float shadow = clamp(sampleLight(pTex, lightBlurRadius), 0.25, 1.0);
 
     // Ambient Lighting: linear approx
     float hfrac = (topHeight - height) / (topHeight - bottomHeight);
