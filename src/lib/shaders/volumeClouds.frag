@@ -5,6 +5,8 @@ in highp vec3 rayOrigin;
 in vec3 lightDir;
 
 uniform lowp sampler3D volumeTex;
+// Sunlight transmittance per voxel, precomputed in lightVolume.ts
+uniform highp sampler3D lightTex;
 uniform sampler2D dataConversionTex;
 uniform float dtScale;
 uniform float finalGamma;
@@ -111,34 +113,6 @@ float extinction(float ql, float h) {
   return ql == 0.0 ? 0.000042 : 3.0 * LWC / (2.0 * 6.0e-3);
 }
 
-float getShadow(vec3 pos, vec3 step, vec2 tbounds, float tstep, float stepLengthm, float distz, vec3 delta) {
-  float transmittance = 1.0;
-  vec3 samplePos = pos;
-  float t = tbounds.x;
-  float n = 1.0;
-  while(t < tbounds.y) {
-    t += (n * tstep);
-    samplePos += (n * step);
-
-    float v = texture(volumeTex, samplePos).r;
-    // Lookup texture replaces the expensive pow() conversion
-    float ql = texture(dataConversionTex, vec2(v, 0.5)).r;
-    if(ql == 0.) {
-      n *= 1.5;
-      continue;
-    }
-
-    float h = bottomHeight + (samplePos.z - 0.5) * distz;
-    float beer = exp(-extinction(ql, h) * extinctionScale * (n * stepLengthm));
-    transmittance *= beer;
-    if(transmittance < 0.05) {
-      break;
-    }
-    n *= 1.5;
-  }
-  return clamp(transmittance, 0.25, 1.0);
-}
-
 void main(void) {
   highp vec3 rayDir = normalize(rayDirUnnorm);
 
@@ -146,14 +120,12 @@ void main(void) {
   // expressed as a range of "t" values (with "t" being the traditional
   // parameter for a how far a point is along a ray).
   vec2 tBox = intersectBox(rayOrigin, rayDir);
-  vec2 tBoxShadow = intersectBox(vec3(0.0), lightDir);
 
   if(tBox.x >= tBox.y) {
     discard; // Discard the fragment if it does not intersect the volume
   }
 
   tBox.x = max(tBox.x, 0.);
-  tBoxShadow.x = max(tBoxShadow.x, 0.0);
 
 // Prepare for ray marching
   ivec3 volumeTexSize = textureSize(volumeTex, 0);
@@ -162,9 +134,7 @@ void main(void) {
   float slabThickness = float(volumeTexSize.z * voxelSize.z);
   float topHeight = bottomHeight + slabThickness;
 
-  float dtScaleShadow = 1.0;
   float dt = dtScale * dt1;
-  float dtS = dtScaleShadow * dt1;
 
   // Prevents a lost WebGL context.
   if(dt < .00001) {
@@ -187,7 +157,6 @@ void main(void) {
   // centered at the origin, but texture look-ups have the origin at a box corner.
   highp vec3 pSized = p / boxSize + vec3(.5);
   highp vec3 dPSized = (rayDir * dt) / boxSize;
-  vec3 dPShadow = (lightDir * dtS) / boxSize;
 
   // Most browsers do not need this initialization, but add it to be safe.
   gl_FragColor = vec4(0.);
@@ -203,9 +172,7 @@ void main(void) {
   float vsz = float(voxelSize.z);
   vec3 distvec = vec3(nvx * vsx, nvy * vsy, nvz * vsz);
   float dx = length(distvec * dPSized);
-  float dz = length(distvec * dPShadow);
   float transmittance_threshold = 0.05;
-  vec3 dg = vec3(1) / vec3(volumeTexSize);
 
   // Loop-invariant
   float cosTheta = dot(rayDir, -lightDir);
@@ -213,6 +180,7 @@ void main(void) {
 
   // Adaptive step size for empty space skipping
   float stepMultiplier = 1.0;
+  bool backedUp = false;
 
   for(float t = tBox.x; t < tBox.y; t += dt * stepMultiplier) {
 
@@ -223,22 +191,31 @@ void main(void) {
     if(ql > 0.0 && noiseStrength > 0.0) {
       ql = erodeCloud(ql, pTex, vec3(volumeTexSize));
     }
+    // Entered a cloud after a double step: go back and resample the skipped point so the
+    // cloud boundary is not quantized to the (jittered) double-step grid.
+    if(ql > 0.0 && stepMultiplier > 1.5) {
+      pSized -= dPSized;
+      t -= dt;
+      stepMultiplier = 0.0;
+      backedUp = true;
+      continue;
+    }
     if(ql == 0.0) {
-      stepMultiplier = 2.0;
+      stepMultiplier = backedUp ? 1.0 : 2.0;
+      backedUp = false;
       pSized += dPSized * stepMultiplier;
       continue;
     }
     stepMultiplier = 1.0;
+    backedUp = false;
     float height = bottomHeight + (0.5 - pSized.z) * distvec.z;
 
     // extinction parameter
     float ext = 0.1 * extinction(ql, height) * extinctionScale;
 
-    // Shadowing; skipped when transmittance is too low to matter
-    float shadow = 1.0;
-    if(ql > 0.0 && transmittance > 0.1) {
-      shadow = getShadow(pTex, dPShadow, tBoxShadow, dt, dz, distvec.z, dg);
-    }
+    // Always sampled: a single fetch, and skipping it for dense samples made them fully lit
+    // depending on where the jittered ray crossed the transmittance cutoff.
+    float shadow = clamp(texture(lightTex, pTex).r, 0.25, 1.0);
 
     // Ambient Lighting: linear approx
     float hfrac = (topHeight - height) / (topHeight - bottomHeight);

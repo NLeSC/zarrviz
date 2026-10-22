@@ -4,6 +4,8 @@ import fragmentShaderVolumeClouds from '$lib/shaders/volumeClouds.frag'; // ql
 import type { VariableStore } from '../stores/multiVariableStore';
 import { makeDataConversionTex } from '$lib/utils/makeDataConversionTex';
 import * as THREE from 'three';
+import { LightVolume } from './lightVolume';
+import { renderer, renderScene } from './create3DScene';
 
 export class CloudLayer extends RemoteDataLayer {
     dataScaleValue: number;
@@ -16,6 +18,7 @@ export class CloudLayer extends RemoteDataLayer {
     // Smaller steps so the sub-voxel noise is not undersampled.
     private static readonly DETAIL_DT_SCALE = 0.5;
     private lodDtScale = CloudLayer.BASE_DT_SCALE;
+    private readonly lightVolume = new LightVolume();
     // Azimuth in the box's xy plane from +x; elevation above that plane (box z is up).
     private static readonly SUN_AZIMUTH_DEG = 90;
     private static readonly SUN_ELEVATION_DEG = 45;
@@ -42,6 +45,27 @@ export class CloudLayer extends RemoteDataLayer {
 
     setSunAngles(azimuthDeg: number, elevationDeg: number) {
         this.updateUniforms({ sunLightDir: CloudLayer.sunDirection(azimuthDeg, elevationDeg) });
+        this.updateLightVolume();
+    }
+
+    async update(timestep: number, interimTexture: THREE.Texture = null) {
+        await super.update(timestep, interimTexture);
+        this.updateLightVolume();
+    }
+
+    disposeTexture() {
+        super.disposeTexture();
+        this.lightVolume.dispose();
+        this.updateUniforms({ lightTex: this.lightVolume.texture });
+    }
+
+    // Recomputes the per-voxel sunlight transmittance; it depends only on the data and the sun.
+    private updateLightVolume() {
+        if (!renderer) return;
+        this.lightVolume.compute(renderer, this.getMaterial().uniforms);
+        this.updateUniforms({ lightTex: this.lightVolume.texture });
+        // The ground shadow is only refreshed when the scene is rendered, and this can finish after the last render.
+        renderScene();
     }
 
     // amount in [0, 1]: strength of the procedural erosion noise (finest level only).
@@ -59,6 +83,7 @@ export class CloudLayer extends RemoteDataLayer {
         uniforms.dataScale = new THREE.Uniform(this.dataScaleValue);
         uniforms.dataEpsilon = new THREE.Uniform(CloudLayer.DATA_EPSILON);
         uniforms.dataConversionTex = new THREE.Uniform(makeDataConversionTex(this.dataScaleValue, CloudLayer.DATA_EPSILON));
+        uniforms.lightTex = new THREE.Uniform(this.lightVolume.texture);
         uniforms.dtScale = new THREE.Uniform(CloudLayer.BASE_DT_SCALE);
         uniforms.extinctionScale = new THREE.Uniform(1.0);
         uniforms.noiseStrength = new THREE.Uniform(0.0);

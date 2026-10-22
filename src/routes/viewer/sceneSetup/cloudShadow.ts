@@ -7,11 +7,11 @@ const SHADOW_MAP_WIDTH = 1024;
 const SHADOW_STRENGTH = 0.4;
 
 // Uniforms of the cloud volume material that the shadow pass reuses.
-const COPIED_UNIFORMS = ['volumeTex', 'dataConversionTex', 'voxelSize', 'displacement', 'sunLightDir', 'bottomHeight', 'extinctionScale'];
+const COPIED_UNIFORMS = ['lightTex', 'displacement', 'sunLightDir'];
 
 /*
- * Renders the cloud volume's shadow onto a top-down texture: every texel marches from
- * the ground towards the sun through the volume and stores the transmittance.
+ * Renders the cloud volume's shadow onto a top-down texture: every texel looks up the sunlight
+ * transmittance (see LightVolume) at the point where its sun ray enters the volume.
  * Materials passed to applyToMaterial() sample that texture by world xy and darken accordingly.
  */
 export class CloudShadow {

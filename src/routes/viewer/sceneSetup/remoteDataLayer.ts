@@ -27,6 +27,22 @@ export abstract class RemoteDataLayer {
         return this.renderObject;
     }
 
+    // Drops the given BoxGeometry faces (group indices: +x, -x, +y, -y, +z, -z; negatives are ignored).
+    // The shader marches the whole volume for every fragment, so faces on the seams between
+    // tiles would composite the same ray again and show up as a wall of extra opacity.
+    private static removeFaces(geometry: THREE.BoxGeometry, faces: number[]) {
+        const index = geometry.getIndex();
+        const kept: number[] = [];
+        geometry.groups.forEach((group, i) => {
+            if (faces.includes(i)) return;
+            for (let k = group.start; k < group.start + group.count; k++) {
+                kept.push(index.getX(k));
+            }
+        });
+        geometry.setIndex(kept);
+        geometry.clearGroups();
+    }
+
     // Splits this.geometry into a tilesX x tilesY grid of smaller meshes sharing one
     // material, so THREE.js's per-object frustum culling can skip off-screen tiles.
     initializeTiles(tilesX: number, tilesY: number): THREE.Group {
@@ -43,6 +59,12 @@ export abstract class RemoteDataLayer {
         for (let iy = 0; iy < tilesY; iy++) {
             for (let ix = 0; ix < tilesX; ix++) {
                 const tileGeometry = new THREE.BoxGeometry(tileSizeX, tileSizeY, sizeZ);
+                RemoteDataLayer.removeFaces(tileGeometry, [
+                    ix < tilesX - 1 ? 0 : -1, // +x
+                    ix > 0 ? 1 : -1, // -x
+                    iy < tilesY - 1 ? 2 : -1, // +y
+                    iy > 0 ? 3 : -1 // -y
+                ]);
                 tileGeometry.translate(
                     bb.min.x + (ix + 0.5) * tileSizeX,
                     bb.min.y + (iy + 0.5) * tileSizeY,
