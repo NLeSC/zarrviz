@@ -1,7 +1,17 @@
 <script>
 	import * as THREE from 'three';
-	import { camera, cameraControls } from '../sceneSetup/create3DScene';
+	import { camera, cameraControls, renderScene } from '../sceneSetup/create3DScene';
+	import { setFlowInterpolation } from '../sceneSetup/boxSetup';
 	const distance = 50; // Adjust the distance based on your scene scale
+
+	let flowEnabled = true;
+
+	// Compares interpolating along the optical flow with only translating the frame with the wind.
+	function toggleFlow() {
+		flowEnabled = !flowEnabled;
+		setFlowInterpolation(flowEnabled);
+		renderScene();
+	}
 
 	// More examples here
 
@@ -13,6 +23,7 @@
 	}
 </script>
 
+<button class="btn btn-sm" class:btn-primary={flowEnabled} on:click={toggleFlow}>Optical flow</button>
 <button class="btn btn-sm" onclick="camera_modal.showModal()">Camera Controls</button>
 <button class="btn btn-sm" on:click={() => setCameraView(0, 0, distance, 0, 1, 0)}>Up</button>
 

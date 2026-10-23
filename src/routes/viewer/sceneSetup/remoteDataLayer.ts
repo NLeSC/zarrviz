@@ -116,14 +116,18 @@ export abstract class RemoteDataLayer {
         this.getDataTexture().needsUpdate = true;
     }
 
-    displace(subStep: number, subStepsPerStep: number, wind: number[]) {
+    // Global displacement over one full snapshot interval, in normalized texture coordinates.
+    protected fullStepDisplacement(wind: number[]): THREE.Vector3 {
         const variableInfo = this.variableStore.variableInfo;
         const dTSnapshot = 10.0; // TODO: get from the variable store
         const xRange = variableInfo.upperBoundXYZ[0] - variableInfo.lowerBoundXYZ[0];
-        const deltaX = wind[0] * (subStep / subStepsPerStep) * dTSnapshot / xRange;
         const yRange = variableInfo.upperBoundXYZ[1] - variableInfo.lowerBoundXYZ[1];
-        const deltaY = wind[1] * (subStep / subStepsPerStep) * dTSnapshot / yRange;
-        (this.renderObject.material as THREE.ShaderMaterial).uniforms.displacement.value = new THREE.Vector3(deltaX, deltaY, 0.0);
+        return new THREE.Vector3(wind[0] * dTSnapshot / xRange, wind[1] * dTSnapshot / yRange, 0.0);
+    }
+
+    displace(subStep: number, subStepsPerStep: number, wind: number[]) {
+        const displacement = this.fullStepDisplacement(wind).multiplyScalar(subStep / subStepsPerStep);
+        (this.renderObject.material as THREE.ShaderMaterial).uniforms.displacement.value = displacement;
         //this.getDataTexture().needsUpdate = true;
     }
 

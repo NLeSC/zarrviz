@@ -24,6 +24,16 @@ uniform float extinctionScale;
 uniform float bottomHeight;
 uniform vec3 displacement;
 
+// Interpolation between two timesteps. volumeTex is the frame at the start of the step and
+// volumeTexNext the one at its end. flowTex holds the optical flow, in texture coordinates, relative
+// to the global displacement over the whole step (stepDisplacement); frameFraction is the
+// position within the step.
+uniform lowp sampler3D volumeTexNext;
+uniform highp sampler3D flowTex;
+uniform float flowBlend;
+uniform float frameFraction;
+uniform vec3 stepDisplacement;
+
 uniform float uTransparency;
 
 // 0 disables the procedural detail; 1 is full strength.
@@ -202,7 +212,17 @@ void main(void) {
   for(float t = tBox.x; t < tBox.y; t += dt * stepMultiplier) {
 
     vec3 pTex = pSized - displacement;
-    float v = texture(volumeTex, pTex).r;
+    float v;
+    if(flowBlend > 0.5) {
+      // Both frames are warped to the current time along the flow and cross-faded, so clouds
+      // that grow or move are interpolated instead of just translated.
+      vec3 flowStep = stepDisplacement + texture(flowTex, pSized).xyz;
+      float vStart = texture(volumeTex, pSized - frameFraction * flowStep).r;
+      float vEnd = texture(volumeTexNext, pSized + (1.0 - frameFraction) * flowStep).r;
+      v = mix(vStart, vEnd, frameFraction);
+    } else {
+      v = texture(volumeTex, pTex).r;
+    }
     // Lookup texture replaces the expensive pow() conversion
     float ql = texture(dataConversionTex, vec2(v, 0.5)).r;
     if(ql > 0.0 && noiseStrength > 0.0) {

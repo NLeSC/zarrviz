@@ -133,6 +133,15 @@ export async function updateLayers(timestep: number) {
   }
 }
 
+// Switches the cloud layers between interpolating along the optical flow and only translating with the wind.
+export function setFlowInterpolation(enabled: boolean) {
+  for (const layer of dataRenderLayers.ql.layers) {
+    if (layer instanceof CloudLayer) {
+      layer.setFlowEnabled(enabled);
+    }
+  }
+}
+
 export async function displaceLayers(subStep: number, subStepsPerStep: number) {
   // TODO: get wind from the data
   for (const [key, value] of Object.entries(dataRenderLayers)) {

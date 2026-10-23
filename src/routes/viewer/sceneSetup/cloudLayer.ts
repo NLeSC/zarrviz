@@ -6,6 +6,8 @@ import { makeDataConversionTex } from '$lib/utils/makeDataConversionTex';
 import * as THREE from 'three';
 import { LightVolume } from './lightVolume';
 import { renderer, renderScene } from './create3DScene';
+import { wind } from '../stores/viewer.store';
+import { GpuOpticalFlow, makeEmptyFlowTexture, makeEmptyVolumeTexture } from './gpuOpticalFlow';
 
 export class CloudLayer extends RemoteDataLayer {
     dataScaleValue: number;
@@ -19,6 +21,13 @@ export class CloudLayer extends RemoteDataLayer {
     private static readonly DETAIL_DT_SCALE = 0.5;
     private lodDtScale = CloudLayer.BASE_DT_SCALE;
     private readonly lightVolume = new LightVolume();
+    // Interpolation between timesteps: the next frame is blended in along an optical flow field
+    // that is estimated on the GPU for every pair of consecutive timesteps.
+    private opticalFlow: GpuOpticalFlow | null = null;
+    private nextFrameTexture: THREE.Texture | null = null;
+    private flowEnabled = true;
+    private flowReady = false;
+    private interpolationToken = 0;
     // Azimuth in the box's xy plane from +x; elevation above that plane (box z is up).
     private static readonly SUN_AZIMUTH_DEG = 90;
     private static readonly SUN_ELEVATION_DEG = 45;
@@ -49,12 +58,79 @@ export class CloudLayer extends RemoteDataLayer {
     }
 
     async update(timestep: number, interimTexture: THREE.Texture = null) {
+        // The blend uniforms refer to the previous timestep until the new frames are ready.
+        this.interpolationToken++;
+        this.setFlowReady(false);
         await super.update(timestep, interimTexture);
         this.updateLightVolume();
+        await this.updateInterpolation(timestep);
     }
+
+    displace(subStep: number, subStepsPerStep: number, wind: number[]) {
+        super.displace(subStep, subStepsPerStep, wind);
+        this.updateUniforms({
+            frameFraction: subStep / subStepsPerStep,
+            stepDisplacement: this.fullStepDisplacement(wind),
+        });
+    }
+
+    // Switches between interpolating along the optical flow and only translating the frame with the wind.
+    setFlowEnabled(enabled: boolean) {
+        this.flowEnabled = enabled;
+        this.setFlowReady(this.flowReady);
+    }
+
+    private setFlowReady(ready: boolean) {
+        this.flowReady = ready;
+        this.updateUniforms({ flowBlend: ready && this.flowEnabled ? 1 : 0 });
+    }
+
+    // Loads the frame after `timestep` and computes the flow towards it.
+    private async updateInterpolation(timestep: number) {
+        const { numCellsXYZ, numTimes } = this.variableStore.variableInfo;
+        if (!renderer || numCellsXYZ[2] < 2 || timestep + 1 >= numTimes) return;
+        const token = this.interpolationToken;
+        const slice = await this.variableStore.bufferStore.setCurrentSliceIndex(timestep + 1, this.variableStore.remoteStore);
+        if (token !== this.interpolationToken) return;
+
+        this.nextFrameTexture?.dispose();
+        // A copy, because the buffer store reuses its memory.
+        this.nextFrameTexture = this.createDataTexture(slice.slice());
+        this.updateUniforms({ volumeTexNext: this.nextFrameTexture });
+
+        this.opticalFlow ??= new GpuOpticalFlow();
+        const step = this.fullStepDisplacement(wind);
+        const startTime = performance.now();
+        const flowTexture = this.opticalFlow.compute(
+            renderer,
+            this.getDataTexture(),
+            this.nextFrameTexture,
+            [numCellsXYZ[0], numCellsXYZ[1], numCellsXYZ[2]],
+            [step.x, step.y, step.z],
+            this.dataScaleValue,
+            CloudLayer.DATA_EPSILON
+        );
+        // The GPU work is asynchronous; wait for it to get a meaningful timing.
+        renderer.getContext().finish();
+        console.log('optical flow', this.variable, timestep, `${(performance.now() - startTime).toFixed(1)} ms`);
+        this.updateUniforms({ flowTex: flowTexture });
+        this.setFlowReady(true);
+    }
+
+    private disposeInterpolation() {
+        this.interpolationToken++;
+        this.setFlowReady(false);
+        this.nextFrameTexture?.dispose();
+        this.nextFrameTexture = makeEmptyVolumeTexture();
+        this.updateUniforms({ volumeTexNext: this.nextFrameTexture });
+        this.opticalFlow?.dispose();
+        this.opticalFlow = null;
+    }
+
 
     disposeTexture() {
         super.disposeTexture();
+        this.disposeInterpolation();
         this.lightVolume.dispose();
         this.updateUniforms({ lightTex: this.lightVolume.texture });
     }
@@ -84,6 +160,12 @@ export class CloudLayer extends RemoteDataLayer {
         uniforms.dataEpsilon = new THREE.Uniform(CloudLayer.DATA_EPSILON);
         uniforms.dataConversionTex = new THREE.Uniform(makeDataConversionTex(this.dataScaleValue, CloudLayer.DATA_EPSILON));
         uniforms.lightTex = new THREE.Uniform(this.lightVolume.texture);
+        this.nextFrameTexture = makeEmptyVolumeTexture();
+        uniforms.volumeTexNext = new THREE.Uniform(this.nextFrameTexture);
+        uniforms.flowTex = new THREE.Uniform(makeEmptyFlowTexture());
+        uniforms.flowBlend = new THREE.Uniform(0);
+        uniforms.frameFraction = new THREE.Uniform(0.0);
+        uniforms.stepDisplacement = new THREE.Uniform(new THREE.Vector3());
         uniforms.dtScale = new THREE.Uniform(CloudLayer.BASE_DT_SCALE);
         uniforms.extinctionScale = new THREE.Uniform(1.0);
         uniforms.noiseStrength = new THREE.Uniform(0.0);
