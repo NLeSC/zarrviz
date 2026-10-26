@@ -8,6 +8,8 @@ export const cloudLayerSettings = persisted('cloudLayer', { enabled: true, opaci
 export const rainLayerSettings = persisted('rainLayer', { enabled: true, opacity: 100, active: true }); // 0 to 100
 export const temperatureLayerSettings = persisted('temperatureLayer', { enabled: true, opacity: 100, active: true }); // 0 to 100
 
+export const timeOfDay = persisted('timeOfDay', 14); // hour of day, 8 to 20
+
 // 1 unit in the scene = 1000 meters (1 kilometer) in real life
 // Meters of the bounding box of the data
 // NOTE: Calculate the bounding box of the data and set it here if possible.

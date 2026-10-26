@@ -15,6 +15,8 @@ uniform float solarFactor;
 uniform vec3 ambientLightColorTop;
 uniform vec3 ambientLightColorBot;
 uniform vec3 sunLightColor;
+// Divides out the colour of the midday sun, so that cloud colours are relative to it (like the eye adapting to daylight).
+uniform vec3 whiteBalance;
 uniform vec3 boxSize;
 uniform ivec3 voxelSize;
 uniform float dataScale;
@@ -201,7 +203,8 @@ void main(void) {
 
   // Loop-invariant
   float cosTheta = dot(rayDir, -lightDir);
-  float phase = phaseHG(cosTheta, gHG);
+  // Scaled by 4*PI so that an isotropic phase function gives 1 and the sun is comparable to the ambient light.
+  float phase = 4.0 * PI * phaseHG(cosTheta, gHG);
 
   vec3 lightBlurRadius = LIGHT_BLUR_VOXELS / vec3(volumeTexSize);
 
@@ -260,16 +263,13 @@ void main(void) {
 
     // Total in-scattering
     vec3 inScattering = ql > 0.0 ? (ambientFactor * ambientLight + solarFactor * sunLightColor * phase * shadow) : vec3(0.0, 0.0, 0.0);
-    // Out-scattering: Beer's law
+    // Beer's law: the fraction of the light that this step absorbs (and scatters towards the camera) is 1 - beer.
     float beer = exp(-ext * dx);
-    float outScattering = ((1.0 - beer) / ext) + (1.0 - beer * beer);
-    //float outScattering=1.0;
-    //float outScattering=((1.0-beer)/ext);
 
+    // Radiance that reaches the camera, attenuated by the cloud in front of this step.
+    // Not clamped: clamping each channel would saturate the colour of the light to white.
+    illumination += transmittance * (1.0 - beer) * inScattering;
     transmittance *= beer;
-
-    // Full illumination
-    illumination += transmittance * clamp(inScattering * outScattering, 0.0, 1.0);
 
     // Break on opacity
     if(transmittance < transmittance_threshold) {
@@ -285,8 +285,14 @@ void main(void) {
     transmittance = 0.0;
   } else {
     float g = 1. / finalGamma;
+    // The gamma is applied to the brightness only: per channel it would push all channels towards 1 and wash out the light colour.
+    const vec3 LUMA = vec3(0.2126, 0.7152, 0.0722);
+    float luma = dot(illumination, LUMA);
+    vec3 chroma = illumination * whiteBalance / max(luma, 1e-6);
+    // Largest channel at 1, so that coloured light keeps its colour instead of clipping to white.
+    chroma /= max(max(chroma.r, max(chroma.g, chroma.b)), 1e-6);
     // Modulate the alpha value of the final color by uTransparency
-    gl_FragColor = pow(vec4(illumination, (1.0 - transmittance) * uTransparency), vec4(g, g, g, 1));
+    gl_FragColor = vec4(chroma * pow(min(luma, 1.0), g), (1.0 - transmittance) * uTransparency);
   }
 }
 

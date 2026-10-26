@@ -1,6 +1,6 @@
 <script lang="ts">
 	import TimeLine from './components/TimeLine.svelte';
-	import { currentTimeIndex, meshSize, numTimes } from './stores/viewer.store';
+	import { currentTimeIndex, meshSize, numTimes, timeOfDay } from './stores/viewer.store';
 
 	import {
 		cloudLayerSettings,
@@ -9,6 +9,7 @@
 	} from './stores/viewer.store';
 
 	import Stats from '$lib/components/Stats.svelte';
+	import { formatHour, SUNRISE_HOUR, SUNSET_HOUR } from './sceneSetup/timeOfDay';
 	import Viewer from './components/Viewer.svelte';
 	// import Viewer from '$lib/components/viewerExample.svelte';
 </script>
@@ -109,6 +110,19 @@
 				</div>
 			</div>
 		{/if}
+
+		<h3 class="mt-10 text-xl">Time of day</h3>
+		<div class="grid grid-cols-2 gap-2 items-center">
+			<span class="label-text">{formatHour($timeOfDay)}</span>
+			<input
+				type="range"
+				min={SUNRISE_HOUR}
+				max={SUNSET_HOUR}
+				step="0.25"
+				bind:value={$timeOfDay}
+				class="range range-xs"
+			/>
+		</div>
 
 		<div class="mt-10 text-xl">Instruments</div>
 		<div class="flex flex-col gap-4 mt-5">
