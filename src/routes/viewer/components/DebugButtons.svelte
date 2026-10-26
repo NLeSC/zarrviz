@@ -1,8 +1,9 @@
-<script>
+<script lang="ts">
 	import * as THREE from 'three';
 	import { camera, cameraControls, renderScene } from '../sceneSetup/create3DScene';
 	import { setFlowInterpolation } from '../sceneSetup/boxSetup';
 	const distance = 50; // Adjust the distance based on your scene scale
+	let cameraModal: HTMLDialogElement;
 
 	let flowEnabled = true;
 
@@ -24,7 +25,7 @@
 </script>
 
 <button class="btn btn-sm" class:btn-primary={flowEnabled} on:click={toggleFlow}>Optical flow</button>
-<button class="btn btn-sm" onclick="camera_modal.showModal()">Camera Controls</button>
+<button class="btn btn-sm" on:click={() => cameraModal.showModal()}>Camera Controls</button>
 <button class="btn btn-sm" on:click={() => setCameraView(0, 0, distance, 0, 1, 0)}>Up</button>
 
 <button class="btn btn-sm" on:click={() => setCameraView(0, -distance, 0, 0, 1, 0, true)}>Front</button>
@@ -32,7 +33,7 @@
 
 <button class="btn btn-sm" on:click={() => setCameraView(distance, 0, 0, 0, 0, 1, true)}>Left</button>
 <button class="btn btn-sm" on:click={() => setCameraView(-distance, 0, 0, 0, 0, 1, true)}>Right</button>
-<dialog id="camera_modal" class="modal">
+<dialog bind:this={cameraModal} id="camera_modal" class="modal">
 	<div class="modal-box">
 		<h3 class="font-bold text-lg">Camera Controls!</h3>
 		<div class="info p-6">

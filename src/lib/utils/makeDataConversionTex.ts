@@ -24,13 +24,7 @@ export function makeDataConversionTex(dataScale: number, dataEpsilon: number) {
 		}
 	}
 
-	const texture = new THREE.DataTexture(
-		data,
-		size,
-		1,
-		THREE.RedFormat,
-		THREE.FloatType
-	);
+	const texture = new THREE.DataTexture(data, size, 1, THREE.RedFormat, THREE.FloatType);
 
 	texture.minFilter = THREE.LinearFilter;
 	texture.magFilter = THREE.LinearFilter;

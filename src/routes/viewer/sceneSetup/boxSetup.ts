@@ -1,6 +1,14 @@
 import * as THREE from 'three';
-import { get } from "svelte/store";
-import { cloudLayerSettings, meshSize, rainLayerSettings, scaleFactor, temperatureLayerSettings, wind, dataRenderLayers } from '../stores/viewer.store';
+import { get } from 'svelte/store';
+import {
+	cloudLayerSettings,
+	meshSize,
+	rainLayerSettings,
+	scaleFactor,
+	temperatureLayerSettings,
+	wind,
+	dataRenderLayers
+} from '../stores/viewer.store';
 import { CloudLayer } from './cloudLayer';
 import { TransferFunctionVolumeLayer } from './transferFunctionVolumeLayer';
 import { HeatMapLayer } from './heatMapLayer';
@@ -18,7 +26,7 @@ const DETAIL_FADE_FAR = 0.8 * lodDistance(1);
 const DETAIL_FADE_NEAR = 0.4 * lodDistance(1);
 
 export function cloudDetailAmount(cameraDistance: number): number {
-  return 1 - THREE.MathUtils.smoothstep(cameraDistance, DETAIL_FADE_NEAR, DETAIL_FADE_FAR);
+	return 1 - THREE.MathUtils.smoothstep(cameraDistance, DETAIL_FADE_NEAR, DETAIL_FADE_FAR);
 }
 
 /*
@@ -27,131 +35,127 @@ export function cloudDetailAmount(cameraDistance: number): number {
  * Y (height) and Z (depth) scaled to match.
  */
 export async function createVolumetricRenderingBox({ scene, variable, variableStores }) {
-  let level = 0;
-  let boxZ = 0;
-  const coarseVariableStore = variableStores[variableStores.length - 1];
-  for (const variableStore of variableStores) {
-    const variableInfo = variableStore.variableInfo;
-    if (level == 0 && get(meshSize).length === 0) {
-      meshSize.set(variableInfo.numCellsXYZ);
-    }
-    if (level == 0){
-      // The proxy box needs real thickness: a flat proxy vanishes when viewed edge-on.
-      boxZ = variableInfo.numCellsXYZ[2] < 2
-        ? variableInfo.numCellsXYZ[1] / variableInfo.numCellsXYZ[0]
-        : variableInfo.getBoxSizes()[2];
-    }
-    const boxGeometry = new THREE.BoxGeometry(1, 1, boxZ);
-    const planeGeometry = new THREE.PlaneGeometry(1, 1);
-    let layer = null;
-    let mesh = null;
-    let enabled = false;
-    let renderingLayerInfo: {layers: RemoteDataLayer[], lod: THREE.LOD} = {layers: [], lod: null};
-    switch (variable) {
-      // Clouds Layer
-      case 'ql': {
-        const cloudLayer = new CloudLayer(variable, variableStore, boxGeometry)
-        mesh = level === 0
-          ? cloudLayer.initializeTiles(CLOUD_TILE_GRID, CLOUD_TILE_GRID)
-          : cloudLayer.initialize();
-        cloudLayer.setLodLevel(level);
-        mesh.position.z = 0.04 + 2000 / get(scaleFactor); // was 0.25 // 570 meters above the map TODO: calculate this value from the data
-        enabled = get(cloudLayerSettings).enabled;
-        layer = cloudLayer as RemoteDataLayer;
-        renderingLayerInfo = dataRenderLayers.ql;
-        break;
-      }
+	let level = 0;
+	let boxZ = 0;
+	const coarseVariableStore = variableStores[variableStores.length - 1];
+	for (const variableStore of variableStores) {
+		const variableInfo = variableStore.variableInfo;
+		if (level == 0 && get(meshSize).length === 0) {
+			meshSize.set(variableInfo.numCellsXYZ);
+		}
+		if (level == 0) {
+			// The proxy box needs real thickness: a flat proxy vanishes when viewed edge-on.
+			boxZ =
+				variableInfo.numCellsXYZ[2] < 2
+					? variableInfo.numCellsXYZ[1] / variableInfo.numCellsXYZ[0]
+					: variableInfo.getBoxSizes()[2];
+		}
+		const boxGeometry = new THREE.BoxGeometry(1, 1, boxZ);
+		const planeGeometry = new THREE.PlaneGeometry(1, 1);
+		let layer = null;
+		let mesh = null;
+		let enabled = false;
+		let renderingLayerInfo: { layers: RemoteDataLayer[]; lod: THREE.LOD } = { layers: [], lod: null };
+		switch (variable) {
+			// Clouds Layer
+			case 'ql': {
+				const cloudLayer = new CloudLayer(variable, variableStore, boxGeometry);
+				mesh = level === 0 ? cloudLayer.initializeTiles(CLOUD_TILE_GRID, CLOUD_TILE_GRID) : cloudLayer.initialize();
+				cloudLayer.setLodLevel(level);
+				mesh.position.z = 0.04 + 2000 / get(scaleFactor); // was 0.25 // 570 meters above the map TODO: calculate this value from the data
+				enabled = get(cloudLayerSettings).enabled;
+				layer = cloudLayer as RemoteDataLayer;
+				renderingLayerInfo = dataRenderLayers.ql;
+				break;
+			}
 
-      // Rain Layer
-      case 'qr': {
-        const rainLayer = new TransferFunctionVolumeLayer(variable, variableStore, boxGeometry, coarseVariableStore);
-        mesh = rainLayer.initialize();
-        mesh.position.z = 2000 / get(scaleFactor); // it was 0.25 + 570 meters above the map TODO: calculate this value from the data
-        enabled = get(rainLayerSettings).enabled;
-        layer = rainLayer as RemoteDataLayer;
-        renderingLayerInfo = dataRenderLayers.qr;
-        break;
-      }
-      // Temperature Layer
-      case 'thetavmix': {
-        const thetaLayer = new HeatMapLayer(variable, variableStore, planeGeometry);
-        mesh = thetaLayer.initialize();
-        mesh.position.z = 0.03 // it was -
-        enabled = get(temperatureLayerSettings).enabled;
-        layer = thetaLayer as RemoteDataLayer;
-        renderingLayerInfo = dataRenderLayers.thetavmix;
-        break;
-      }
-    }
-    // Only eagerly fetch level 0. Coarser LOD levels start with just the tiny
-    // placeholder texture from configureUniforms() and are fetched lazily by
-    // updateLOD() the first time they actually become the active level - so GPU
-    // memory isn't spent on every LOD level's full-size texture up front.
-    if (level === 0) {
-      await layer.update(0);
-    }
-    renderingLayerInfo.layers.push(layer);
-    if (variableStores.length > 1) {
-      if (renderingLayerInfo.lod === null){
-        renderingLayerInfo.lod = new THREE.LOD();
-      }
-      renderingLayerInfo.lod.addLevel(mesh, lodDistance(level));
-      if (enabled && level == variableStores.length - 1) {
-        scene.add(renderingLayerInfo.lod);
-      }
-    }
-    else if (enabled) {
-      scene.add(mesh);
-    }
-    level++;
-  }
+			// Rain Layer
+			case 'qr': {
+				const rainLayer = new TransferFunctionVolumeLayer(variable, variableStore, boxGeometry, coarseVariableStore);
+				mesh = rainLayer.initialize();
+				mesh.position.z = 2000 / get(scaleFactor); // it was 0.25 + 570 meters above the map TODO: calculate this value from the data
+				enabled = get(rainLayerSettings).enabled;
+				layer = rainLayer as RemoteDataLayer;
+				renderingLayerInfo = dataRenderLayers.qr;
+				break;
+			}
+			// Temperature Layer
+			case 'thetavmix': {
+				const thetaLayer = new HeatMapLayer(variable, variableStore, planeGeometry);
+				mesh = thetaLayer.initialize();
+				mesh.position.z = 0.03; // it was -
+				enabled = get(temperatureLayerSettings).enabled;
+				layer = thetaLayer as RemoteDataLayer;
+				renderingLayerInfo = dataRenderLayers.thetavmix;
+				break;
+			}
+		}
+		// Only eagerly fetch level 0. Coarser LOD levels start with just the tiny
+		// placeholder texture from configureUniforms() and are fetched lazily by
+		// updateLOD() the first time they actually become the active level - so GPU
+		// memory isn't spent on every LOD level's full-size texture up front.
+		if (level === 0) {
+			await layer.update(0);
+		}
+		renderingLayerInfo.layers.push(layer);
+		if (variableStores.length > 1) {
+			if (renderingLayerInfo.lod === null) {
+				renderingLayerInfo.lod = new THREE.LOD();
+			}
+			renderingLayerInfo.lod.addLevel(mesh, lodDistance(level));
+			if (enabled && level == variableStores.length - 1) {
+				scene.add(renderingLayerInfo.lod);
+			}
+		} else if (enabled) {
+			scene.add(mesh);
+		}
+		level++;
+	}
 }
 
 export function isVisible(key: string) {
-  if (key == 'ql'){
-    return get(cloudLayerSettings).enabled;
-  }
-  else if (key == 'qr'){
-    return get(rainLayerSettings).enabled;
-  }
-  else if (key == 'thetavmix'){
-    return get(temperatureLayerSettings).enabled;
-  }
-  return false;
+	if (key == 'ql') {
+		return get(cloudLayerSettings).enabled;
+	} else if (key == 'qr') {
+		return get(rainLayerSettings).enabled;
+	} else if (key == 'thetavmix') {
+		return get(temperatureLayerSettings).enabled;
+	}
+	return false;
 }
 
 export async function updateLayers(timestep: number) {
-  for (const [key, value] of Object.entries(dataRenderLayers)) {
-    if (isVisible(key)){
-      if (value.layers.length == 0){
-        continue;
-      }
-      const level = value.lod ? value.lod.getCurrentLevel() : 0;
-      console.log('updateLayers', value.layers[level].variable, timestep, level);
-      await value.layers[level].update(timestep);
-    }
-  }
+	for (const [key, value] of Object.entries(dataRenderLayers)) {
+		if (isVisible(key)) {
+			if (value.layers.length == 0) {
+				continue;
+			}
+			const level = value.lod ? value.lod.getCurrentLevel() : 0;
+			console.log('updateLayers', value.layers[level].variable, timestep, level);
+			await value.layers[level].update(timestep);
+		}
+	}
 }
 
 // Switches the cloud layers between interpolating along the optical flow and only translating with the wind.
 export function setFlowInterpolation(enabled: boolean) {
-  for (const layer of dataRenderLayers.ql.layers) {
-    if (layer instanceof CloudLayer) {
-      layer.setFlowEnabled(enabled);
-    }
-  }
+	for (const layer of dataRenderLayers.ql.layers) {
+		if (layer instanceof CloudLayer) {
+			layer.setFlowEnabled(enabled);
+		}
+	}
 }
 
 export async function displaceLayers(subStep: number, subStepsPerStep: number) {
-  // TODO: get wind from the data
-  for (const [key, value] of Object.entries(dataRenderLayers)) {
-    if (isVisible(key)){
-      if (value.layers.length == 0){
-        continue;
-      }
-      const level = value.lod ? value.lod.getCurrentLevel() : 0;
-      console.log('displaceLayers', value.layers[level].variable, subStep, level);
-      value.layers[level].displace(subStep, subStepsPerStep, wind);
-    }
-  }
+	// TODO: get wind from the data
+	for (const [key, value] of Object.entries(dataRenderLayers)) {
+		if (isVisible(key)) {
+			if (value.layers.length == 0) {
+				continue;
+			}
+			const level = value.lod ? value.lod.getCurrentLevel() : 0;
+			console.log('displaceLayers', value.layers[level].variable, subStep, level);
+			value.layers[level].displace(subStep, subStepsPerStep, wind);
+		}
+	}
 }

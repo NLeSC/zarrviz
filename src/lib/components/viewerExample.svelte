@@ -1,13 +1,12 @@
 <script lang="ts">
 	import { afterUpdate, onMount } from 'svelte';
 	import * as THREE from 'three';
-	import { openArray, HTTPStore, create } from 'zarr';
+	import { openArray, HTTPStore } from 'zarr';
 	import CameraControls from 'camera-controls';
 	import vertexShaderVolume from '$lib/shaders/volume.vert';
-	import fragmentShaderVolume from '$lib/shaders/volume.frag';
+	import fragmentShaderVolume from '$lib/shaders/volumeTransfer.frag';
 	import { makeCloudTransferTex } from '$lib/utils/makeCloudTransferTex';
 	import { getBoxSize } from '$lib/utils/Utils';
-	import type { PersistenceMode } from 'zarr/types/types';
 
 	// import examplePoints from '$lib/components/3DVolumetric/examplePoints';
 
@@ -58,15 +57,6 @@
 	);
 
 	const finalGamma = 6.0;
-
-	function addExampleCube() {
-		// Create a cube
-		const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
-		const cubeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-		const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
-		cube.position.set(-1, 0, 0); // Set the position of the cube
-		return cube; // Add the cube to the scene
-	}
 
 	function create3DScene(): void {
 		// Set up the Three.js scene
@@ -190,12 +180,6 @@
 		return boxMaterial;
 	}
 
-	// Render the scene. This function can be reused in other effects or callbacks.
-	function renderScene(): void {
-		renderer.render(scene, camera);
-		console.log('🔥 rendered');
-	}
-
 	//
 	// Create and add  plane mesh to the scene to hold the Map texture
 	//
@@ -217,7 +201,7 @@
 		return planeMesh;
 	}
 
-	async function getVoxelAndVolumeSize({ store, shape, path, mode }) {
+	async function getVoxelAndVolumeSize({ store, shape }) {
 		// if (timeSliceIndex === 0) {
 		const zarrxvals = await openArray({ store, path: 'xt', mode: 'r' });
 		const zarryvals = await openArray({ store, path: 'yt', mode: 'r' });
@@ -254,7 +238,7 @@
 		timeSliceIndex = 0,
 		url = 'http://localhost:5173/data/ql.zarr',
 		path = 'ql',
-		mode = 'r' as PersistenceMode
+		mode = 'r' as 'r' | 'r+' | 'a' | 'w' | 'w-'
 	}) {
 		// Create an HTTPStore pointing to the base of your Zarr hierarchy
 		const store = new HTTPStore(url, {

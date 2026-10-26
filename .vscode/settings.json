@@ -1,6 +1,4 @@
 {
-  "window.title": "🌤️ Ruisdael CLouds - ${activeEditorShort}",
-  "githubPullRequests.ignoredPullRequestBranches": [
-    "master"
-  ]
+	"window.title": "🌤️ Ruisdael Clouds - ${activeEditorShort}",
+	"githubPullRequests.ignoredPullRequestBranches": ["master"]
 }

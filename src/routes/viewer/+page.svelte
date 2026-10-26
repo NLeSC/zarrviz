@@ -2,16 +2,22 @@
 	import TimeLine from './components/TimeLine.svelte';
 	import { currentTimeIndex, meshSize, numTimes, timeOfDay } from './stores/viewer.store';
 
-	import {
-		cloudLayerSettings,
-		rainLayerSettings,
-		temperatureLayerSettings
-	} from './stores/viewer.store';
+	import { cloudLayerSettings, rainLayerSettings, temperatureLayerSettings } from './stores/viewer.store';
 
 	import Stats from '$lib/components/Stats.svelte';
 	import { formatHour, SUNRISE_HOUR, SUNSET_HOUR } from './sceneSetup/timeOfDay';
 	import Viewer from './components/Viewer.svelte';
 	// import Viewer from '$lib/components/viewerExample.svelte';
+
+	let instrumentModal: HTMLDialogElement;
+
+	function getInputNumber(event: Event): number {
+		return (event.currentTarget as HTMLInputElement).valueAsNumber;
+	}
+
+	function getInputChecked(event: Event): boolean {
+		return (event.currentTarget as HTMLInputElement).checked;
+	}
 </script>
 
 <!--  Debugging info -->
@@ -25,18 +31,15 @@
 		<div class="w-full h-full">
 			<Viewer />
 		</div>
-		<TimeLine
-			length={$numTimes}
-			on:onSelectedIndex={(value) => currentTimeIndex.set(value.detail.index)}
-		/>
+		<TimeLine length={$numTimes} on:onSelectedIndex={(value) => currentTimeIndex.set(value.detail.index)} />
 	</div>
 	<div class="px-4 py-4">
 		<h2 class="text-2xl mb-3">Dataset</h2>
 		<Stats />
 		<span class="label-text w-1/2">No. timestamps: {$numTimes}</span>
-		<br>
+		<br />
 		<span class="label-text w-1/2">Current timestamp: {$currentTimeIndex}</span>
-		<br>
+		<br />
 		<span class="label-text w-1/2">Mesh size: {$meshSize[0]} x {$meshSize[1]} x {$meshSize[2]}</span>
 
 		<h3 class="mt-10 text-xl">Layers</h3>
@@ -49,7 +52,7 @@
 							disabled={!$cloudLayerSettings.active}
 							checked={$cloudLayerSettings.enabled}
 							class="checkbox checkbox-sm"
-							on:change={(e) => ($cloudLayerSettings.enabled = e.target.checked)}
+							on:change={(e) => ($cloudLayerSettings.enabled = getInputChecked(e))}
 						/>
 						<span class="label-text w-1/2">Clouds</span>
 					</label>
@@ -58,7 +61,7 @@
 						min="0"
 						max="100"
 						bind:value={$cloudLayerSettings.opacity}
-						on:change={(e) => ($cloudLayerSettings.opacity = e.target.value)}
+						on:change={(e) => ($cloudLayerSettings.opacity = getInputNumber(e))}
 						disabled={!$cloudLayerSettings.enabled}
 						class:opacity-30={!$cloudLayerSettings.enabled}
 						class="disabled range range-xs"
@@ -72,14 +75,14 @@
 							disabled={!$rainLayerSettings.active}
 							checked={$rainLayerSettings.enabled}
 							class="checkbox checkbox-sm"
-							on:change={(e) => ($rainLayerSettings.enabled = e.target.checked)}
+							on:change={(e) => ($rainLayerSettings.enabled = getInputChecked(e))}
 						/>
 						<span class="label-text">Rain</span>
 					</label>
 					<input
 						type="range"
 						bind:value={$rainLayerSettings.opacity}
-						on:change={(e) => ($rainLayerSettings.opacity = e.target.value)}
+						on:change={(e) => ($rainLayerSettings.opacity = getInputNumber(e))}
 						min="0"
 						max="100"
 						class="range range-xs"
@@ -94,7 +97,7 @@
 							disabled={!$temperatureLayerSettings.active}
 							checked={$temperatureLayerSettings.enabled}
 							class="checkbox checkbox-sm"
-							on:change={(e) => ($temperatureLayerSettings.enabled = e.target.checked)}
+							on:change={(e) => ($temperatureLayerSettings.enabled = getInputChecked(e))}
 						/>
 						<span class="label-text">Surface Temperature</span>
 					</label>
@@ -127,8 +130,8 @@
 		<div class="mt-10 text-xl">Instruments</div>
 		<div class="flex flex-col gap-4 mt-5">
 			<!-- You can open the modal using ID.showModal() method -->
-			<button class="btn" onclick="my_modal_1.showModal()">Instrument Details Demo</button>
-			<dialog id="my_modal_1" class="modal">
+			<button class="btn" on:click={() => instrumentModal.showModal()}>Instrument Details Demo</button>
+			<dialog bind:this={instrumentModal} id="my_modal_1" class="modal">
 				<div class="modal-box w-11/12 max-w-full h-[90%] max-h-full">
 					<form method="dialog">
 						<button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
