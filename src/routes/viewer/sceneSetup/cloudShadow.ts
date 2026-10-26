@@ -22,7 +22,8 @@ export class CloudShadow {
   private readonly sampleUniforms = {
     uCloudShadowMap: { value: null as THREE.Texture | null },
     uCloudShadowSize: { value: new THREE.Vector2(1, 1) },
-    uCloudShadowStrength: { value: 0.0 }
+    uCloudShadowStrength: { value: 0.0 },
+    uGroundTint: { value: new THREE.Color(1, 1, 1) }
   };
 
   constructor() {
@@ -72,6 +73,11 @@ export class CloudShadow {
     renderer.setRenderTarget(previousTarget);
   }
 
+  // Colour that the surface materials patched by applyToMaterial() are multiplied with (time-of-day lighting).
+  setGroundTint(color: THREE.Color) {
+    this.sampleUniforms.uGroundTint.value.copy(color);
+  }
+
   // Patches a (surface) material so it is darkened where the shadow texture says so.
   applyToMaterial(material: THREE.Material) {
     const previousOnBeforeCompile = material.onBeforeCompile;
@@ -92,11 +98,13 @@ export class CloudShadow {
 uniform sampler2D uCloudShadowMap;
 uniform vec2 uCloudShadowSize;
 uniform float uCloudShadowStrength;
+uniform vec3 uGroundTint;
 void main()`
         )
         .replace(
           '#include <dithering_fragment>',
           `#include <dithering_fragment>
+  gl_FragColor.rgb *= uGroundTint;
   vec2 cloudShadowUv = vCloudShadowWorld.xy / uCloudShadowSize + 0.5;
   if (all(greaterThanEqual(cloudShadowUv, vec2(0.0))) && all(lessThanEqual(cloudShadowUv, vec2(1.0)))) {
     gl_FragColor.rgb *= mix(1.0 - uCloudShadowStrength, 1.0, texture2D(uCloudShadowMap, cloudShadowUv).r);

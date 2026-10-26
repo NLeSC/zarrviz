@@ -6,6 +6,9 @@ import { makeDataConversionTex } from '$lib/utils/makeDataConversionTex';
 import * as THREE from 'three';
 import { LightVolume } from './lightVolume';
 import { renderer, renderScene } from './create3DScene';
+import { noonWhiteBalance, sunDirection, sunLightingAt, type SunLighting } from './timeOfDay';
+import { get } from 'svelte/store';
+import { timeOfDay } from '../stores/viewer.store';
 
 export class CloudLayer extends RemoteDataLayer {
     dataScaleValue: number;
@@ -19,16 +22,6 @@ export class CloudLayer extends RemoteDataLayer {
     private static readonly DETAIL_DT_SCALE = 0.5;
     private lodDtScale = CloudLayer.BASE_DT_SCALE;
     private readonly lightVolume = new LightVolume();
-    // Azimuth in the box's xy plane from +x; elevation above that plane (box z is up).
-    private static readonly SUN_AZIMUTH_DEG = 90;
-    private static readonly SUN_ELEVATION_DEG = 45;
-
-    private static sunDirection(azimuthDeg: number, elevationDeg: number): THREE.Vector3 {
-        const az = THREE.MathUtils.degToRad(azimuthDeg);
-        const el = THREE.MathUtils.degToRad(elevationDeg);
-        return new THREE.Vector3(Math.cos(el) * Math.cos(az), Math.cos(el) * Math.sin(az), Math.sin(el));
-    }
-
     constructor(variable: string, variableStore: VariableStore, geometry: THREE.BufferGeometry) {
         super(variable, variableStore, geometry, vertexShaderVolume, fragmentShaderVolumeClouds);
         this.dataScaleValue = 0.00446; // Default value, adjust as needed
@@ -43,9 +36,16 @@ export class CloudLayer extends RemoteDataLayer {
         });
     }
 
-    setSunAngles(azimuthDeg: number, elevationDeg: number) {
-        this.updateUniforms({ sunLightDir: CloudLayer.sunDirection(azimuthDeg, elevationDeg) });
-        this.updateLightVolume();
+    // recomputeLight: only needed for the layer that is currently rendered; others recompute on their next update().
+    setSunLighting(lighting: SunLighting, recomputeLight: boolean) {
+        this.updateUniforms({
+            sunLightDir: sunDirection(lighting.azimuthDeg, lighting.elevationDeg),
+            sunLightColor: lighting.sunColor,
+            solarFactor: lighting.solarFactor,
+            ambientLightColorTop: lighting.ambientTop,
+            ambientLightColorBot: lighting.ambientBottom
+        });
+        if (recomputeLight) this.updateLightVolume();
     }
 
     async update(timestep: number, interimTexture: THREE.Texture = null) {
@@ -79,7 +79,7 @@ export class CloudLayer extends RemoteDataLayer {
 
     configureUniforms(uniforms: { [uniform: string]: THREE.IUniform<any>; }): void {
         super.configureUniforms(uniforms);
-        const sunLightColor = new THREE.Color(0.99, 0.83, 0.62);
+        const lighting = sunLightingAt(get(timeOfDay));
         uniforms.dataScale = new THREE.Uniform(this.dataScaleValue);
         uniforms.dataEpsilon = new THREE.Uniform(CloudLayer.DATA_EPSILON);
         uniforms.dataConversionTex = new THREE.Uniform(makeDataConversionTex(this.dataScaleValue, CloudLayer.DATA_EPSILON));
@@ -87,12 +87,13 @@ export class CloudLayer extends RemoteDataLayer {
         uniforms.dtScale = new THREE.Uniform(CloudLayer.BASE_DT_SCALE);
         uniforms.extinctionScale = new THREE.Uniform(1.0);
         uniforms.noiseStrength = new THREE.Uniform(0.0);
-        uniforms.ambientFactor = new THREE.Uniform(0.0);
-        uniforms.sunLightDir = new THREE.Uniform(CloudLayer.sunDirection(CloudLayer.SUN_AZIMUTH_DEG, CloudLayer.SUN_ELEVATION_DEG));
-        uniforms.solarFactor = new THREE.Uniform(0.8);
-        uniforms.ambientLightColorTop = new THREE.Uniform(new THREE.Color().setRGB(0.529, 0.808, 0.922));
-        uniforms.ambientLightColorBot = new THREE.Uniform(new THREE.Color(0.3036, 0.4026, 0.2937));
-        uniforms.sunLightColor = new THREE.Uniform(sunLightColor);
+        uniforms.ambientFactor = new THREE.Uniform(0.08);
+        uniforms.sunLightDir = new THREE.Uniform(sunDirection(lighting.azimuthDeg, lighting.elevationDeg));
+        uniforms.solarFactor = new THREE.Uniform(lighting.solarFactor);
+        uniforms.ambientLightColorTop = new THREE.Uniform(lighting.ambientTop);
+        uniforms.ambientLightColorBot = new THREE.Uniform(lighting.ambientBottom);
+        uniforms.sunLightColor = new THREE.Uniform(lighting.sunColor);
+        uniforms.whiteBalance = new THREE.Uniform(noonWhiteBalance());
         uniforms.gHG = new THREE.Uniform(0.6);
         uniforms.bottomHeight = new THREE.Uniform(675.0); // TODO: calculate this value from the data
         uniforms.finalGamma = new THREE.Uniform(6.0);        

@@ -5,7 +5,7 @@
 
 	import { cloudLayerSettings, rainLayerSettings, temperatureLayerSettings, showGrid, 
 		numTimes, currentTimeIndex, currentStepIndex, subStepsPerFrame, wind, multiVariableStore, 
-		dataRenderLayers} from '../stores/viewer.store';
+		dataRenderLayers, timeOfDay} from '../stores/viewer.store';
 	import { create3DScene, scene, renderer, camera, renderScene, cloudShadow, setUpdateCloudShadowCallback, updateLODCallback, setUpdateLODCallback } from '../sceneSetup/create3DScene';
 
 	import { dataSetup } from '../fetchAndPrepareData/dataSetup';
@@ -14,6 +14,7 @@
 	import { get, writable } from 'svelte/store';
 	import type { RemoteDataLayer } from '../sceneSetup/remoteDataLayer';
 	import type { CloudLayer } from '../sceneSetup/cloudLayer';
+	import { sunLightingAt } from '../sceneSetup/timeOfDay';
 	import { cloudDetailAmount } from '../sceneSetup/boxSetup';
 
 	let canvas: HTMLElement;
@@ -68,6 +69,21 @@
 			scene.remove(renderObject);
 		}
 	}
+
+	// Time of day: sun direction/colour for the clouds, ground tint and the sky background colour
+	function applyTimeOfDay(hour: number) {
+		if (!scene) return;
+		const lighting = sunLightingAt(hour);
+		scene.background = lighting.background;
+		cloudShadow?.setGroundTint(lighting.groundTint);
+		const activeLevel = dataRenderLayers.ql.lod ? dataRenderLayers.ql.lod.getCurrentLevel() : 0;
+		dataRenderLayers.ql.layers.forEach((layer, level) =>
+			(layer as CloudLayer).setSunLighting(lighting, level === activeLevel)
+		);
+		renderScene();
+	}
+
+	$: applyTimeOfDay($timeOfDay);
 
 	let lastDetailAmount = -1;
 
@@ -133,6 +149,7 @@
 
 		// Create the base 3D scene (camera, renderer, etc.)
 		await create3DScene({ canvas });
+		applyTimeOfDay(get(timeOfDay));
 
 		// Add the grid helper to the scene
 		gridHelper = createGridHelper();
