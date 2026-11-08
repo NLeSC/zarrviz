@@ -23,7 +23,10 @@ export class CloudShadow {
 		uCloudShadowMap: { value: null as THREE.Texture | null },
 		uCloudShadowSize: { value: new THREE.Vector2(1, 1) },
 		uCloudShadowStrength: { value: 0.0 },
-		uGroundTint: { value: new THREE.Color(1, 1, 1) }
+		uGroundTint: { value: new THREE.Color(1, 1, 1) },
+		uHazeColor: { value: new THREE.Color(1, 1, 1) },
+		uHazeDistance: { value: new THREE.Vector2(100, 900) },
+		uHazeFocus: { value: 0 }
 	};
 
 	constructor() {
@@ -78,6 +81,23 @@ export class CloudShadow {
 		this.sampleUniforms.uGroundTint.value.copy(color);
 	}
 
+	// Colour the surface fades into towards the horizon. Output is already sRGB-encoded when the haze is
+	// applied, so the (linear) colour is converted here.
+	setHazeColor(linearColor: THREE.Color) {
+		linearColor.getRGB(this.sampleUniforms.uHazeColor.value, THREE.SRGBColorSpace);
+	}
+
+	// Distances (scene units from the camera) over which the surface fades out completely; the camera far plane
+	// should lie beyond `end`.
+	setHazeDistance(start: number, end: number) {
+		this.sampleUniforms.uHazeDistance.value.set(start, end);
+	}
+
+	// Distance from the camera to the point it orbits around; the surface in front of it never gets haze.
+	setHazeFocus(distance: number) {
+		this.sampleUniforms.uHazeFocus.value = distance;
+	}
+
 	// Patches a (surface) material so it is darkened where the shadow texture says so.
 	applyToMaterial(material: THREE.Material) {
 		const previousOnBeforeCompile = material.onBeforeCompile;
@@ -99,6 +119,9 @@ uniform sampler2D uCloudShadowMap;
 uniform vec2 uCloudShadowSize;
 uniform float uCloudShadowStrength;
 uniform vec3 uGroundTint;
+uniform vec3 uHazeColor;
+uniform vec2 uHazeDistance;
+uniform float uHazeFocus;
 void main()`
 				)
 				.replace(
@@ -108,7 +131,15 @@ void main()`
   vec2 cloudShadowUv = vCloudShadowWorld.xy / uCloudShadowSize + 0.5;
   if (all(greaterThanEqual(cloudShadowUv, vec2(0.0))) && all(lessThanEqual(cloudShadowUv, vec2(1.0)))) {
     gl_FragColor.rgb *= mix(1.0 - uCloudShadowStrength, 1.0, texture2D(uCloudShadowMap, cloudShadowUv).r);
-  }`
+  }
+  // Fade into the sky's horizon colour with view distance and when looking close to the horizon,
+  // but only beyond the point the camera orbits around (the far side of a tilted plane)
+  vec3 hazeRay = vCloudShadowWorld - cameraPosition;
+  float hazeDist = length(hazeRay);
+  float hazeFarSide = smoothstep(uHazeFocus, uHazeFocus * 1.25, hazeDist);
+  float hazeByDistance = smoothstep(uHazeDistance.x, uHazeDistance.y, hazeDist);
+  float hazeByAngle = 1.0 - smoothstep(0.0, 0.08, -hazeRay.z / hazeDist);
+  gl_FragColor.rgb = mix(gl_FragColor.rgb, uHazeColor, hazeFarSide * max(hazeByDistance, hazeByAngle));`
 				);
 		};
 		material.customProgramCacheKey = () => previousCacheKey.call(material) + '|cloudShadow';

@@ -25,7 +25,7 @@
 	let camera: THREE.PerspectiveCamera;
 	let renderer: THREE.WebGLRenderer;
 
-	// Be caruful with these valies, they can clip the date in the 3D scene
+	// Be caruful with these values, they can clip the date in the 3D scene
 	let cameraNear = 0.1;
 	let cameraFar = 10000.0;
 	let cameraFovDegrees = 45.0;

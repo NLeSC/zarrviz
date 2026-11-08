@@ -3,6 +3,7 @@ import WebGL from 'three/examples/jsm/capabilities/WebGL.js';
 import CameraControls from 'camera-controls';
 import { createMapTiles } from './createPlaneMesh';
 import { CloudShadow } from './cloudShadow';
+import { SkyDome } from './skyDome';
 import type { TilesRenderer } from '3d-tiles-renderer';
 CameraControls.install({ THREE: THREE });
 
@@ -12,6 +13,7 @@ export let cameraControls: CameraControls | null = null;
 export let renderer: THREE.WebGLRenderer;
 export let mapTiles: TilesRenderer;
 export let cloudShadow: CloudShadow;
+export let skyDome: SkyDome;
 export let updateLODCallback: () => void;
 
 export const cameraFovDegrees = 1.0; // it was 5  - 1.0 has no artifacts almost, but less performant
@@ -31,6 +33,8 @@ export function setUpdateLODCallback(callback: () => void) {
 export function renderScene(): void {
 	// The shadow only depends on the cloud data and sun, not on the camera, so it is refreshed here only
 	updateCloudShadowCallback?.();
+	skyDome?.followCamera(camera);
+	if (cameraControls) cloudShadow?.setHazeFocus(cameraControls.distance);
 	renderer.render(scene, camera);
 	console.log('🔥 rendered');
 }
@@ -66,6 +70,9 @@ export function create3DScene({ canvas }): void {
 
 	cameraControls = new CameraControls(camera, canvas);
 
+	skyDome = new SkyDome(cameraFar * 0.9);
+	scene.add(skyDome.mesh);
+
 	// Add the map tiles (3DTilesRendererJS) to the scene
 	let mapDirty = true;
 	cloudShadow = new CloudShadow();
@@ -92,6 +99,8 @@ export function create3DScene({ canvas }): void {
 		if (cameraChanged || mapDirty) {
 			mapDirty = false;
 			camera.updateMatrixWorld();
+			skyDome.followCamera(camera);
+			cloudShadow.setHazeFocus(cameraControls.distance);
 			mapTiles.setResolutionFromRenderer(camera, renderer);
 			mapTiles.update();
 			renderer.render(scene, camera);

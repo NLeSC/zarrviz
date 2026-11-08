@@ -24,6 +24,7 @@
 		camera,
 		renderScene,
 		cloudShadow,
+		skyDome,
 		setUpdateCloudShadowCallback,
 		setUpdateLODCallback
 	} from '../sceneSetup/create3DScene';
@@ -95,8 +96,9 @@
 	function applyTimeOfDay(hour: number) {
 		if (!scene) return;
 		const lighting = sunLightingAt(hour);
-		scene.background = lighting.background;
+		skyDome?.setTimeOfDaySky(lighting.background);
 		cloudShadow?.setGroundTint(lighting.groundTint);
+		if (skyDome) cloudShadow?.setHazeColor(skyDome.horizonColor);
 		const activeLevel = dataRenderLayers.ql.lod ? dataRenderLayers.ql.lod.getCurrentLevel() : 0;
 		dataRenderLayers.ql.layers.forEach((layer, level) =>
 			(layer as CloudLayer).setSunLighting(lighting, level === activeLevel)
