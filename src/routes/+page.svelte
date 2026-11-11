@@ -14,14 +14,14 @@
 			title: 'Local Dataset (600MB)',
 			description: 'Rain and clouds',
 			image: `${base}/images/cover.webp`,
-			url: 'http://localhost:5173/data/movie-0.zarr',
+			url: `${base}/data/dales-0.zarr`,
 			dev: true
 		},
 		{
 			title: 'Local Dataset – low res only (movie-2)',
 			description: 'Rain and clouds, coarsest LOD only',
 			image: `${base}/images/cover.webp`,
-			url: 'http://localhost:5173/data/movie-2.zarr',
+			url: `${base}/data/movie-2.zarr`,
 			dev: true
 		},
 		{
@@ -61,7 +61,7 @@
 
 	<div class="flex gap-8 mt-4">
 		{#each datasets as data}
-			<a href={'viewer?dataset=' + data.url}>
+			<a href={'viewer?dataset=' + encodeURIComponent(data.url)}>
 				<div class="flex flex-col items-center">
 					<div class="card w-60 bg-base-300 shadow-xl ring-base-300 hover:ring-gray-500 transition-all ring-2">
 						<img src={data.image} class="flex-none rounded-t-2xl" alt="Shoes" />

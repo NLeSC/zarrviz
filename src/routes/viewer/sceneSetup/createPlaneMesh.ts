@@ -3,7 +3,7 @@ import { get } from 'svelte/store';
 import { TilesRenderer } from '3d-tiles-renderer';
 // GeneratedSurfacePlugin is exported at runtime but missing from the package typings
 // @ts-expect-error missing type declaration
-import { GeneratedSurfacePlugin, XYZTilesOverlay } from '3d-tiles-renderer/plugins';
+import { GeneratedSurfacePlugin, TerrariumMeshPlugin, XYZTilesOverlay } from '3d-tiles-renderer/plugins';
 import { scaleFactor } from '../stores/viewer.store';
 import type { CloudShadow } from './cloudShadow';
 
@@ -19,30 +19,20 @@ function toMercatorNormalized(lon: number, lat: number): [number, number] {
 	return [u, v];
 }
 
-//
-// Create a 3DTilesRendererJS tile set (satellite tiles on a flat surface) that replaces the static map plane.
-// The tiles are scaled so that 1 scene unit equals `scaleFactor` ground meters, with the center of the
-// Netherlands at the scene origin.
-//
-export function createMapTiles(
+function satelliteOverlay() {
+	return new XYZTilesOverlay({
+		url: 'https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2021_3857/default/g/{z}/{y}/{x}.jpg',
+		levels: 15
+	});
+}
+
+function configureTiles(
+	tiles: TilesRenderer,
 	camera: THREE.Camera,
 	renderer: THREE.WebGLRenderer,
 	onChange: () => void,
 	cloudShadow: CloudShadow
-): TilesRenderer {
-	const tiles = new TilesRenderer();
-	tiles.registerPlugin(
-		new GeneratedSurfacePlugin({
-			projection: 'source',
-			applyOverlayTexture: true,
-			overlay: new XYZTilesOverlay({
-				// Sentinel-2 cloudless 2021 by EOX (10 m, CC BY-NC-SA 4.0, attribution: Sentinel-2 cloudless by EOX)
-				url: 'https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2021_3857/default/g/{z}/{y}/{x}.jpg',
-				levels: 15
-			})
-		})
-	);
-
+): void {
 	// Mercator stretches distances by 1/cos(lat); compensate at the center latitude
 	const scale = (EARTH_CIRCUMFERENCE * Math.cos(THREE.MathUtils.degToRad(CENTER_LAT))) / get(scaleFactor);
 	const [u, v] = toMercatorNormalized(CENTER_LON, CENTER_LAT);
@@ -64,5 +54,54 @@ export function createMapTiles(
 		});
 		onChange();
 	});
+}
+
+export function createMapTiles(
+	camera: THREE.Camera,
+	renderer: THREE.WebGLRenderer,
+	onChange: () => void,
+	cloudShadow: CloudShadow
+): TilesRenderer {
+	const tiles = new TilesRenderer();
+	tiles.registerPlugin(
+		new GeneratedSurfacePlugin({ projection: 'source', applyOverlayTexture: true, overlay: satelliteOverlay() })
+	);
+	configureTiles(tiles, camera, renderer, onChange, cloudShadow);
 	return tiles;
+}
+
+export function createTerrainTiles(
+	camera: THREE.Camera,
+	renderer: THREE.WebGLRenderer,
+	onChange: () => void,
+	cloudShadow: CloudShadow,
+	onError: () => void
+) {
+	const tiles = new TilesRenderer();
+	const terrain = new TerrariumMeshPlugin({
+		url: 'https://elevation-tiles-prod.s3.amazonaws.com/terrarium/{z}/{x}/{y}.png',
+		maxZoom: 15,
+		projection: 'source',
+		heightScale: 1 / (EARTH_CIRCUMFERENCE * Math.cos(THREE.MathUtils.degToRad(CENTER_LAT))),
+		overlay: satelliteOverlay(),
+		applyOverlayTexture: true,
+		unlit: true
+	});
+	tiles.registerPlugin(terrain);
+	configureTiles(tiles, camera, renderer, onChange, cloudShadow);
+	tiles.addEventListener('load-error', ({ error }) => {
+		console.error('Failed to load terrain tiles:', error);
+		onError();
+	});
+	return {
+		tiles,
+		elevationAt(x: number, y: number): number | null {
+			const scale = tiles.group.scale.x;
+			const [u, v] = toMercatorNormalized(CENTER_LON, CENTER_LAT);
+			const lon = (u + x / scale - 0.5) * 2 * Math.PI;
+			const lat = Math.atan(Math.sinh((v + y / scale - 0.5) * 2 * Math.PI));
+			const height: number | null = terrain.sampleCartographicElevation(lat, lon);
+			return height === null ? null : height * scale;
+		}
+	};
 }

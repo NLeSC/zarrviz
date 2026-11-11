@@ -1,7 +1,9 @@
 import * as THREE from 'three';
 import WebGL from 'three/examples/jsm/capabilities/WebGL.js';
 import CameraControls from 'camera-controls';
-import { createMapTiles } from './createPlaneMesh';
+import { get } from 'svelte/store';
+import { scaleFactor } from '../stores/viewer.store';
+import { createMapTiles, createTerrainTiles } from './createPlaneMesh';
 import { CloudShadow } from './cloudShadow';
 import { SkyDome } from './skyDome';
 import type { TilesRenderer } from '3d-tiles-renderer';
@@ -16,6 +18,22 @@ export let cloudShadow: CloudShadow;
 export let skyDome: SkyDome;
 export let updateLODCallback: () => void;
 
+let groundTerrain: ReturnType<typeof createTerrainTiles> | null = null;
+let groundPosition: THREE.Vector3 | null = null;
+let groundYaw = 0;
+let groundPitch = Math.PI / 9;
+let sceneDirty = false;
+let animationFrame = 0;
+let resizeHandler: (() => void) | null = null;
+let savedCamera: {
+	position: THREE.Vector3;
+	target: THREE.Vector3;
+	up: THREE.Vector3;
+	fov: number;
+	near: number;
+	zoom: number;
+} | null = null;
+
 export const cameraFovDegrees = 1.0; // it was 5  - 1.0 has no artifacts almost, but less performant
 export const cameraNear = 0.01;
 export const cameraFar = 1000.0;
@@ -27,6 +45,95 @@ export function setUpdateCloudShadowCallback(callback: () => void) {
 
 export function setUpdateLODCallback(callback: () => void) {
 	updateLODCallback = callback;
+}
+
+function lookFromGround() {
+	if (!groundPosition) return;
+	camera.position.copy(groundPosition);
+	const horizontal = Math.cos(groundPitch);
+	camera.lookAt(
+		groundPosition.x + Math.sin(groundYaw) * horizontal,
+		groundPosition.y + Math.cos(groundYaw) * horizontal,
+		groundPosition.z + Math.sin(groundPitch)
+	);
+	sceneDirty = true;
+}
+
+export function turnGroundView(dx: number, dy: number) {
+	if (!groundPosition) return;
+	groundYaw -= dx * 0.005;
+	groundPitch = THREE.MathUtils.clamp(groundPitch + dy * 0.005, -Math.PI / 2 + 0.01, Math.PI / 2 - 0.01);
+	lookFromGround();
+}
+
+export function enterGroundView(clientX: number, clientY: number, canvas: HTMLElement, onError: () => void): boolean {
+	if (!cameraControls || groundPosition) return false;
+	const rect = canvas.getBoundingClientRect();
+	const pointer = new THREE.Vector2(
+		((clientX - rect.left) / rect.width) * 2 - 1,
+		-((clientY - rect.top) / rect.height) * 2 + 1
+	);
+	const raycaster = new THREE.Raycaster();
+	raycaster.setFromCamera(pointer, camera);
+	const point = raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 0, 1), 0), new THREE.Vector3());
+	if (!point) return false;
+
+	const terrain = createTerrainTiles(camera, renderer, () => (sceneDirty = true), cloudShadow, onError);
+	savedCamera = {
+		position: cameraControls.getPosition(new THREE.Vector3()),
+		target: cameraControls.getTarget(new THREE.Vector3()),
+		up: camera.up.clone(),
+		fov: camera.fov,
+		near: camera.near,
+		zoom: camera.zoom
+	};
+	cameraControls.enabled = false;
+	groundPosition = point;
+	groundPosition.z = 1.7 / get(scaleFactor);
+	groundYaw = 0;
+	groundPitch = Math.PI / 9;
+	camera.up.set(0, 0, 1);
+	camera.fov = 60;
+	camera.zoom = 1;
+	camera.near = 0.2 / get(scaleFactor);
+	camera.updateProjectionMatrix();
+	groundTerrain = terrain;
+	mapTiles.group.visible = false;
+	scene.add(groundTerrain.tiles.group);
+	lookFromGround();
+	return true;
+}
+
+export function exitGroundView() {
+	if (!groundPosition || !savedCamera || !cameraControls) return;
+	groundPosition = null;
+	if (groundTerrain) {
+		scene.remove(groundTerrain.tiles.group);
+		groundTerrain.tiles.dispose();
+		groundTerrain = null;
+	}
+	mapTiles.group.visible = true;
+	camera.up.copy(savedCamera.up);
+	camera.fov = savedCamera.fov;
+	camera.near = savedCamera.near;
+	camera.zoom = savedCamera.zoom;
+	camera.updateProjectionMatrix();
+	cameraControls.updateCameraUp();
+	const { position, target } = savedCamera;
+	cameraControls.setLookAt(position.x, position.y, position.z, target.x, target.y, target.z, false);
+	cameraControls.zoomTo(savedCamera.zoom, false);
+	cameraControls.enabled = true;
+	savedCamera = null;
+	sceneDirty = true;
+}
+
+export function dispose3DScene() {
+	cancelAnimationFrame(animationFrame);
+	if (resizeHandler) window.removeEventListener('resize', resizeHandler);
+	exitGroundView();
+	cameraControls?.dispose();
+	mapTiles?.dispose();
+	renderer?.dispose();
 }
 
 // Render the scene. This function can be reused in other effects or callbacks.
@@ -95,20 +202,34 @@ export function create3DScene({ canvas }): void {
 	const clock = new THREE.Clock();
 	function animate() {
 		const delta = clock.getDelta();
-		const cameraChanged = cameraControls.update(delta);
-		if (cameraChanged || mapDirty) {
+		const cameraChanged = !groundPosition && cameraControls.update(delta);
+		if (cameraChanged || mapDirty || sceneDirty) {
 			mapDirty = false;
+			sceneDirty = false;
+			if (groundTerrain && groundPosition) {
+				const elevation = groundTerrain.elevationAt(groundPosition.x, groundPosition.y);
+				if (elevation !== null) {
+					groundPosition.z = elevation + 1.7 / get(scaleFactor);
+					lookFromGround();
+					sceneDirty = false;
+				}
+			}
 			camera.updateMatrixWorld();
 			skyDome.followCamera(camera);
-			cloudShadow.setHazeFocus(cameraControls.distance);
-			mapTiles.setResolutionFromRenderer(camera, renderer);
-			mapTiles.update();
+			cloudShadow.setHazeFocus(groundPosition ? 0.001 : cameraControls.distance);
+			const activeTiles = groundTerrain?.tiles ?? mapTiles;
+			activeTiles.setResolutionFromRenderer(camera, renderer);
+			activeTiles.update();
 			renderer.render(scene, camera);
-			if (cameraChanged) updateLODCallback();
+			if (cameraChanged || groundPosition) updateLODCallback?.();
 		}
-		requestAnimationFrame(animate);
+		animationFrame = requestAnimationFrame(animate);
 	}
-	window.addEventListener('resize', () => resize(canvas, camera)); // Fix: Pass the correct arguments to the resize function
+	resizeHandler = () => {
+		resize(canvas, camera);
+		sceneDirty = true;
+	};
+	window.addEventListener('resize', resizeHandler);
 	resize(canvas, camera);
 	animate();
 	renderer.render(scene, camera);

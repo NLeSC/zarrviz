@@ -14,7 +14,9 @@ export async function dataSetup(
 	store: MultiVariableStore
 ): Promise<string[]> {
 	const urlSearchParams = new URLSearchParams(document.location.search);
-	const datasetUrl = urlSearchParams.get('dataset');
+	const datasetPath = urlSearchParams.get('dataset');
+	if (!datasetPath) throw new Error('No dataset URL was provided.');
+	const datasetUrl = new URL(datasetPath, document.location.href).href;
 	const remoteStore = new RemoteZarrStore(datasetUrl);
 	store.addRemoteStore(remoteStore);
 	const coarseRemoteZarrStores = [remoteStore];

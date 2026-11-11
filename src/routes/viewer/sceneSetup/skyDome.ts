@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { sunDirection, type SunLighting } from './timeOfDay';
 
 // Light greyish blue at the horizon, dark blue at high altitude.
 const HORIZON_COLOR = new THREE.Color(0.74, 0.8, 0.86);
@@ -18,7 +19,10 @@ export class SkyDome {
 			fog: false,
 			uniforms: {
 				uHorizon: { value: HORIZON_COLOR.clone() },
-				uZenith: { value: ZENITH_COLOR.clone() }
+				uZenith: { value: ZENITH_COLOR.clone() },
+				uSunDirection: { value: new THREE.Vector3(0, 0, 1) },
+				uSunColor: { value: new THREE.Color(1, 1, 1) },
+				uShowSun: { value: 0 }
 			},
 			vertexShader: /* glsl */ `
 				varying vec3 vDir;
@@ -32,6 +36,9 @@ export class SkyDome {
 			fragmentShader: /* glsl */ `
 				uniform vec3 uHorizon;
 				uniform vec3 uZenith;
+				uniform vec3 uSunDirection;
+				uniform vec3 uSunColor;
+				uniform float uShowSun;
 				varying vec3 vDir;
 				void main() {
 					float h = vDir.z;
@@ -39,6 +46,10 @@ export class SkyDome {
 					float t = smoothstep(-0.02, 0.6, h);
 					t = pow(t, 0.7);
 					vec3 col = mix(uHorizon, uZenith, t);
+					float sunAngle = dot(normalize(vDir), uSunDirection);
+					float glow = pow(max(sunAngle, 0.0), 256.0) * 0.3;
+					float disc = smoothstep(0.9994, 0.9997, sunAngle);
+					col = mix(col, uSunColor, uShowSun * clamp(glow + disc, 0.0, 1.0));
 					gl_FragColor = vec4(col, 1.0);
 					#include <colorspace_fragment>
 				}
@@ -51,8 +62,20 @@ export class SkyDome {
 	}
 
 	setTimeOfDaySky(skyColor: THREE.Color) {
-		const base = HORIZON_COLOR.clone().lerp(skyColor, HORIZON_TINT * THREE.MathUtils.clamp(skyColor.r - skyColor.b, 0, 1));
+		const base = HORIZON_COLOR.clone().lerp(
+			skyColor,
+			HORIZON_TINT * THREE.MathUtils.clamp(skyColor.r - skyColor.b, 0, 1)
+		);
 		this.material.uniforms.uHorizon.value.copy(base);
+	}
+
+	setSun(lighting: SunLighting) {
+		this.material.uniforms.uSunDirection.value.copy(sunDirection(lighting.azimuthDeg, lighting.elevationDeg));
+		this.material.uniforms.uSunColor.value.copy(lighting.sunColor);
+	}
+
+	showSun(visible: boolean) {
+		this.material.uniforms.uShowSun.value = visible ? 1 : 0;
 	}
 
 	// Current colour of the sky at the horizon; the ground fades into this colour in the distance.

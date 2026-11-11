@@ -28,7 +28,7 @@ export class RemoteZarrStore implements RemoteStore {
 		const zarrArray = await this.getValArray(variable);
 		const shape = zarrArray.meta['shape'];
 		//TODO: Make this more general
-		const dims = ['time', 'z_' + variable, 'yt', 'xt'];
+		const dims = ['time', 'z_' + variable, 'y', 'x'];
 		const result = { t: [shape[0], 0, shape[0] - 1] };
 		for (let i = 5 - shape.length; i < dims.length; i++) {
 			const coordinateArray = await openArray({ store: this.zarrStore, path: dims[i], mode: 'r' });
